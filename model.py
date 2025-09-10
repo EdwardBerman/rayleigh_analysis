@@ -2,24 +2,74 @@ import torch
 import torch.nn as nn
 from torch_geometric.nn import MessagePassing
 
+class GroupSort(nn.Module):
+    def forward(self, x):
+        a, b = x.split(x.size(-1) // 2, 1)
+        a, b = torch.max(a, b), torch.min(a, b)
+        return torch.cat([a, b], dim=-1)
+
+class ComplexReLU(nn.Module):
+    def forward(self, x):
+        real = torch.relu(x.real)
+        imag = torch.relu(x.imag)
+        return torch.complex(real, imag)
+
+class UnitaryMLP(nn.Module):
+    def __init__(self, input_dim , layers, activation=ComplexReLU(), taylor_terms):
+        super(UnitaryMLP, self).__init__()
+        self.layer_list = []
+        self.layers = layers
+        self.taylor_terms = taylor_terms
+        self.lie_algebra = LieAlgebra(max_matrix_power=taylor_terms, inverse_method='taylor')
+
+        for i in range(layers):
+            self.layer_list.append(nn.Parameter(torch.randn(input_dim, input_dim, dtype=torch.cfloat)))
+
+    def forward(self, x):
+        x = x.to(torch.cfloat)
+        for i in range(len(self.layer_list)):
+            weight = self.layer_list[i]
+            anti_symmeterized_weight = (weight - weight.conj().t()) / 2
+            unitary_matrix = self.lie_algebra.forward(anti_symmeterized_weight)
+            x = torch.matmul(x, unitary_matrix)
+            x = activation(x) if i != len(self.layer_list) - 1 else x
+        return x
+
 class UnitaryMessagePassing(MessagePassing):
     def __init__(self, dimension):
-        super(UnitaryMessagePassing, self).__init__(aggr='add')
+        super(UnitaryMessagePassing, self).__init__(aggr='mean')
         self.weight = nn.Parameter(torch.randn(dimension, dimension, dtype=torch.cfloat))
-        self.lie_algebra = LieAlgebra(max_matrix_power=10, inverse_method='taylor')
+        self.unitary_mlp = UnitaryMLP(input_dim=dimension, layers=2, activation=ComplexReLU(), taylor_terms=10)
 
-    def forward(self, x, edge_index):
-        return self.propagate(edge_index, x=x)
+        self.phi_x = nn.Sequential(
+                nn.Linear(dimension, dimension),
+                GroupSort(),
+                nn.Linear(dimension, dimension)
+                )
 
-    def message(self, x_i, x_j):
-        x_feat = torch.cat([x_i, x_j], dim=1)
-        x_feat = torch.complex(x_feat)
-        anti_symmeterized_weight = (self.weight - self.weight.conj().t()) / 2
-        unitary_matrix = self.lie_algebra.forward(anti_symmeterized_weight)
-        return torch.matmul(x_feat, unitary_matrix)
+    def forward(self, h, x, edge_index, edge_attr=None, add_loops=False):
+        h = h.to(torch.cfloat)
+        x = x.to(torch.cfloat)
 
-    def update(self, aggr_out):
-        return aggr_out
+        if add_loops:
+            edge_index, edge_attr = add_self_loops(edge_index, edge_attr, fill_value=0., num_nodes=h.size(0))
+        
+        m_ij = self.propagate(edge_index,
+                              h=h,              # name 'x' is arbitrary; suffixes _i/_j disambiguate
+                              x=x,
+                              edge_attr=edge_attr)
+
+
+    def message(self, h_i, h_j, x_i, x_j, edge_attr):
+        rij = x_j - x_i                        # [E, d]
+        dist = torch.norm(rij, dim=-1, keepdim=True).clamp_min(1e-9)  # [E,1]
+
+        if edge_attr is None:
+            feat = torch.cat([h_i, h_j, dist], dim=-1)
+        else:
+            feat = torch.cat([h_i, h_j, dist, edge_attr], dim=-1)
+
+        return self.unitary_mlp(feat)
 
 class LieAlgebra(nn.Module):
     def __init__(self, max_matrix_power: int, inverse_method: str = 'taylor')):
