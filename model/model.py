@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn import MessagePassing
+from external.torch_scatter import scatter_mean
 
 class GroupSort(nn.Module):
     def forward(self, x):
@@ -21,6 +22,7 @@ class UnitaryMLP(nn.Module):
         self.layers = layers
         self.taylor_terms = taylor_terms
         self.lie_algebra = LieAlgebra(max_matrix_power=taylor_terms, inverse_method='taylor')
+        self.activation = activation
 
         for i in range(layers):
             self.layer_list.append(nn.Parameter(torch.randn(input_dim, input_dim, dtype=torch.cfloat)))
@@ -32,16 +34,21 @@ class UnitaryMLP(nn.Module):
             anti_symmeterized_weight = (weight - weight.conj().t()) / 2
             unitary_matrix = self.lie_algebra.forward(anti_symmeterized_weight)
             x = torch.matmul(x, unitary_matrix)
-            x = activation(x) if i != len(self.layer_list) - 1 else x
+            x = self.activation(x) if i != len(self.layer_list) - 1 else x
         return x
 
 class UnitaryMessagePassing(MessagePassing):
-    def __init__(self, dimension):
+    def __init__(self, dimension: int, mlp_layers: int = 2):
         super(UnitaryMessagePassing, self).__init__(aggr='mean')
-        self.weight = nn.Parameter(torch.randn(dimension, dimension, dtype=torch.cfloat))
-        self.unitary_mlp = UnitaryMLP(input_dim=dimension, layers=2, activation=ComplexReLU(), taylor_terms=10)
+        self.unitary_mlp = UnitaryMLP(input_dim=dimension, layers=mlp_layers, activation=ComplexReLU(), taylor_terms=10)
 
         self.phi_x = nn.Sequential(
+                nn.Linear(dimension, dimension),
+                GroupSort(),
+                nn.Linear(dimension, dimension)
+                )
+
+        self.phi_h = nn.Sequential(
                 nn.Linear(dimension, dimension),
                 GroupSort(),
                 nn.Linear(dimension, dimension)
@@ -58,6 +65,15 @@ class UnitaryMessagePassing(MessagePassing):
                               h=h,              # name 'x' is arbitrary; suffixes _i/_j disambiguate
                               x=x,
                               edge_attr=edge_attr)
+
+        h_feat = torch.cat([h, m_ij], dim=-1)
+        h = self.phi_h(h_feat)
+
+        rij = x[edge_index[0]] - x[edge_index[1]]
+        x_feat = self.phi_x(m_ij) * rij
+        x = x + scatter_mean(x_feat, edge_index[1], dim=0, dim_size=x.size(0))
+        return h, x
+
 
 
     def message(self, h_i, h_j, x_i, x_j, edge_attr):
