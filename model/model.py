@@ -37,54 +37,36 @@ class UnitaryMLP(nn.Module):
             x = self.activation(x) if i != len(self.layer_list) - 1 else x
         return x
 
-class UnitaryMessagePassing(MessagePassing):
+class UnitaryMPNN(MessagePassing):
+    """
+    Unitary Message Passing Neural Network layer
+    """
     def __init__(self, dimension: int, mlp_layers: int = 2):
-        super(UnitaryMessagePassing, self).__init__(aggr='mean')
+        super(UnitaryMessagePassing, self).__init__(aggr='add')
         self.unitary_mlp = UnitaryMLP(input_dim=dimension, layers=mlp_layers, activation=ComplexReLU(), taylor_terms=10)
 
-        self.phi_x = nn.Sequential(
+        self.mlp_out = nn.Sequential(
                 nn.Linear(dimension, dimension),
                 GroupSort(),
                 nn.Linear(dimension, dimension)
                 )
 
-        self.phi_h = nn.Sequential(
-                nn.Linear(dimension, dimension),
-                GroupSort(),
-                nn.Linear(dimension, dimension)
-                )
-
-    def forward(self, h, x, edge_index, edge_attr=None, add_loops=False):
-        h = h.to(torch.cfloat)
+    def forward(self, x, edge_index, edge_attr=None, add_loops=False):
         x = x.to(torch.cfloat)
 
         if add_loops:
             edge_index, edge_attr = add_self_loops(edge_index, edge_attr, fill_value=0., num_nodes=h.size(0))
         
         m_ij = self.propagate(edge_index,
-                              h=h,              # name 'x' is arbitrary; suffixes _i/_j disambiguate
                               x=x,
                               edge_attr=edge_attr)
 
-        h_feat = torch.cat([h, m_ij], dim=-1)
-        h = self.phi_h(h_feat)
+        x_feat = torch.cat([x, m_ij], dim=-1)
+        x = self.mlp_out(x_feat)
+        return x
 
-        rij = x[edge_index[0]] - x[edge_index[1]]
-        x_feat = self.phi_x(m_ij) * rij
-        x = x + scatter_mean(x_feat, edge_index[1], dim=0, dim_size=x.size(0))
-        return h, x
-
-
-
-    def message(self, h_i, h_j, x_i, x_j, edge_attr):
-        rij = x_j - x_i                        # [E, d]
-        dist = torch.norm(rij, dim=-1, keepdim=True).clamp_min(1e-9)  # [E,1]
-
-        if edge_attr is None:
-            feat = torch.cat([h_i, h_j, dist], dim=-1)
-        else:
-            feat = torch.cat([h_i, h_j, dist, edge_attr], dim=-1)
-
+    def message(self, x_i, x_j, edge_attr):
+        feat = torch.cat([x_i, x_j], dim=-1) if edge_attr is None else torch.cat([x_i, x_j, edge_attr], dim=-1)
         return self.unitary_mlp(feat)
 
 class LieAlgebra(nn.Module):
