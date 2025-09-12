@@ -42,10 +42,16 @@ class UnitaryMPNN(MessagePassing):
     Unitary Message Passing Neural Network layer
     """
     def __init__(self, dimension: int, mlp_layers: int = 2):
-        super(UnitaryMessagePassing, self).__init__(aggr='add')
+        super(UnitaryMessagePassing, self).__init__(aggr='mean')
         self.unitary_mlp = UnitaryMLP(input_dim=dimension, layers=mlp_layers, activation=ComplexReLU(), taylor_terms=10)
 
-        self.mlp_out = nn.Sequential(
+        self.unitary_breaking_mlp = nn.Sequential(
+                nn.Linear(dimension, dimension),
+                GroupSort(),
+                nn.Linear(dimension, dimension)
+                )
+
+        self.message_mlp = nn.Sequential(
                 nn.Linear(dimension, dimension),
                 GroupSort(),
                 nn.Linear(dimension, dimension)
@@ -61,13 +67,14 @@ class UnitaryMPNN(MessagePassing):
                               x=x,
                               edge_attr=edge_attr)
 
+        x = self.unitary_mlp(x)
         x_feat = torch.cat([x, m_ij], dim=-1)
-        x = self.mlp_out(x_feat)
+        x = self.unitary_breaking_mlp(x_feat)
         return x
 
     def message(self, x_i, x_j, edge_attr):
         feat = torch.cat([x_i, x_j], dim=-1) if edge_attr is None else torch.cat([x_i, x_j, edge_attr], dim=-1)
-        return self.unitary_mlp(feat)
+        return self.message_mlp(feat)
 
 class LieAlgebra(nn.Module):
     def __init__(self, max_matrix_power: int, inverse_method: str = 'taylor')):
