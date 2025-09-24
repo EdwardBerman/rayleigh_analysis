@@ -15,67 +15,6 @@ class ComplexReLU(nn.Module):
         imag = torch.relu(x.imag)
         return torch.complex(real, imag)
 
-class UnitaryMLP(nn.Module):
-    def __init__(self, input_dim , layers, activation=ComplexReLU(), taylor_terms):
-        super(UnitaryMLP, self).__init__()
-        self.layer_list = []
-        self.layers = layers
-        self.taylor_terms = taylor_terms
-        self.lie_algebra = LieAlgebra(max_matrix_power=taylor_terms, inverse_method='taylor')
-        self.activation = activation
-
-        for i in range(layers):
-            self.layer_list.append(nn.Parameter(torch.randn(input_dim, input_dim, dtype=torch.cfloat)))
-
-    def forward(self, x):
-        x = x.to(torch.cfloat)
-        for i in range(len(self.layer_list)):
-            weight = self.layer_list[i]
-            anti_symmeterized_weight = (weight - weight.conj().t()) / 2
-            unitary_matrix = self.lie_algebra.forward(anti_symmeterized_weight)
-            x = torch.matmul(x, unitary_matrix)
-            x = self.activation(x) if i != len(self.layer_list) - 1 else x
-        return x
-
-class UnitaryMPNN(MessagePassing):
-    """
-    Unitary Message Passing Neural Network layer
-    """
-    def __init__(self, dimension: int, mlp_layers: int = 2):
-        super(UnitaryMessagePassing, self).__init__(aggr='mean')
-        self.unitary_mlp = UnitaryMLP(input_dim=dimension, layers=mlp_layers, activation=ComplexReLU(), taylor_terms=10)
-
-        self.unitary_breaking_mlp = nn.Sequential(
-                nn.Linear(dimension, dimension),
-                GroupSort(),
-                nn.Linear(dimension, dimension)
-                )
-
-        self.message_mlp = nn.Sequential(
-                nn.Linear(dimension, dimension),
-                GroupSort(),
-                nn.Linear(dimension, dimension)
-                )
-
-    def forward(self, x, edge_index, edge_attr=None, add_loops=False):
-        x = x.to(torch.cfloat)
-
-        if add_loops:
-            edge_index, edge_attr = add_self_loops(edge_index, edge_attr, fill_value=0., num_nodes=h.size(0))
-        
-        m_ij = self.propagate(edge_index,
-                              x=x,
-                              edge_attr=edge_attr)
-
-        x = self.unitary_mlp(x)
-        x_feat = torch.cat([x, m_ij], dim=-1)
-        x = self.unitary_breaking_mlp(x_feat)
-        return x
-
-    def message(self, x_i, x_j, edge_attr):
-        feat = torch.cat([x_i, x_j], dim=-1) if edge_attr is None else torch.cat([x_i, x_j, edge_attr], dim=-1)
-        return self.message_mlp(feat)
-
 class LieAlgebra(nn.Module):
     def __init__(self, max_matrix_power: int, inverse_method: str = 'taylor')):
         super(LieAlgebra, self).__init__()
@@ -133,3 +72,5 @@ class LieAlgebra(nn.Module):
             batch_matrix_logarithms +=  torch.matrix_power(current_power, 2*i + 1) / (2*i + 1)
 
         return -2 * batch_matrix_logarithms
+
+class UnitaryConvolution(
