@@ -22,6 +22,17 @@ def rayleigh_error(f: nn.module,
 
     return torch.abs(rayleigh_X - rayleigh_X_prime)
 
-    
-
-
+def integrated_rayleigh_error(f: nn.module, 
+                              X: torch.Tensor, 
+                              A: torch.Tensor, 
+                              edge_indices: torch.Tensor | None = None,
+                              edge_features: torch.Tensor | None = None) -> torch.Tensor:
+    """
+        Sums the Rayleigh errors across all layers of the model f.
+    """
+    total_error = 0.0
+    for layer in f.children():
+        if isinstance(layer, nn.Module):
+            total_error += rayleigh_error(layer, X, A, edge_indices, edge_features)
+            X = layer(X, edge_indices, edge_features)
+    return total_error
