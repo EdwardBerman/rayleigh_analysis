@@ -1,5 +1,5 @@
 from parsers.parser_base import Parser
-# TODO: for classification store num classes
+from torch_geometric.datasets import LRGBDataset
 
 class LongeRangeGraphBenchmarkParser(Parser):
     def __init__(self, name: str, path: str | None = None):
