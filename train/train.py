@@ -10,7 +10,10 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mode, acc_scorer: nn.Module, optimizer: torch.optim.Optimizer):
+def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mode, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
+    """
+    Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
+    """
     if mode == Mode.TRAIN:
         model.train()
         optimizer.zero_grad()
@@ -24,14 +27,14 @@ def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mo
         l.backward()
         optimizer.step()
 
-    acc = acc_scorer(out, data.y)
+    acc = acc_scorer(out, data.y) if acc_scorer is not None else None
 
     if mode == Mode.TRAIN:
-        run.log({"train_loss": l.item(), "train_acc": acc})
+        run.log({"train_loss": l.item(), "train_acc": acc}) if acc is not None else run.log({"train_loss": l.item()})
     elif mode == Mode.EVAL:
-        run.log({"val_loss": l.item(), "val_acc": acc})
+        run.log({"val_loss": l.item(), "val_acc": acc}) if acc is not None else run.log({"val_loss": l.item()})
     else:
-        run.log({"test_loss": l.item(), "test_acc": acc})
+        run.log({"test_loss": l.item(), "test_acc": acc}) if acc is not None else run.log({"test_loss": l.item()})
 
 def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
