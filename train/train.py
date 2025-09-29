@@ -52,7 +52,7 @@ def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--dataset", type=str, help="", required=True)
-    parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl, LINKX", required=True)
+    parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
     parser.add_argument("--num_layers", type=int, required=True)
     parser.add_argument("--skip_connections", type=bool, required=True)
     parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, GroupSort")

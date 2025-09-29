@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn import BatchNorm
-from torch_geometric.nn.models import GCN, GAT, GraphSAGE
+from torch_geometric.nn.models import GCN, GAT, GraphSAGE, LINKX
 from model.edge_aggregator import EdgeModel, NodeModel
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
@@ -73,8 +73,6 @@ def build_model(node_dim: int,
             pass
         case 'CRAWL':
             pass
-        case 'LINKX':
-            pass
         case _:
-            raise ValueError(f"Unsupported model type: {model_type}. Accepts 'GCN', 'GAT', 'MPNN', 'Sage', 'Uni', 'CRAWL', 'LINKX'.")
+            raise ValueError(f"Unsupported model type: {model_type}. Accepts 'GCN', 'GAT', 'MPNN', 'Sage', 'Uni', 'CRAWL'.")
     
