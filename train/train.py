@@ -148,8 +148,9 @@ if __name__ == "__main__":
     parser = LongeRangeGraphBenchmarkParser(name=args.dataset)
     dataset = parser.parse()
     train_dataset, val_dataset, test_dataset = dataset['train_dataset'], dataset['val_dataset'], dataset['test_dataset']
+    node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']
 
-    base_gnn_model = build_model(node_dim=dataset['node_dim'],
+    base_gnn_model = build_model(node_dim=node_dim,
                                  model_type=args.architecture,
                                  num_layers=args.num_layers,
                                  hidden_size=args.hidden_size,
@@ -161,22 +162,27 @@ if __name__ == "__main__":
                                  receptive_field=args.receptive_field,
                                  dropout_rate=args.dropout_rate,
                                  edge_aggregator=args.edge_aggregator,
-                                 edge_dim=dataset['edge_dim'])
+                                 edge_dim=edge_dim)
 
     is_classification = dataset['is_classification']
     level = dataset['level']
 
     if is_classification:
+        num_classes = dataset['num_classes']
+        loss_fn = weighted_cross_entropy 
+        # TODO: Make an accuracy function for classification
+        acc_scorer = None
         if level == "graph_level":
-            model = GraphLevelClassifier(base_gnn_model, dataset['num_classes'])
-            acc_scorer = GraphClassificationAccuracy()
+            model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes)
         else:
-            model = NodeLevelClassifier(base_gnn_model, dataset['num_classes'])
-            acc_scorer = NodeClassificationAccuracy()
-        loss_fn = nn.CrossEntropyLoss()
+            model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes)
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
+        if level == "graph_level":
+            model = GraphLevelRegressor(base_gnn_model, node_dim)
+        else:
+            model = NodeLevelRegressor(base_gnn_model, node_dim)
 
     run = setup_wandb(lr=args.lr, 
                       architecture=args.architecture, 

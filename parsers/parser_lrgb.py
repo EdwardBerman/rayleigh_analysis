@@ -14,24 +14,28 @@ class LongeRangeGraphBenchmarkParser(Parser):
                 self.test_dataset = LRGBDataset(root=root, name="PascalVOC-SP", split="test")
                 self._is_classification = True
                 self._level = "node_level"
+                self.num_classes = self.train_dataset.num_classes
             case 'COCO-SP':
                 self.train_dataset = LRGBDataset(root=root, name="COCO-SP", split="train")
                 self.val_dataset = LRGBDataset(root=root, name="COCO-SP", split="val")
                 self.test_dataset = LRGBDataset(root=root, name="COCO-SP", split="test")
                 self._is_classification = True
                 self._level = "node_level"
+                self.num_classes = self.train_dataset.num_classes
             case 'Peptides-func':
                 self.train_dataset = LRGBDataset(root=root, name="Peptides-func", split="train")
                 self.val_dataset = LRGBDataset(root=root, name="Peptides-func", split="val")
                 self.test_dataset = LRGBDataset(root=root, name="Peptides-func", split="test")
                 self._is_classification = True
                 self._level = "graph_level"
+                self.num_classes = self.train_dataset.num_classes
             case 'Peptides-struct':
                 self.train_dataset = LRGBDataset(root=root, name="Peptides-struct", split="train")
                 self.val_dataset = LRGBDataset(root=root, name="Peptides-struct", split="val")
                 self.test_dataset = LRGBDataset(root=root, name="Peptides-struct", split="test")
                 self._is_classification = False
                 self._level = "graph_level"
+                self.num_classes = self.train_dataset.num_classes
             case _:
                 raise ValueError(f"Dataset {name} not recognized. Available datasets are 'PascalVOC-SP' and ''.")
 
@@ -65,6 +69,7 @@ class LongeRangeGraphBenchmarkParser(Parser):
             'node_dim': self.node_dim,
             'edge_dim': self.edge_dim,
             'is_classification': self.is_classification,
-            'level': self.level
+            'level': self.level,
+            'num_classes': self.num_classes if self.is_classification else None
         }
 
