@@ -2,7 +2,7 @@ from parsers.parser_base import Parser
 # TODO: for classification store num classes
 
 class LongeRangeGraphBenchmarkParser(Parser):
-    def __init__(self, name: str, path: str | None):
+    def __init__(self, name: str, path: str | None = None):
         self._level = "node_level"
 
         root = 'data_preprocessing/data/LRGB/' if path is None else path
