@@ -38,6 +38,7 @@ class LongeRangeGraphBenchmarkParser(Parser):
         self.path = path
         self.name = name
         self._level = "node_level"
+        self._loss_fn = nn.CrossEntropyLoss()
 
         match name:
             case 'PascalVOC-SP':
@@ -49,6 +50,7 @@ class LongeRangeGraphBenchmarkParser(Parser):
                 self._is_classification = True
                 self._level = "node_level"
                 # loss_fn = ...
+                # acc_fn = ...
             case 'COCO-SP':
                 self.train_dataset = LRGBDataset(root=root, name="COCO-SP", split="train")
                 self.val_dataset = LRGBDataset(root=root, name="COCO-SP", split="val")
@@ -73,6 +75,7 @@ class LongeRangeGraphBenchmarkParser(Parser):
                 self._edge_dim = self.train_dataset.num_edge_features
                 self._is_classification = False
                 self._level = "graph_level"
+                self._loss_fn = nn.MSELoss()
             case _:
                 raise ValueError(f"Dataset {name} not recognized. Available datasets are 'PascalVOC-SP' and ''.")
 
@@ -91,6 +94,10 @@ class LongeRangeGraphBenchmarkParser(Parser):
     @property
     def level(self):
         return self._level
+
+    @property
+    def loss_fn(self):
+        return self._loss_fn
 
     def return_datasets(self):
         return self.train_dataset, self.val_dataset, self.test_dataset
