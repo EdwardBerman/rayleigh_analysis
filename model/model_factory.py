@@ -25,6 +25,8 @@ def build_model(node_dim: int,
                 skip_connections: bool,
                 batch_norm: str,
                 num_attention_heads: int = 2,
+                window_size: int = 4,
+                receptive_field: int = 5,
                 dropout_rate: float = 0.1,
                 edge_aggregator: bool = False,
                 edge_dim: int | None = None) -> nn.Module:

@@ -68,6 +68,9 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.001, required=False)
     parser.add_argument("--epochs", type=int, default=100, required=False)
     parser.add_argument("--weight_decay", type=float, default=0.0, required=False)
+    
+    parser.add_argument("--window_size", type=int, default=4, required=False) # For CRAWL 
+    parser.add_argument("--receptive_field", type=float, default=5, required=False) # For CRAWL
 
     args = parser.parse_args()
     pprint.pprint(vars(args))
@@ -83,6 +86,8 @@ if __name__ == "__main__":
                         skip_connections=args.skip_connections,
                         batch_norm=args.batch_norm,
                         num_attention_heads=args.num_attention_heads,
+                        window_size=args.window_size,
+                        receptive_field=args.receptive_field,
                         dropout_rate=args.dropout_rate,
                         edge_aggregator=args.edge_aggregator,
                         edge_dim=edge_dim)
