@@ -73,4 +73,4 @@ class LieAlgebra(nn.Module):
 
         return -2 * batch_matrix_logarithms
 
-class UnitaryConvolution(
+#class UnitaryConvolution(
