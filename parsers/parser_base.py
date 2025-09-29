@@ -5,11 +5,6 @@ from abc import ABC, abstractmethod
 
 class Parser(ABC):
 
-    @abstractmethod
-    def loss_fn(self) -> nn.Module:
-        """Returns the loss function used for training the model."""
-        pass
-
     @property
     @abstractmethod
     def node_dim(self):
