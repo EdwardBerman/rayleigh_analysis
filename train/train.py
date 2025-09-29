@@ -5,18 +5,18 @@ import wandb
 
 # def step function(model, data, optimizer, criterion):
 
-# def setup wandb 
-run = wandb.init(
-    entity="rayleigh_analysis_gnn-org",
-    project="eb_ll_rule_the_tri_state_area",
-    config={
-        "learning_rate": 0.02,
-        "architecture": "CNN",
-        "dataset": "CIFAR-100",
-        "epochs": 10,
-    },
-)
-
+def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
+    run = wandb.init(
+            entity="rayleigh_analysis_gnn-org",
+            project="eb_ll_rule_the_tri_state_area",
+            config={
+                "learning_rate": lr,
+                "architecture": architecture,
+                "dataset": dataset,
+                "epochs": epochs,
+                },
+            )
+    return run
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -32,7 +32,10 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_size", type=int, default=128, required=False) # Unitary Convolution has to be square
     parser.add_argument("--edge_aggregator", type=bool, default=False, required=False) # For models that don't support edge features on datasets with edge features
 
-    # TODO: Parse training stuff (optimizer, lr, epochs, etc.)
+    parser.add_argument("--optimizer", type=str, default="Adam", required=False)
+    parser.add_argument("--lr", type=float, default=0.001, required=False)
+    parser.add_argument("--epochs", type=int, default=100, required=False)
+    parser.add_argument("--weight_decay", type=float, default=0.0, required=False)
 
     args = parser.parse_args()
     pprint.pprint(vars(args))
@@ -51,4 +54,6 @@ if __name__ == "__main__":
                         dropout_rate=args.dropout_rate,
                         edge_aggregator=args.edge_aggregator,
                         edge_dim=edge_dim)
+
+    run = setup_wandb(lr=args.lr, architecture=args.architecture, dataset=args.dataset, epochs=args.epochs)
 
