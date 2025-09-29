@@ -189,6 +189,9 @@ if __name__ == "__main__":
                       dataset=args.dataset, 
                       epochs=args.epochs)
 
+    #TODO: Set up different optimizers
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay) if args.optimizer == "Adam" else None
+
     train(model=model, 
           train_loader=train_loader, 
           val_loader=val_loader, 
