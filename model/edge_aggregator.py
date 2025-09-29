@@ -21,7 +21,7 @@ class EdgeModel(torch.nn.Module):
         self.edge_aggregator = EdgeAggregator(edge_dim, node_dim)
         self.base_model = base_model
 
-    def forward(self, data: Data) -> torch.Tensor):
+    def forward(self, data: Data) -> torch.Tensor:
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
         x = self.edge_aggregator(x, edge_index, edge_attr)
         return self.base_model(x, edge_index)
