@@ -200,6 +200,12 @@ if __name__ == "__main__":
     #TODO: Set up different optimizers
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay) if args.optimizer == "Adam" else None
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+    train_dataset = train_dataset.to(device)
+    val_dataset = val_dataset.to(device)
+    test_dataset = test_dataset.to(device)
+
     train(model=model, 
           train_loader=train_loader, 
           val_loader=val_loader, 
