@@ -52,7 +52,7 @@ def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mo
 
 def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
-            entity="rayleigh_analysis_gnn-org",
+            entity="rayleigh_analysis_gnn", 
             project="eb_ll_rule_the_tri_state_area",
             config={
                 "learning_rate": lr,
