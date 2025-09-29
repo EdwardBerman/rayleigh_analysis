@@ -32,5 +32,5 @@ class NodeModel(torch.nn.Module):
         self.base_model = base_model
 
     def forward(self, data: Data) -> torch.Tensor):
-        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
+        x, edge_index = data.x, data.edge_index
         return self.base_model(x, edge_index)

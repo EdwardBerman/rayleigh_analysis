@@ -23,7 +23,6 @@ def build_model(node_dim: int,
                 hidden_size: int,
                 activation_function: nn.Module = nn.ReLU,
                 skip_connections: bool,
-                batch_size: int,
                 batch_norm: str,
                 num_attention_heads: int = 2,
                 dropout_rate: float = 0.1,
@@ -43,7 +42,6 @@ def build_model(node_dim: int,
                         out_channels=in_channels, 
                         dropout=dropout_rate, 
                         norm=batch_norm, 
-                        batch_size=batch_size,
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
@@ -55,7 +53,6 @@ def build_model(node_dim: int,
                         heads=num_attention_heads, 
                         dropout=dropout_rate, 
                         norm=batch_norm, 
-                        batch_size=batch_size,
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
@@ -69,7 +66,6 @@ def build_model(node_dim: int,
                               out_channels=in_channels, 
                               dropout=dropout_rate, 
                               norm=batch_norm, 
-                              batch_size=batch_size,
                               act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)

@@ -10,7 +10,7 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mode):
+def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mode, acc_scorer: nn.Module, optimizer: torch.optim.Optimizer):
     if mode == Mode.TRAIN:
         model.train()
         optimizer.zero_grad()
@@ -23,10 +23,8 @@ def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mo
     if mode == Mode.TRAIN:
         l.backward()
         optimizer.step()
-    
-    pred = out.argmax(dim=1)
-    correct = (pred == data.y).sum()
-    acc = int(correct) / int(data.y.size(0))
+
+    acc = acc_scorer(out, data.y)
 
     if mode == Mode.TRAIN:
         run.log({"train_loss": l.item(), "train_acc": acc})
@@ -34,8 +32,6 @@ def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mo
         run.log({"val_loss": l.item(), "val_acc": acc})
     else:
         run.log({"test_loss": l.item(), "test_acc": acc})
-
-    return l.item(), acc
 
 def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
@@ -72,7 +68,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     pprint.pprint(vars(args))
 
-    # node_dim and edge_dim will be determined by dataset
+    # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, and accuracy function
 
     model = build_model(node_dim=node_dim,
                         model_type=args.architecture,
@@ -80,7 +76,6 @@ if __name__ == "__main__":
                         hidden_size=args.hidden_size,
                         activation_function=getattr(nn, args.activation_function),
                         skip_connections=args.skip_connections,
-                        batch_size=args.batch_size,
                         batch_norm=args.batch_norm,
                         num_attention_heads=args.num_attention_heads,
                         dropout_rate=args.dropout_rate,
