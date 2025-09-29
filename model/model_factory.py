@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.nn import BatchNorm
 from torch_geometric.nn.models import GCN, GAT, GraphSAGE
-from model.edge_aggregator import EdgeModel
+from model.edge_aggregator import EdgeModel, NodeModel
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
     class ResidualModel(nn.Module):
@@ -46,7 +46,7 @@ def build_model(node_dim: int,
                         batch_size=batch_size,
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
-            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else model
+            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
         case 'GAT':
             model = GAT(num_layers=num_layers, 
                         in_channels=node_dim,
@@ -58,7 +58,7 @@ def build_model(node_dim: int,
                         batch_size=batch_size,
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
-            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else model
+            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
         case 'MPNN':
             model = nn.Module()  # Placeholder for actual MPNN implementation
             pass
@@ -72,7 +72,7 @@ def build_model(node_dim: int,
                               batch_size=batch_size,
                               act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
-            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else model
+            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
         case 'Uni':
             pass
         case 'CRAWL':

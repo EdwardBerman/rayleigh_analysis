@@ -1,9 +1,41 @@
+from torch_geometric.data import DataLoader, Data
 from simple_parsing import ArgumentParser
 import pprint
 from model.model_factory import build_model
 import wandb
+from enum import Enum
 
-# def step function(model, data, optimizer, criterion):
+class Mode(Enum):
+    TRAIN = "train"
+    EVAL = "eval"
+    TEST = "test"
+
+def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mode):
+    if mode == Mode.TRAIN:
+        model.train()
+        optimizer.zero_grad()
+    else:
+        model.eval()
+    
+    out = model(data)
+    l = loss(out, data.y)
+
+    if mode == Mode.TRAIN:
+        l.backward()
+        optimizer.step()
+    
+    pred = out.argmax(dim=1)
+    correct = (pred == data.y).sum()
+    acc = int(correct) / int(data.y.size(0))
+
+    if mode == Mode.TRAIN:
+        run.log({"train_loss": l.item(), "train_acc": acc})
+    elif mode == Mode.EVAL:
+        run.log({"val_loss": l.item(), "val_acc": acc})
+    else:
+        run.log({"test_loss": l.item(), "test_acc": acc})
+
+    return l.item(), acc
 
 def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
@@ -55,5 +87,8 @@ if __name__ == "__main__":
                         edge_aggregator=args.edge_aggregator,
                         edge_dim=edge_dim)
 
-    run = setup_wandb(lr=args.lr, architecture=args.architecture, dataset=args.dataset, epochs=args.epochs)
+    run = setup_wandb(lr=args.lr, 
+                      architecture=args.architecture, 
+                      dataset=args.dataset, 
+                      epochs=args.epochs)
 
