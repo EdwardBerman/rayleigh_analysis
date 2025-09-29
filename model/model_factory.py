@@ -19,7 +19,7 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
     return ResidualModel(model)
 
 def str_to_activation(activation_name: str) -> nn.Module:
-    match case activation_name:
+    match activation_name:
         case 'ReLU':
             return nn.ReLU
         case 'LeakyReLU':
@@ -52,7 +52,7 @@ def build_model(node_dim: int,
     if edge_aggregator and edge_dim is None:
         raise ValueError("edge_dim must be provided if edge_aggregator is True.")
 
-    match case model_type:
+    match model_type:
         case 'GCN':
             model = GCN(num_layers=num_layers, 
                         in_channels=node_dim,
