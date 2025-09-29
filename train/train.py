@@ -7,6 +7,7 @@ import wandb
 from enum import Enum
 from model.predictor import GraphLevelRegressor, NodeLevelRegressor, GraphLevelClassifier, NodeLevelClassifier
 from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
+from external.weighted_cross_entropy import weighted_cross_entropy
 
 class Mode(Enum):
     TRAIN = "train"
