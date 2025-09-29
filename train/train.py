@@ -60,8 +60,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_norm", type=str, required=True, help="None, BatchNorm, LayerNorm, GraphNorm")
     parser.add_argument("--num_attention_heads", type=int, default=2, required=False) # Only for GAT
     parser.add_argument("--dropout_rate", type=float, default=0.1, required=False)
-    parser.add_argument("--hidden_size_variable", type=bool, default=False, required=False) # Likely should be the same as the node dim
-    parser.add_argument("--hidden_size", type=int, default=128, required=False) # Likely should be the same as the node dim
+    parser.add_argument("--hidden_size", type=int, default=128, required=False) 
     parser.add_argument("--edge_aggregator", type=bool, default=False, required=False) # For models that don't support edge features on datasets with edge features
 
     parser.add_argument("--optimizer", type=str, default="Adam", required=False)
@@ -76,7 +75,6 @@ if __name__ == "__main__":
     pprint.pprint(vars(args))
 
     # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, and accuracy function
-    hidden_size = args.hidden_size if not args.hidden_size_variable else node_dim
 
     model = build_model(node_dim=node_dim,
                         model_type=args.architecture,
