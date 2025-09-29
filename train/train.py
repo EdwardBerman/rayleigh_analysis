@@ -5,6 +5,8 @@ from model.model_factory import build_model
 from tqdm import tqdm
 import wandb
 from enum import Enum
+from model.predictor import GraphLevelRegressor, NodeLevelRegressor, GraphLevelClassifier, NodeLevelClassifier
+from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 
 class Mode(Enum):
     TRAIN = "train"
@@ -67,6 +69,8 @@ def train(model: nn.Module,
     val_losses, val_accuracies = [], []
     test_losses, test_accuracies = [], []
 
+    best_loss = float('inf')
+
     for epoch in tqdm(range(epochs)):
 
         train_loss, train_acc = 0, 0
@@ -87,12 +91,18 @@ def train(model: nn.Module,
         val_losses.append(val_loss / len(val_loader))
         val_accuracies.append(val_acc / len(val_loader) if acc_scorer is not None else 0)
 
+        if val_losses[-1] < best_loss:
+            best_loss = val_losses[-1]
+            torch.save(model.state_dict(), os.path.join(output_dir, "best_model.pt"))
+
         for batch in test_loader:
             loss, accuracy = step(model, batch, loss_fn, run, Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
         test_losses.append(test_loss / len(test_loader))
         test_accuracies.append(test_acc / len(test_loader) if acc_scorer is not None else 0)
+
+    torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
 
     np.save(os.path.join(output_dir, "train_losses.npy"), np.array(train_losses))
     np.save(os.path.join(output_dir, "train_accuracies.npy"), np.array(train_accuracies))
@@ -103,7 +113,7 @@ def train(model: nn.Module,
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--dataset", type=str, help="", required=True)
+    parser.add_argument("--dataset", type=str, help="LRGB Datasets are PascalVOC-SP, COCO-SP, Peptides-func, Peptides-struct", required=True)
     parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
     parser.add_argument("--num_layers", type=int, required=True)
     parser.add_argument("--skip_connections", type=bool, required=True)
@@ -133,20 +143,39 @@ if __name__ == "__main__":
     os.makedirs(args.save_dir, exist_ok=True)
 
     # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, accuracy function, and the predictor head it needs
+    # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
+    parser = LongeRangeGraphBenchmarkParser(name=args.dataset)
+    dataset = parser.parse()
+    train_dataset, val_dataset, test_dataset = dataset['train_dataset'], dataset['val_dataset'], dataset['test_dataset']
 
-    model = build_model(node_dim=node_dim,
-                        model_type=args.architecture,
-                        num_layers=args.num_layers,
-                        hidden_size=args.hidden_size,
-                        activation_function=getattr(nn, args.activation_function),
-                        skip_connections=args.skip_connections,
-                        batch_norm=args.batch_norm,
-                        num_attention_heads=args.num_attention_heads,
-                        window_size=args.window_size,
-                        receptive_field=args.receptive_field,
-                        dropout_rate=args.dropout_rate,
-                        edge_aggregator=args.edge_aggregator,
-                        edge_dim=edge_dim)
+    base_gnn_model = build_model(node_dim=dataset['node_dim'],
+                                 model_type=args.architecture,
+                                 num_layers=args.num_layers,
+                                 hidden_size=args.hidden_size,
+                                 activation_function=args.activation_function,
+                                 skip_connections=args.skip_connections,
+                                 batch_norm=args.batch_norm,
+                                 num_attention_heads=args.num_attention_heads,
+                                 window_size=args.window_size,
+                                 receptive_field=args.receptive_field,
+                                 dropout_rate=args.dropout_rate,
+                                 edge_aggregator=args.edge_aggregator,
+                                 edge_dim=dataset['edge_dim'])
+
+    is_classification = dataset['is_classification']
+    level = dataset['level']
+
+    if is_classification:
+        if level == "graph_level":
+            model = GraphLevelClassifier(base_gnn_model, dataset['num_classes'])
+            acc_scorer = GraphClassificationAccuracy()
+        else:
+            model = NodeLevelClassifier(base_gnn_model, dataset['num_classes'])
+            acc_scorer = NodeClassificationAccuracy()
+        loss_fn = nn.CrossEntropyLoss()
+    else:
+        loss_fn = nn.MSELoss()
+        acc_scorer = None
 
     run = setup_wandb(lr=args.lr, 
                       architecture=args.architecture, 

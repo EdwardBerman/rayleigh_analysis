@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch_geometric.nn import BatchNorm
 from torch_geometric.nn.models import GCN, GAT, GraphSAGE, LINKX
 from model.edge_aggregator import EdgeModel, NodeModel
+from model.lie_operations.model import GroupSort
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
     class ResidualModel(nn.Module):
@@ -17,11 +18,24 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
                 return x
     return ResidualModel(model)
 
+def str_to_activation(activation_name: str) -> nn.Module:
+    match case activation_name:
+        case 'ReLU':
+            return nn.ReLU
+        case 'LeakyReLU':
+            return nn.LeakyReLU
+        case 'Identity':
+            return nn.Identity
+        case 'GroupSort':
+            return GroupSort
+        case _:
+            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+
 def build_model(node_dim: int,
                 model_type: str,
                 num_layers: int,
                 hidden_size: int,
-                activation_function: nn.Module = nn.ReLU,
+                activation_function: str,
                 skip_connections: bool,
                 batch_norm: str,
                 num_attention_heads: int = 2,
@@ -32,6 +46,8 @@ def build_model(node_dim: int,
                 edge_dim: int | None = None) -> nn.Module:
 
     # TODO: Check the models being built use all args in build_model (where applicable)
+
+    activation_function = str_to_activation(activation_function)
 
     if edge_aggregator and edge_dim is None:
         raise ValueError("edge_dim must be provided if edge_aggregator is True.")
