@@ -17,7 +17,7 @@ class EdgeAggregator(torch.nn.Module):
 
 class EdgeModel(torch.nn.Module):
     def __init__(self, edge_dim, node_dim, base_model):
-        super(FullModel, self).__init__()
+        super(EdgeModel, self).__init__()
         self.edge_aggregator = EdgeAggregator(edge_dim, node_dim)
         self.base_model = base_model
 
@@ -28,7 +28,7 @@ class EdgeModel(torch.nn.Module):
 
 class NodeModel(torch.nn.Module):
     def __init__(self, base_model):
-        super(FullModel, self).__init__()
+        super(NodeModel, self).__init__()
         self.base_model = base_model
 
     def forward(self, data: Data) -> torch.Tensor:
