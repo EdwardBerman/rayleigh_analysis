@@ -1,0 +1,3 @@
+# Training
+
+The training script here uses wandb for diagnostics. To set up wandb...
