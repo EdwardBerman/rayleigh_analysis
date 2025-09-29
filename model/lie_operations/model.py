@@ -16,7 +16,7 @@ class ComplexReLU(nn.Module):
         return torch.complex(real, imag)
 
 class LieAlgebra(nn.Module):
-    def __init__(self, max_matrix_power: int, inverse_method: str = 'taylor')):
+    def __init__(self, max_matrix_power: int, inverse_method: str = 'taylor'):
         super(LieAlgebra, self).__init__()
         self.max_matrix_power = max_matrix_power
 
