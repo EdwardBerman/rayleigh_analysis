@@ -2,6 +2,7 @@ from torch_geometric.data import DataLoader, Data
 from simple_parsing import ArgumentParser
 import pprint
 from model.model_factory import build_model
+from tqdm import tqdm
 import wandb
 from enum import Enum
 
@@ -10,7 +11,7 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mode, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
+def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: Mode, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -36,6 +37,8 @@ def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: Mo
     else:
         run.log({"test_loss": l.item(), "test_acc": acc}) if acc is not None else run.log({"test_loss": l.item()})
 
+    return l.item(), acc 
+
 def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
             entity="rayleigh_analysis_gnn-org",
@@ -48,6 +51,55 @@ def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
                 },
             )
     return run
+
+def train(model: nn.Module, 
+          train_loader: DataLoader, 
+          val_loader: DataLoader, 
+          test_loader: DataLoader, 
+          loss_fn: nn.Module, 
+          optimizer: torch.optim.Optimizer, 
+          run: wandb.run, 
+          epochs: int,
+          output_dir: str,
+          acc_scorer: nn.Module | None = None):
+
+    train_losses, train_accuracies = [], []
+    val_losses, val_accuracies = [], []
+    test_losses, test_accuracies = [], []
+
+    for epoch in tqdm(range(epochs)):
+
+        train_loss, train_acc = 0, 0
+        val_loss, val_acc = 0, 0
+        test_loss, test_acc = 0, 0
+
+        for batch in train_loader:
+            loss, accuracy = step(model, batch, loss_fn, run, Mode.TRAIN, optimizer, acc_scorer)
+            train_loss += loss
+            train_acc += accuracy if accuracy is not None else 0
+        train_losses.append(train_loss / len(train_loader))
+        train_accuracies.append(train_acc / len(train_loader) if acc_scorer is not None else 0)
+
+        for batch in val_loader:
+            loss, accuracy = step(model, batch, loss_fn, run, Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
+            val_loss += loss
+            val_acc += accuracy if accuracy is not None else 0
+        val_losses.append(val_loss / len(val_loader))
+        val_accuracies.append(val_acc / len(val_loader) if acc_scorer is not None else 0)
+
+        for batch in test_loader:
+            loss, accuracy = step(model, batch, loss_fn, run, Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
+            test_loss += loss
+            test_acc += accuracy if accuracy is not None else 0
+        test_losses.append(test_loss / len(test_loader))
+        test_accuracies.append(test_acc / len(test_loader) if acc_scorer is not None else 0)
+
+    np.save(os.path.join(output_dir, "train_losses.npy"), np.array(train_losses))
+    np.save(os.path.join(output_dir, "train_accuracies.npy"), np.array(train_accuracies))
+    np.save(os.path.join(output_dir, "val_losses.npy"), np.array(val_losses))
+    np.save(os.path.join(output_dir, "val_accuracies.npy"), np.array(val_accuracies))
+    np.save(os.path.join(output_dir, "test_losses.npy"), np.array(test_losses))
+    np.save(os.path.join(output_dir, "test_accuracies.npy"), np.array(test_accuracies))
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -70,11 +122,17 @@ if __name__ == "__main__":
     
     parser.add_argument("--window_size", type=int, default=4, required=False) # For CRAWL 
     parser.add_argument("--receptive_field", type=float, default=5, required=False) # For CRAWL
+    
+    parser.add_argument("--save_dir", type=str, default='output', required=False) # For CRAWL
 
     args = parser.parse_args()
     pprint.pprint(vars(args))
 
-    # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, and accuracy function
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    args.save_dir = os.path.join(args.save_dir, f"{args.architecture}_{args.dataset}_{current_time}")
+    os.makedirs(args.save_dir, exist_ok=True)
+
+    # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, accuracy function, and the predictor head it needs
 
     model = build_model(node_dim=node_dim,
                         model_type=args.architecture,
@@ -95,3 +153,13 @@ if __name__ == "__main__":
                       dataset=args.dataset, 
                       epochs=args.epochs)
 
+    train(model=model, 
+          train_loader=train_loader, 
+          val_loader=val_loader, 
+          test_loader=test_loader, 
+          loss_fn=loss_fn, 
+          optimizer=optimizer, 
+          run=run, 
+          epochs=args.epochs,
+          output_dir=args.save_dir,
+          acc_scorer=acc_scorer if is_classification else None)
