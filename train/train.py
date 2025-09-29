@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 
 from torch_geometric.data import DataLoader, Data
+from torch_geometric.datasets import LRGBDataset
 from simple_parsing import ArgumentParser
 
 import pprint
