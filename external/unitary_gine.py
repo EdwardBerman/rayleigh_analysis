@@ -182,3 +182,17 @@ class ComplexGINEConv(MessagePassing):
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
+
+class ComplexDropout(torch.nn.Module):
+    def __init__(self, dropout):
+        super().__init__()
+        self.dropout = dropout
+
+    def forward(self, x):
+        # If input is complex, apply dropout only to the real part
+        if torch.is_complex(x):
+            mask = F.dropout(torch.ones_like(x.real), p=self.dropout, training=self.training)
+            return x * mask
+        else:
+            # If input is real, apply dropout as usual
+            return F.dropout(x, p=self.dropout, training=self.training)
