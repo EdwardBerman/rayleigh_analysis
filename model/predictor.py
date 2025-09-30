@@ -49,6 +49,7 @@ class NodeLevelRegressor(nn.Module):
     
     def forward(self, x: Data):
         # Input [n, d] treated by the regressor as a batch of n samples of dimension d
+        x = self.base_model(x)
         x = self.Regressor(x)
         return x
 
@@ -72,5 +73,6 @@ class NodeLevelClassifier(nn.Module):
     
     def forward(self, x: Data):
         # Input [n, d] treated by the classifier as a batch of n samples of dimension d
+        x = self.base_model(x)
         x = self.Classifier(x)
         return x
