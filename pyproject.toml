@@ -16,7 +16,16 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "rayleigh_analysis", from = "src"}]
+name = "rayleigh-analysis"
+version = "0.1.0"
+packages = [
+  { include = "metrics", from = "." },
+  { include = "train", from = "." },
+  { include = "model", from = "." },
+  { include = "data_preprocessing", from = "." },
+  { include = "parsers", from = "." },
+  { include = "external", from = "." }
+]
 
 [[tool.poetry.source]]
 name = "pyg-cu124"
