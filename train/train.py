@@ -156,6 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", type=bool, default=True, required=False) 
 
     args = parser.parse_args()
+    print("Arguments:")
     pprint.pprint(vars(args))
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
