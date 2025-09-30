@@ -16,7 +16,7 @@ from model.model_factory import build_model
 from model.predictor import GraphLevelRegressor, NodeLevelRegressor, GraphLevelClassifier, NodeLevelClassifier
 from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 from external.weighted_cross_entropy import weighted_cross_entropy
-from metrics.rayleigh import integrated_rayleigh_error
+from metrics.rayleigh import rayleigh_error
 
 class Mode(Enum):
     TRAIN = "train"
@@ -102,7 +102,7 @@ def train(model: nn.Module,
             loss, accuracy = step(model, batch, loss_fn, run, Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
             val_loss += loss
             val_acc += accuracy if accuracy is not None else 0
-            val_rayleigh_error.append(integrated_rayleigh_error(model, batch).item())
+            val_rayleigh_error.append(rayleigh_error(model, batch).item())
         run.log({"val_rayleigh_error": np.mean(val_rayleigh_error)})
 
         val_losses.append(val_loss / len(val_loader))
