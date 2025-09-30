@@ -72,6 +72,7 @@ def train(model: nn.Module,
           run: wandb.run, 
           epochs: int,
           output_dir: str,
+          device: torch.device,
           acc_scorer: nn.Module | None = None):
 
     train_losses, train_accuracies = [], []
@@ -87,6 +88,7 @@ def train(model: nn.Module,
         test_loss, test_acc = 0, 0
 
         for batch in train_loader:
+            batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn, run, Mode.TRAIN, optimizer, acc_scorer)
             train_loss += loss
             train_acc += accuracy if accuracy is not None else 0
@@ -94,6 +96,7 @@ def train(model: nn.Module,
         train_accuracies.append(train_acc / len(train_loader) if acc_scorer is not None else 0)
 
         for batch in val_loader:
+            batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn, run, Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
             val_loss += loss
             val_acc += accuracy if accuracy is not None else 0
@@ -105,6 +108,7 @@ def train(model: nn.Module,
             torch.save(model.state_dict(), os.path.join(output_dir, "best_model.pt"))
 
         for batch in test_loader:
+            batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn, run, Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
@@ -202,9 +206,6 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
-    train_dataset = train_dataset.to(device)
-    val_dataset = val_dataset.to(device)
-    test_dataset = test_dataset.to(device)
 
     train(model=model, 
           train_loader=train_loader, 
@@ -215,4 +216,5 @@ if __name__ == "__main__":
           run=run, 
           epochs=args.epochs,
           output_dir=args.save_dir,
+          device=device,
           acc_scorer=acc_scorer if is_classification else None)
