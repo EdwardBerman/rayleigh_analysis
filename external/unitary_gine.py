@@ -195,4 +195,18 @@ class ComplexDropout(torch.nn.Module):
             return x * mask
         else:
             # If input is real, apply dropout as usual
-            return F.dropout(x, p=self.dropout, training=self.training)
+ 
+ class ComplexActivation(nn.Module):
+    def __init__(self, activation):
+        super().__init__()
+        self.activation = activation
+
+    def forward(self, input):
+        # Separate real and imaginary parts
+        if torch.is_complex(input):
+            real_part = self.activation(input.real)
+            imag_part = self.activation(input.imag)
+            return torch.complex(real_part, imag_part)
+        else:
+            return self.activation(input)
+        return input           return F.dropout(x, p=self.dropout, training=self.training)
