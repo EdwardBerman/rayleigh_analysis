@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch_geometric.data import Data
 from torch_geometric.utils import to_torch_sparse_tensor
 
-def rayleigh_error(f: nn.module, X: Data) -> torch.Tensor:
+def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """ 
         Computes |R_G(f(X; A)) - R_G(X; A)| 
     X' = f(X; A), so this is equivalent to |Tr(X'^TAX')/||X'||_F - Tr(X^TAX)/||X||_F|
@@ -24,7 +24,7 @@ def rayleigh_error(f: nn.module, X: Data) -> torch.Tensor:
 
     return torch.abs(rayleigh_X - rayleigh_X_prime)
 
-def integrated_rayleigh_error(f: nn.module, X: Data) -> torch.Tensor:
+def integrated_rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """
         Sums the Rayleigh errors across all layers of the model f.
     """
