@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.data import Data
 from torch_geometric.utils import to_torch_coo_tensor  
+from torch_geometric.utils import to_dense_adj
 
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """ 
@@ -15,7 +16,8 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
 
     X = X.x 
     num_nodes = X.size(0)
-    A = to_torch_coo_tensor(edge_indices, size=(num_nodes, num_nodes))
+    A_sparse = to_torch_coo_tensor(edge_indices, size=(num_nodes, num_nodes))
+    A = A_sparse.to_dense()
 
     D = torch.diag(A.sum(dim=1)**(-0.5))
     I = torch.eye(A.size(0), device=A.device)
