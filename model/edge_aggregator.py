@@ -9,8 +9,12 @@ class EdgeAggregator(torch.nn.Module):
     """
     def __init__(self, edge_dim, node_dim):
         super(EdgeAggregator, self).__init__()
-        edge_projector = torch.nn.Linear(edge_dim, node_dim)
-        self.conv = GINEConv(nn=edge_projector, edge_dim=edge_dim)
+        update_mlp = nn.Sequential(
+            torch.nn.Linear(node_dim, node_dim),
+            torch.nn.ReLU(),
+            torch.nn.Linear(node_dim, node_dim)
+        )
+        self.conv = GINEConv(nn=update_mlp, edge_dim=edge_dim)
 
     def forward(self, x, edge_index, edge_attr):
         return self.conv(x, edge_index, edge_attr)
