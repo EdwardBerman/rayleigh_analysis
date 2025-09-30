@@ -213,6 +213,10 @@ if __name__ == "__main__":
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+    # one more param count for the road (cowboy emoji)
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Number of trainable parameters: {num_params}")
+
     train(model=model, 
           train_loader=train_loader, 
           val_loader=val_loader, 
