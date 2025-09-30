@@ -4,6 +4,7 @@ from torch_geometric.data import Data
 from torch_geometric.utils import to_torch_coo_tensor  
 from torch_geometric.utils import to_dense_adj
 
+# TODO: Make these more mem efficient
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """ 
         Computes |R_G(f(X; A)) - R_G(X; A)| 
