@@ -1,11 +1,13 @@
 from parsers.parser_base import Parser
 from torch_geometric.datasets import LRGBDataset
+import pprint
 
 class LongeRangeGraphBenchmarkParser(Parser):
-    def __init__(self, name: str, path: str | None = None):
+    def __init__(self, name: str, path: str | None = None, verbose: bool = True):
         self._level = "node_level"
 
         root = 'data_preprocessing/data/LRGB/' if path is None else path
+        self.verbose = verbose
 
         match name:
             case 'PascalVOC-SP':
@@ -62,7 +64,7 @@ class LongeRangeGraphBenchmarkParser(Parser):
         return self.train_dataset, self.val_dataset, self.test_dataset
 
     def parse(self):
-        return {
+        datasets_info = {
             'train_dataset': self.train_dataset,
             'val_dataset': self.val_dataset,
             'test_dataset': self.test_dataset,
@@ -72,4 +74,8 @@ class LongeRangeGraphBenchmarkParser(Parser):
             'level': self.level,
             'num_classes': self.num_classes if self.is_classification else None
         }
+        if self.verbose:
+            print("Dataset Information:")
+            pprint.pprint(datasets_info)
+        return datasets_info
 

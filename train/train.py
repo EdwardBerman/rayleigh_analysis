@@ -152,7 +152,8 @@ if __name__ == "__main__":
     parser.add_argument("--window_size", type=int, default=4, required=False) # For CRAWL 
     parser.add_argument("--receptive_field", type=float, default=5, required=False) # For CRAWL
     
-    parser.add_argument("--save_dir", type=str, default='output', required=False) # For CRAWL
+    parser.add_argument("--save_dir", type=str, default='output', required=False) 
+    parser.add_argument("--verbose", type=bool, default=True, required=False) 
 
     args = parser.parse_args()
     pprint.pprint(vars(args))
