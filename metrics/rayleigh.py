@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data
-from torch_geometric.utils import to_torch_sparse_tensor
+from torch_geometric.utils import to_torch_coo_tensor  
 
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """ 
@@ -14,7 +14,8 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     edge_indices = X.edge_index
 
     X = X.x 
-    A = to_torch_sparse_tensor(edge_indices, num_nodes=X.size(0))
+    num_nodes = X.size(0)
+    A = to_torch_coo_tensor(edge_indices, size=(N, N))
 
     D = torch.diag(A.sum(dim=1)**(-0.5))
     I = torch.eye(A.size(0), device=A.device)
