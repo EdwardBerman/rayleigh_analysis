@@ -84,15 +84,6 @@ def train(model: nn.Module,
         test_loss, test_acc = 0, 0
         val_rayleigh_error = []
 
-        for batch in train_loader:
-            batch = batch.to(device)
-            loss, accuracy = step(model, batch, loss_fn, run, Mode.TRAIN, optimizer, acc_scorer)
-            train_loss += loss
-            train_acc += accuracy if accuracy is not None else 0
-        train_losses.append(train_loss / len(train_loader))
-        train_accuracies.append(train_acc / len(train_loader) if acc_scorer is not None else 0)
-        run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
-
         for batch in val_loader:
             batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn, run, Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
@@ -122,6 +113,15 @@ def train(model: nn.Module,
         test_losses.append(test_loss / len(test_loader))
         test_accuracies.append(test_acc / len(test_loader) if acc_scorer is not None else 0)
         run.log({"test_loss": test_losses[-1], "test_acc": test_accuracies[-1]}) if acc_scorer is not None else run.log({"test_loss": test_losses[-1]})
+        
+        for batch in train_loader:
+            batch = batch.to(device)
+            loss, accuracy = step(model, batch, loss_fn, run, Mode.TRAIN, optimizer, acc_scorer)
+            train_loss += loss
+            train_acc += accuracy if accuracy is not None else 0
+        train_losses.append(train_loss / len(train_loader))
+        train_accuracies.append(train_acc / len(train_loader) if acc_scorer is not None else 0)
+        run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
 
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
 
