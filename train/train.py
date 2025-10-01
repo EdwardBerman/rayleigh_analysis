@@ -23,7 +23,7 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: Mode, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
+def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -41,13 +41,6 @@ def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mo
         optimizer.step()
 
     acc = acc_scorer(out, data.y) if acc_scorer is not None else None
-
-    if mode == Mode.TRAIN:
-        run.log({"train_loss": l.item(), "train_acc": acc}) if acc is not None else run.log({"train_loss": l.item()})
-    elif mode == Mode.EVAL:
-        run.log({"val_loss": l.item(), "val_acc": acc}) if acc is not None else run.log({"val_loss": l.item()})
-    else:
-        run.log({"test_loss": l.item(), "test_acc": acc}) if acc is not None else run.log({"test_loss": l.item()})
 
     return l.item(), acc 
 
@@ -97,6 +90,7 @@ def train(model: nn.Module,
             train_acc += accuracy if accuracy is not None else 0
         train_losses.append(train_loss / len(train_loader))
         train_accuracies.append(train_acc / len(train_loader) if acc_scorer is not None else 0)
+        run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
 
         for batch in val_loader:
             batch = batch.to(device)
@@ -112,6 +106,7 @@ def train(model: nn.Module,
 
         val_losses.append(val_loss / len(val_loader))
         val_accuracies.append(val_acc / len(val_loader) if acc_scorer is not None else 0)
+        run.log({"val_loss": val_losses[-1], "val_acc": val_accuracies[-1]}) if acc_scorer is not None else run.log({"val_loss": val_losses[-1]})
 
         if val_losses[-1] < best_loss:
             best_loss = val_losses[-1]
@@ -122,9 +117,10 @@ def train(model: nn.Module,
             loss, accuracy = step(model, batch, loss_fn, run, Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
-
+    
         test_losses.append(test_loss / len(test_loader))
         test_accuracies.append(test_acc / len(test_loader) if acc_scorer is not None else 0)
+        run.log({"test_loss": test_losses[-1], "test_acc": test_accuracies[-1]}) if acc_scorer is not None else run.log({"test_loss": test_losses[-1]})
 
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
 
