@@ -25,6 +25,15 @@ name = "pyg-cu124"
 url = "https://data.pyg.org/whl/torch-2.5.1+cu124.html"
 priority = "explicit"
 
+
+[[tool.poetry.source]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+torch = {version = "2.5.1+cu124", source = "pytorch-cu124"}
+torch-geometric = "2.6.1"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
