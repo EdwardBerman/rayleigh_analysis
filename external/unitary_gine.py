@@ -210,3 +210,150 @@ class ComplexDropout(torch.nn.Module):
         else:
             return self.activation(input)
         return input           return F.dropout(x, p=self.dropout, training=self.training)
+
+class TaylorGCNConv(MessagePassing):
+    def __init__(
+        self,
+        conv: ComplexGCNConv,
+        T: int = 16,
+        return_real: bool = False,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.conv = conv
+        self.T = T
+        self.return_real = return_real
+
+    def forward(self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None, **kwargs) -> Tensor:
+        if not torch.is_complex(x):
+            x = torch.complex(x, torch.zeros_like(x))
+
+        c = 1.
+        x = self.conv(x, edge_index, edge_weight,
+                      apply_feature_lin = True,
+                      return_feature_only = True)
+        x_k = x.clone()  # Create a copy of the input tensor
+
+        for k in range(self.T):
+            x_k = self.conv(x_k, edge_index, edge_weight, apply_feature_lin = False, **kwargs) / (k+1)
+            x += x_k
+        if self.return_real:
+            x = x.real
+        return x
+
+class ComplexGCNConv(MessagePassing):
+    _cached_edge_index: Optional[OptPairTensor]
+    _cached_adj_t: Optional[SparseTensor]
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        improved: bool = False,
+        cached: bool = False,
+        add_self_loops: Optional[bool] = False,
+        normalize: bool = True,
+        bias: bool = True,
+        **kwargs,
+    ):
+        kwargs.setdefault('aggr', 'add')
+        super().__init__(**kwargs)
+
+        if add_self_loops is None:
+            add_self_loops = normalize
+
+        if add_self_loops and not normalize:
+            raise ValueError(f"'{self.__class__.__name__}' does not support "
+                             f"adding self-loops to the graph when no "
+                             f"on-the-fly normalization is applied")
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.improved = improved
+        self.cached = cached
+        self.add_self_loops = add_self_loops
+        self.normalize = normalize
+
+        self._cached_edge_index = None
+        self._cached_adj_t = None
+
+        # self.lin = Linear(in_channels, out_channels, bias=False,
+        #                   weight_initializer='glorot')
+        self.lin = torch.nn.Linear(in_channels, out_channels, bias=False)
+        self.lin.weight.data = init.orthogonal_(self.lin.weight.data)
+        self.lin.weight = torch.nn.Parameter(torch.complex(self.lin.weight, torch.zeros_like(self.lin.weight)))
+
+        if bias:
+            self.bias = torch.nn.Parameter(torch.zeros(out_channels, dtype=torch.cfloat))
+        else:
+            self.register_parameter('bias', None)
+
+        
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        super().reset_parameters()
+        # self.lin.reset_parameters()
+        self._cached_edge_index = None
+        self._cached_adj_t = None
+        if self.bias is not None:
+            zeros(self.bias)
+
+
+    def forward(self, x: Tensor, edge_index: Adj,
+                edge_weight: OptTensor = None,
+                apply_feature_lin: bool = True,
+                return_feature_only: bool = False) -> Tensor:
+
+        if isinstance(x, (tuple, list)):
+            raise ValueError(f"'{self.__class__.__name__}' received a tuple "
+                             f"of node features as input while this layer "
+                             f"does not support bipartite message passing. "
+                             f"Please try other layers such as 'SAGEConv' or "
+                             f"'GraphConv' instead")
+
+        if apply_feature_lin:
+            if not torch.is_complex(x):
+                x = torch.complex(x, torch.zeros_like(x))
+            x = self.lin(x)
+            if self.bias is not None:
+                x = x + self.bias
+            if return_feature_only:
+                return x
+
+        if self.normalize:
+            if isinstance(edge_index, Tensor):
+                cache = self._cached_edge_index
+                if cache is None:
+                    edge_index, edge_weight = gcn_norm(  # yapf: disable
+                        edge_index, edge_weight, x.size(self.node_dim),
+                        self.improved, self.add_self_loops, self.flow, x.dtype)
+                    if self.cached:
+                        self._cached_edge_index = (edge_index, edge_weight)
+                else:
+                    edge_index, edge_weight = cache[0], cache[1]
+
+            elif isinstance(edge_index, SparseTensor):
+                cache = self._cached_adj_t
+                if cache is None:
+                    edge_index = gcn_norm(  # yapf: disable
+                        edge_index, edge_weight, x.size(self.node_dim),
+                        self.improved, self.add_self_loops, self.flow, x.dtype)
+                    if self.cached:
+                        self._cached_adj_t = edge_index
+                else:
+                    edge_index = cache
+
+        # propagate_type: (x: Tensor, edge_weight: OptTensor)
+        out = 1j*self.propagate(edge_index, x=x, edge_weight=edge_weight)
+
+        return out
+
+    def message(self, x_j: Tensor, edge_weight: OptTensor) -> Tensor:
+        return x_j if edge_weight is None else edge_weight.view(-1, 1) * x_j
+
+    def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        return spmm(adj_t, x, reduce=self.aggr)
+    
+
