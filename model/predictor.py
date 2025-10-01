@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data
-from torch_geometric.nn import global_mean_pool
 
 class Classifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -37,7 +36,7 @@ class GraphLevelRegressor(nn.Module):
     
     def forward(self, x: Data):
         x = self.base_model(x)
-        x = global_mean_pool(x, x.batch)
+        x = x.mean(dim=0, keepdim=True)
         x = self.Regressor(x)
         return x
 
@@ -61,7 +60,7 @@ class GraphLevelClassifier(nn.Module):
     
     def forward(self, x: Data):
         x = self.base_model(x)
-        x = global_mean_pool(x, x.batch)
+        x = x.mean(dim=0, keepdim=True)
         x = self.Classifier(x)
         return x
 
