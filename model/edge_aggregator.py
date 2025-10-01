@@ -28,6 +28,7 @@ class EdgeModel(torch.nn.Module):
 
     def forward(self, data: Data) -> torch.Tensor:
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
+        edge_attr = edge_attr.float()
         x = self.edge_aggregator(x, edge_index, edge_attr)
         return self.base_model(x, edge_index)
 
