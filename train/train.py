@@ -74,6 +74,7 @@ def train(model: nn.Module,
           epochs: int,
           output_dir: str,
           device: torch.device,
+          log_rq: bool = False,
           acc_scorer: nn.Module | None = None):
 
     train_losses, train_accuracies = [], []
@@ -102,8 +103,12 @@ def train(model: nn.Module,
             loss, accuracy = step(model, batch, loss_fn, run, Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
             val_loss += loss
             val_acc += accuracy if accuracy is not None else 0
-            val_rayleigh_error.append(rayleigh_error(model, batch).item())
-        run.log({"val_rayleigh_error": np.mean(val_rayleigh_error)})
+
+            if log_rq:
+                val_rayleigh_error.append(rayleigh_error(model, batch).item())
+
+        if log_rq:
+            run.log({"val_rayleigh_error": np.mean(val_rayleigh_error)})
 
         val_losses.append(val_loss / len(val_loader))
         val_accuracies.append(val_acc / len(val_loader) if acc_scorer is not None else 0)
@@ -154,6 +159,7 @@ if __name__ == "__main__":
     
     parser.add_argument("--save_dir", type=str, default='output', required=False) 
     parser.add_argument("--verbose", type=bool, default=True, required=False) 
+    parser.add_argument("--log_rq", type=bool, default=False, required=False) 
 
     args = parser.parse_args()
     print("Arguments:")
@@ -235,4 +241,5 @@ if __name__ == "__main__":
           epochs=args.epochs,
           output_dir=args.save_dir,
           device=device,
+          log_rq= args.log_rq,
           acc_scorer=acc_scorer if is_classification else None)
