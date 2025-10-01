@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_attention_heads", type=int, default=2, required=False) # Only for GAT
     parser.add_argument("--dropout_rate", type=float, default=0.1, required=False)
     parser.add_argument("--hidden_size", type=int, default=128, required=False) 
-    parser.add_argument("--edge_aggregator", type=bool, default=False, required=False) # For models that don't support edge features on datasets with edge features
+    parser.add_argument("--edge_aggregator", type=str, default=False, required=False) # For models that don't support edge features on datasets with edge features. One of GINE, GATED, NONE
 
     parser.add_argument("--optimizer", type=str, default="Adam", required=False)
     parser.add_argument("--lr", type=float, default=0.001, required=False)

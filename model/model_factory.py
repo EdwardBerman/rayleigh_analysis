@@ -42,7 +42,7 @@ def build_model(node_dim: int,
                 window_size: int = 4,
                 receptive_field: int = 5,
                 dropout_rate: float = 0.1,
-                edge_aggregator: bool = False,
+                edge_aggregator: str | None,
                 edge_dim: int | None = None) -> nn.Module:
 
     # TODO: Check the models being built use all args in build_model (where applicable)
@@ -62,7 +62,7 @@ def build_model(node_dim: int,
                         norm=batch_norm, 
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
-            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
+            return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'GAT':
             model = GAT(num_layers=num_layers, 
                         in_channels=node_dim,
@@ -73,7 +73,7 @@ def build_model(node_dim: int,
                         norm=batch_norm, 
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
-            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
+            return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'MPNN':
             model = nn.Module()  # Placeholder for actual MPNN implementation
             pass
@@ -86,7 +86,7 @@ def build_model(node_dim: int,
                               norm=batch_norm, 
                               act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
-            return EdgeModel(edge_dim, node_dim, model) if edge_aggregator else NodeModel(model)
+            return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'Uni':
             pass
         case 'CRAWL':
