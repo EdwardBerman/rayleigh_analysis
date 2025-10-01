@@ -42,7 +42,7 @@ def build_model(node_dim: int,
                 window_size: int = 4,
                 receptive_field: int = 5,
                 dropout_rate: float = 0.1,
-                edge_aggregator: str | None,
+                edge_aggregator: str | None = None,
                 edge_dim: int | None = None) -> nn.Module:
 
     # TODO: Check the models being built use all args in build_model (where applicable)
