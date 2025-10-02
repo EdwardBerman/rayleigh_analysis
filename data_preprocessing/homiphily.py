@@ -1,11 +1,17 @@
+import os
 from external.homiphily import our_measure
 from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 from torch.utils.data import ConcatDataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 import numpy as np
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
+    save_dir = "data/LRGB"
+    current_dir = os.getcwd()
+    os.makedirs(save_dir, exist_ok=True)
+
     parser = LongeRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
@@ -24,6 +30,16 @@ if __name__ == "__main__":
     print(f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
     homiphily = [h for h in homiphily if not np.isnan(h)]
     print("Homophily PascalVOC-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
+
+    plt.figure(figsize=(8, 6))
+    plt.hist(homiphily, bins=30, color='skyblue', edgecolor='black')
+    plt.title('Homophily Distribution for PascalVOC-SP')
+    plt.xlabel('Homophily')
+    plt.ylabel('Frequency')
+    plt.grid(axis='y', alpha=0.75)
+    plt.savefig(os.path.join(save_dir, 'homophily_distribution_pascalvoc_sp.pdf'))
+    plt.close()
+
     parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
@@ -42,3 +58,13 @@ if __name__ == "__main__":
     print(f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
     homiphily = [h for h in homiphily if not np.isnan(h)]
     print("Homophily COCO-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
+
+
+    plt.figure(figsize=(8, 6))
+    plt.hist(homiphily, bins=30, color='skyblue', edgecolor='black')
+    plt.title('Homophily Distribution for COCO-SP')
+    plt.xlabel('Homophily')
+    plt.ylabel('Frequency')
+    plt.grid(axis='y', alpha=0.75)
+    plt.savefig(os.path.join(save_dir, 'homophily_distribution_coco_sp.pdf'))
+    plt.close()
