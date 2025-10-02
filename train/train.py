@@ -19,6 +19,8 @@ from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.rayleigh import rayleigh_error
 
+from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
+
 class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
@@ -131,6 +133,8 @@ def train(model: nn.Module,
     np.save(os.path.join(output_dir, "val_accuracies.npy"), np.array(val_accuracies))
     np.save(os.path.join(output_dir, "test_losses.npy"), np.array(test_losses))
     np.save(os.path.join(output_dir, "test_accuracies.npy"), np.array(test_accuracies))
+
+    plot_learning_curve(train_losses, val_losses, test_losses, output_dir)
 
 if __name__ == "__main__":
     parser = ArgumentParser()

@@ -1,7 +1,6 @@
 from external.homiphily import our_measure
 from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 from torch.utils.data import ConcatDataset
-from torch_geometric.utils import remove_self_loops
 from torch_geometric.loader import DataLoader
 
 if __name__ == "__main__":

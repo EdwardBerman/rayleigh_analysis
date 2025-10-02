@@ -1,4 +1,6 @@
 """Sourced from https://github.com/CUAI/Non-Homophily-Large-Scale/blob/master/homophily.py"""
+from torch_geometric.utils import remove_self_loops
+
 
 def compat_matrix_edge_idx(edge_idx, labels):
     """

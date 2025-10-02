@@ -62,7 +62,7 @@ class LongeRangeGraphBenchmarkParser(Parser):
 
     def return_datasets(self):
         return self.train_dataset, self.val_dataset, self.test_dataset
-
+        
     def parse(self):
         datasets_info = {
             'train_dataset': self.train_dataset,

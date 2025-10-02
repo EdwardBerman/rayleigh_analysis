@@ -17,6 +17,7 @@ packages = [
   { include = "model", from = "." },
   { include = "data_preprocessing", from = "." },
   { include = "parsers", from = "." },
+  { include = "evaluation", from = "." },
   { include = "external", from = "." }
 ]
 
