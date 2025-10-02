@@ -1,5 +1,6 @@
 from external.homiphily import our_measure
 from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
+from torch.utils.data import ConcatDataset
 
 if __name__ == "__main__":
     parser = LongeRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
