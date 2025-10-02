@@ -3,6 +3,7 @@ from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 from torch.utils.data import ConcatDataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
+import numpy as np
 
 if __name__ == "__main__":
     parser = LongeRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
