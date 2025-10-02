@@ -1,4 +1,6 @@
 import torch
+import torch.nn.functional as F
+
 
 def node_level_accuracy(node_logits_batch, labels_batch):
     """
@@ -12,7 +14,9 @@ def node_level_accuracy(node_logits_batch, labels_batch):
     - accuracy: Float, the accuracy of the predictions.
     """
 
-    _, predicted_classes = torch.max(node_logits_batch, dim=1)
+    preds = F.log_softmax(node_logits_batch, dim=1)
+
+    _, predicted_classes = torch.max(preds, dim=1)
     correct_predictions = (predicted_classes == labels_batch).sum().item()
     
     total_predictions = labels_batch.size(0)
