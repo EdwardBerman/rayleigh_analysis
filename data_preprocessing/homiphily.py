@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    save_dir = "data/LRGB"
+    save_dir = "data_preprocessing/data/LRGB"
     current_dir = os.getcwd()
     os.makedirs(save_dir, exist_ok=True)
 
