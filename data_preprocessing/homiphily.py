@@ -20,6 +20,9 @@ if __name__ == "__main__":
         homiphily.append(h.item() if hasattr(h, "item") else h)
         pbar.set_postfix({"Homophily": f"{h:.4f}"})
 
+    num_nans = sum(1 for h in homiphily if np.isnan(h))
+    print(f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
+    homiphily = [h for h in homiphily if not np.isnan(h)]
     print("Homophily PascalVOC-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
     parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
@@ -35,4 +38,7 @@ if __name__ == "__main__":
         homiphily.append(h.item() if hasattr(h, "item") else h)
         pbar.set_postfix({"Homophily": f"{h:.4f}"})
 
+    num_nans = sum(1 for h in homiphily if np.isnan(h))
+    print(f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
+    homiphily = [h for h in homiphily if not np.isnan(h)]
     print("Homophily COCO-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
