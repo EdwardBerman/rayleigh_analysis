@@ -17,8 +17,8 @@ if __name__ == "__main__":
         edge_indices = data.edge_index
         node_labels = data.y
         h = our_measure(edge_indices, node_labels)
-        homiphily.append(h.item() if hasattr(val, "item") else h)
-        pbar.set_postfix({"Homophily": f"{val:.4f}"})
+        homiphily.append(h.item() if hasattr(h, "item") else h)
+        pbar.set_postfix({"Homophily": f"{h:.4f}"})
 
     print("Homophily PascalVOC-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
     parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         edge_indices = data.edge_index
         node_labels = data.y
         h = our_measure(edge_indices, node_labels)
-        homiphily.append(h.item() if hasattr(val, "item") else h)
-        pbar.set_postfix({"Homophily": f"{val:.4f}"})
+        homiphily.append(h.item() if hasattr(h, "item") else h)
+        pbar.set_postfix({"Homophily": f"{h:.4f}"})
 
     print("Homophily COCO-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
