@@ -18,6 +18,7 @@ from model.predictor import GraphLevelRegressor, NodeLevelRegressor, GraphLevelC
 from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
 from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.rayleigh import rayleigh_error
+from metrics.accuracy import node_level_accuracy
 
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
 
@@ -197,12 +198,13 @@ if __name__ == "__main__":
     if is_classification:
         num_classes = dataset['num_classes']
         loss_fn = weighted_cross_entropy 
-        # TODO: Make an accuracy function for classification
         acc_scorer = None
         if level == "graph_level":
             model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes)
+            # TODO: Make an accuracy function for classification at graph level
         else:
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes)
+            acc_scorer = node_level_accuracy
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
@@ -216,7 +218,7 @@ if __name__ == "__main__":
                       dataset=args.dataset, 
                       epochs=args.epochs)
 
-    #TODO: Set up different optimizers
+    #TODO: Set up different optimizers. COSINE LR
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay) if args.optimizer == "Adam" else None
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
