@@ -11,22 +11,22 @@ if __name__ == "__main__":
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
     num_graphs = len(full_dataset)
     
-    homiphily = 0
+    homiphily = []
     loader = DataLoader(full_dataset, batch_size=num_graphs, shuffle=True)
     for data in tqdm(loader):
         edge_indices = data.edge_index
         node_labels = data.y
-        homiphily += our_measure(edge_indices, node_labels)
-    print("Homophily PascalVOC-SP:", homiphily)
+        homiphily.append(our_measure(edge_indices, node_labels))
+    print("Homophily PascalVOC-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
     parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
     num_graphs = len(full_dataset)
     
-    homiphily = 0
+    homiphily = []
     loader = DataLoader(full_dataset, batch_size=num_graphs, shuffle=True)
     for data in tqdm(loader):
         edge_indices = data.edge_index
         node_labels = data.y
-        homiphily += our_measure(edge_indices, node_labels)
-    print("Homophily COCO-SP:", homiphily)
+        homiphily.append(our_measure(edge_indices, node_labels))
+    print("Homophily COCO-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
