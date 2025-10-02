@@ -12,10 +12,14 @@ if __name__ == "__main__":
     
     homiphily = []
     loader = DataLoader(full_dataset, batch_size=1, shuffle=True)
-    for data in tqdm(loader):
+    pbar = tqdm(loader)
+    for data in pbar:
         edge_indices = data.edge_index
         node_labels = data.y
-        homiphily.append(our_measure(edge_indices, node_labels))
+        h = our_measure(edge_indices, node_labels)
+        homiphily.append(h.item() if hasattr(val, "item") else h)
+        pbar.set_postfix({"Homophily": f"{val:.4f}"})
+
     print("Homophily PascalVOC-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
     parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
@@ -23,8 +27,12 @@ if __name__ == "__main__":
     
     homiphily = []
     loader = DataLoader(full_dataset, batch_size=1, shuffle=True)
-    for data in tqdm(loader):
+    pbar = tqdm(loader)
+    for data in pbar:
         edge_indices = data.edge_index
         node_labels = data.y
-        homiphily.append(our_measure(edge_indices, node_labels))
+        h = our_measure(edge_indices, node_labels)
+        homiphily.append(h.item() if hasattr(val, "item") else h)
+        pbar.set_postfix({"Homophily": f"{val:.4f}"})
+
     print("Homophily COCO-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
