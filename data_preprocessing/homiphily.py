@@ -9,10 +9,9 @@ if __name__ == "__main__":
     parser = LongeRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
-    num_graphs = len(full_dataset)
     
     homiphily = []
-    loader = DataLoader(full_dataset, batch_size=num_graphs, shuffle=True)
+    loader = DataLoader(full_dataset, batch_size=1, shuffle=True)
     for data in tqdm(loader):
         edge_indices = data.edge_index
         node_labels = data.y
@@ -21,10 +20,9 @@ if __name__ == "__main__":
     parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
-    num_graphs = len(full_dataset)
     
     homiphily = []
-    loader = DataLoader(full_dataset, batch_size=num_graphs, shuffle=True)
+    loader = DataLoader(full_dataset, batch_size=1, shuffle=True)
     for data in tqdm(loader):
         edge_indices = data.edge_index
         node_labels = data.y
