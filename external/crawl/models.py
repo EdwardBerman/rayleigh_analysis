@@ -112,17 +112,15 @@ class ConvModule(Module):
 
 
 class CRaWl(Module):
-    def __init__(self, config, node_feat_dim, edge_feat_dim, layers, hidden, kernel_size, dropout, steps, train_start_ratio, compute_id_feat=True, compute_adj_feat=True, walk_delta=0.0, node_feat_enc=None, edge_feat_enc=None):
+    def __init__(self, node_feat_dim, edge_feat_dim, layers, hidden, kernel_size, dropout, steps, win_size, train_start_ratio, compute_id_feat, compute_adj_feat, walk_delta, node_feat_enc, edge_feat_enc):
         """
         # TODO: Docstrings 
-        :param config: Python Dict that specifies the configuration of the model
         :param node_feat_dim: Dimension of the node features
         :param edge_feat_dim: Dimension of the edge features
         :param node_feat_enc: Optional initial embedding of node features
         :param edge_feat_enc: Optional initial embedding of edge features
         """
         super(CRaWl, self).__init__()
-        self.config = config
         self.layers = layers
         self.hidden = hidden
         self.kernel_size = kernel_size
@@ -130,7 +128,7 @@ class CRaWl(Module):
         self.node_feat_enc = node_feat_enc
         self.edge_feat_enc = edge_feat_enc
 
-        self.walker = Walker(steps, train_start_ratio,
+        self.walker = Walker(steps, win_size, train_start_ratio,
                              compute_id_feat, compute_adj_feat, walk_delta)
         self.walk_dim = self.walker.struc_feat_dim
 

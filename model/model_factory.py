@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn import BatchNorm
-from torch_geometric.nn.models import GCN, GAT, GraphSAGE, LINKX
+from torch_geometric.nn.models import GAT, GCN, LINKX, GraphSAGE
+
+from external.crawl.models import CRaWl
 from model.edge_aggregator import EdgeModel, NodeModel
 from model.lie_operations.model import GroupSort
+
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
     class ResidualModel(nn.Module):
@@ -43,7 +46,8 @@ def build_model(node_dim: int,
                 receptive_field: int = 5,
                 dropout_rate: float = 0.1,
                 edge_aggregator: str | None = None,
-                edge_dim: int | None = None) -> nn.Module:
+                edge_dim: int | None = None,
+                **kwargs) -> nn.Module:
 
     # TODO: Check the models being built use all args in build_model (where applicable)
 
@@ -90,7 +94,20 @@ def build_model(node_dim: int,
         case 'Uni':
             pass
         case 'CRAWL':
-            pass
+            model = CRaWl(node_feat_dim=node_dim,
+                          edge_feat_dim=edge_dim,
+                          layers=num_layers,
+                          hidden=hidden_size,
+                          kernel_size=receptive_field,
+                          dropout=kwargs['dropout'], 
+                          steps=kwargs['steps'],
+                          win_size=window_size,
+                          train_start_ratio=kwargs['train_start_ratio'],
+                          compute_id_feat=kwargs.get('compute_id_feat', True),
+                          compute_adj_feat=kwargs.get('compute_adj_feat', True),
+                          walk_delta=kwargs.get('walk_delta', 0.0),
+                          node_feat_enc=kwargs.get('node_feat_enc', None),
+                          edge_feat_enc=kwargs.get('edge_feat_enc', None))
         case _:
             raise ValueError(f"Unsupported model type: {model_type}. Accepts 'GCN', 'GAT', 'MPNN', 'Sage', 'Uni', 'CRAWL'.")
     

@@ -6,24 +6,23 @@ MAXINT = np.iinfo(np.int64).max
 
 class Walker(torch.nn.Module):
 
-    def __init__(self, steps, train_start_ratio, compute_id_feat=True, compute_adj_feat=True, walk_delta=0.0):
+    def __init__(self, steps, win_size, train_start_ratio, compute_id_feat=True, compute_adj_feat=True, walk_delta=0.0):
         super(Walker, self).__init__()
 
         self.steps = steps
+        self.win_size = win_size
         self.train_start_ratio = train_start_ratio
         self.compute_id = compute_id_feat
         self.compute_adj = compute_adj_feat
-        
+
         self.non_backtracking = True
         self.delta = walk_delta
-        self.win_size = 16  # hardcode for long range graphs
 
         self.struc_feat_dim = 0
         if self.compute_id:
             self.struc_feat_dim += self.win_size
         if self.compute_adj:
             self.struc_feat_dim += self.win_size - 1
-
 
     @staticmethod
     def sample_start(start_p, graph_idx, graph_offset, order, device):
