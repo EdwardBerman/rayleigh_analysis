@@ -2,7 +2,7 @@
 
 python3 -m train.train \
   --dataset COCO-SP \
-  --architecture GCN \
+  --architecture CRAWL \
   --num_layers 12 \
   --skip_connections False \
   --activation_function ReLU \

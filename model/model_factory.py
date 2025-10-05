@@ -10,16 +10,17 @@ from model.lie_operations.model import GroupSort
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
     class ResidualModel(nn.Module):
-            def __init__(self, model):
-                super(ResidualModel, self).__init__()
-                self.model = model
+        def __init__(self, model):
+            super(ResidualModel, self).__init__()
+            self.model = model
 
-            def forward(self, x, edge_index):
-                x_res = x
-                x = self.model(x, edge_index)
-                x += x_res
-                return x
+        def forward(self, x, edge_index):
+            x_res = x
+            x = self.model(x, edge_index)
+            x += x_res
+            return x
     return ResidualModel(model)
+
 
 def str_to_activation(activation_name: str) -> nn.Module:
     match activation_name:
@@ -32,7 +33,9 @@ def str_to_activation(activation_name: str) -> nn.Module:
         case 'GroupSort':
             return GroupSort
         case _:
-            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+            raise ValueError(
+                f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+
 
 def build_model(node_dim: int,
                 model_type: str,
@@ -54,27 +57,28 @@ def build_model(node_dim: int,
     activation_function = str_to_activation(activation_function)
 
     if edge_aggregator and edge_dim is None:
-        raise ValueError("edge_dim must be provided if edge_aggregator is True.")
+        raise ValueError(
+            "edge_dim must be provided if edge_aggregator is True.")
 
     match model_type:
         case 'GCN':
-            model = GCN(num_layers=num_layers, 
+            model = GCN(num_layers=num_layers,
                         in_channels=node_dim,
-                        hidden_channels=hidden_size, 
+                        hidden_channels=hidden_size,
                         out_channels=node_dim,
-                        dropout=dropout_rate, 
-                        norm=batch_norm, 
+                        dropout=dropout_rate,
+                        norm=batch_norm,
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'GAT':
-            model = GAT(num_layers=num_layers, 
+            model = GAT(num_layers=num_layers,
                         in_channels=node_dim,
-                        hidden_channels=hidden_size, 
+                        hidden_channels=hidden_size,
                         out_channels=node_dim,
-                        heads=num_attention_heads, 
-                        dropout=dropout_rate, 
-                        norm=batch_norm, 
+                        heads=num_attention_heads,
+                        dropout=dropout_rate,
+                        norm=batch_norm,
                         act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
@@ -82,12 +86,12 @@ def build_model(node_dim: int,
             model = nn.Module()  # Placeholder for actual MPNN implementation
             pass
         case 'Sage':
-            model = GraphSAGE(num_layers=num_layers, 
+            model = GraphSAGE(num_layers=num_layers,
                               in_channels=node_dim,
-                              hidden_channels=hidden_size, 
+                              hidden_channels=hidden_size,
                               out_channels=node_dim,
-                              dropout=dropout_rate, 
-                              norm=batch_norm, 
+                              dropout=dropout_rate,
+                              norm=batch_norm,
                               act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
@@ -99,15 +103,16 @@ def build_model(node_dim: int,
                           layers=num_layers,
                           hidden=hidden_size,
                           kernel_size=receptive_field,
-                          dropout=kwargs['dropout'], 
-                          steps=kwargs['steps'],
+                          dropout=kwargs.get('dropout', 0.1),
+                          steps=kwargs.get('steps', 50),
                           win_size=window_size,
-                          train_start_ratio=kwargs['train_start_ratio'],
+                          train_start_ratio=kwargs.get('train_start_ratio', 1.0),
                           compute_id_feat=kwargs.get('compute_id_feat', True),
-                          compute_adj_feat=kwargs.get('compute_adj_feat', True),
+                          compute_adj_feat=kwargs.get(
+                              'compute_adj_feat', True),
                           walk_delta=kwargs.get('walk_delta', 0.0),
                           node_feat_enc=kwargs.get('node_feat_enc', None),
                           edge_feat_enc=kwargs.get('edge_feat_enc', None))
         case _:
-            raise ValueError(f"Unsupported model type: {model_type}. Accepts 'GCN', 'GAT', 'MPNN', 'Sage', 'Uni', 'CRAWL'.")
-    
+            raise ValueError(
+                f"Unsupported model type: {model_type}. Accepts 'GCN', 'GAT', 'MPNN', 'Sage', 'Uni', 'CRAWL'.")
