@@ -3,8 +3,9 @@ import os
 import torch
 from torch.nn import (BatchNorm1d, Conv1d, Dropout, Identity, Linear, Module,
                       ReLU, Sequential)
-from external.torch_scatter import scatter_mean, scatter_sum
+
 from external.crawl.walker import Walker
+from external.torch_scatter import scatter_mean, scatter_sum
 
 
 class VNUpdate(Module):

@@ -3,11 +3,13 @@ import torch.nn as nn
 from torch_geometric.data import Data
 from torch_geometric.nn import GINEConv, ResGatedGraphConv
 
+
 class EdgeAggregatorGINE(torch.nn.Module):
     """
     The EdgeAggregatorGine class uses a GINEConv layer to aggregate edge features into node features.
     This is done so that we can run a GNN on a graph with edge features as a baseline against models that use edge features.
     """
+
     def __init__(self, edge_dim, node_dim):
         super(EdgeAggregator, self).__init__()
         update_mlp = nn.Sequential(
@@ -20,17 +22,21 @@ class EdgeAggregatorGINE(torch.nn.Module):
     def forward(self, x, edge_index, edge_attr):
         return self.conv(x, edge_index, edge_attr)
 
+
 class EdgeAggregatorGATED(torch.nn.Module):
     """
     The EdgeAggregatorGated class uses a ResGatedGraphConv layer to aggregate edge features into node features.
     This is done so that we can run a GNN on a graph with edge features as a baseline against models that use edge features.
     """
+
     def __init__(self, edge_dim, node_dim):
         super(EdgeAggregatorGATED, self).__init__()
-        self.conv = ResGatedGraphConv(in_channels=node_dim, out_channels=node_dim, edge_dim=edge_dim)
-    
+        self.conv = ResGatedGraphConv(
+            in_channels=node_dim, out_channels=node_dim, edge_dim=edge_dim)
+
     def forward(self, x, edge_index, edge_attr):
         return self.conv(x, edge_index, edge_attr)
+
 
 class EdgeModel(torch.nn.Module):
     def __init__(self, edge_dim, node_dim, base_model, aggregator_type):
@@ -50,6 +56,7 @@ class EdgeModel(torch.nn.Module):
         edge_attr = edge_attr.float()
         x = self.edge_aggregator(x, edge_index, edge_attr)
         return self.base_model(x, edge_index)
+
 
 class NodeModel(torch.nn.Module):
     def __init__(self, base_model):

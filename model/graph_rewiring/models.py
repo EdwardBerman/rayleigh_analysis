@@ -1,10 +1,6 @@
 import torch
-from torch_geometric.nn.models import GraphSAGE
 from torch_geometric.data import Data
-
-import torch
 from torch_geometric.nn.models import GraphSAGE
-from torch_geometric.data import Data
 
 # Example graph data
 # Suppose we have 5 nodes, each with 16 features
@@ -29,4 +25,3 @@ model = GraphSAGE(
 out = model(x, edge_index)
 # `out` will have shape [N, 10] because out_channels=10
 print(out.shape)  # torch.Size([5, 10])
-

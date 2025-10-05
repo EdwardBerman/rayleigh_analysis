@@ -18,7 +18,7 @@ def node_level_accuracy(node_logits_batch, labels_batch):
 
     _, predicted_classes = torch.max(preds, dim=1)
     correct_predictions = (predicted_classes == labels_batch).sum().item()
-    
+
     total_predictions = labels_batch.size(0)
     accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0.0
 

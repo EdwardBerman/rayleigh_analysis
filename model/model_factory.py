@@ -4,8 +4,8 @@ from torch_geometric.nn import BatchNorm
 from torch_geometric.nn.models import GAT, GCN, LINKX, GraphSAGE
 
 from external.crawl.models import CRaWl
+from external.unitary_gcn import GroupSort, UnitaryGCNConvLayer
 from model.edge_aggregator import EdgeModel, NodeModel
-from external.unitary_gcn import UnitaryGCNConvLayer, GroupSort
 
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
@@ -33,7 +33,9 @@ def str_to_activation(activation_name: str) -> nn.Module:
         case 'GroupSort':
             return lambda: GroupSort
         case _:
-            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+            raise ValueError(
+                f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+
 
 def build_model(node_dim: int,
                 model_type: str,
@@ -99,13 +101,13 @@ def build_model(node_dim: int,
                 input_dim = node_dim if layer == 0 else hidden_size
                 output_dim = node_dim if layer == num_layers - 1 else hidden_size
                 module_list.append(UnitaryGCNConvLayer(input_dim,
-                                                       output_dim, 
-                                                       dropout  =  dropout_rate, 	
-                                                       residual  = skip_connections, 	
-                                                       global_bias  =  True, 		
-                                                       T  =  10, 				
-                                                       use_hermitian  =  False, 		
-                                                       activation  =  activation_function()))
+                                                       output_dim,
+                                                       dropout=dropout_rate,
+                                                       residual=skip_connections,
+                                                       global_bias=True,
+                                                       T=10,
+                                                       use_hermitian=False,
+                                                       activation=activation_function()))
             model = nn.Sequential(*module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'CRAWL':

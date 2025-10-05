@@ -1,46 +1,28 @@
 """From https://github.com/Weber-GeoML/Unitary_Convolutions/blob/872aebc9500e59ecb61be5abfb2adc30dc1151d1/layers/complex_valued_layers.py"""
 
+import typing
+from typing import Callable, List, Optional, Tuple, Union
+
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torch.nn.init as init
+import torch_geometric
 import torch_geometric.nn as pyg_nn
 import torch_geometric.utils as pyg_utils
-import typing
-from typing import Callable, Optional, Union, Tuple, List
-import torch
 from torch import Tensor
 from torch.nn import Parameter
-import torch.nn.init as init
-import torch.nn.functional as F
-from torch_geometric.nn.inits import reset, glorot, zeros
-from torch_geometric.utils import (
-    add_self_loops,
-    is_torch_sparse_tensor,
-    remove_self_loops,
-    softmax,
-    to_undirected,
-)
-
-import torch_geometric
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
-from torch_geometric.nn.inits import zeros
-
-from torch_geometric.typing import (
-    Adj,
-    NoneType,
-    OptPairTensor,
-    OptTensor,
-    SparseTensor,
-    Size,
-    torch_sparse,
-)
+from torch_geometric.nn.inits import glorot, reset, zeros
+from torch_geometric.typing import (Adj, NoneType, OptPairTensor, OptTensor,
+                                    Size, SparseTensor, torch_sparse)
 from torch_geometric.utils import add_remaining_self_loops
+from torch_geometric.utils import add_self_loops
 from torch_geometric.utils import add_self_loops as add_self_loops_fn
-from torch_geometric.utils import (
-    is_torch_sparse_tensor,
-    scatter,
-    spmm,
-    to_edge_index,
-)
+from torch_geometric.utils import (is_torch_sparse_tensor, remove_self_loops,
+                                   scatter, softmax, spmm, to_edge_index,
+                                   to_undirected)
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 from torch_geometric.utils.sparse import set_sparse_value
 
@@ -51,11 +33,13 @@ class GroupSort(nn.Module):
         a, b = torch.max(a, b), torch.min(a, b)
         return torch.cat([a, b], dim=-1)
 
+
 class ComplexActivation(nn.Module):
     def __init__(self, activation):
         super().__init__()
-        #self.activation = activation
-        self.activation = activation if isinstance(activation, nn.Module) else activation()
+        # self.activation = activation
+        self.activation = activation if isinstance(
+            activation, nn.Module) else activation()
 
     def forward(self, input):
         # Separate real and imaginary parts
@@ -68,7 +52,6 @@ class ComplexActivation(nn.Module):
         return input
 
 
-
 class ComplexDropout(torch.nn.Module):
     def __init__(self, dropout):
         super().__init__()
@@ -77,16 +60,18 @@ class ComplexDropout(torch.nn.Module):
     def forward(self, x):
         # If input is complex, apply dropout only to the real part
         if torch.is_complex(x):
-            mask = F.dropout(torch.ones_like(x.real), p=self.dropout, training=self.training)
+            mask = F.dropout(torch.ones_like(x.real),
+                             p=self.dropout, training=self.training)
             return x * mask
         else:
             # If input is real, apply dropout as usual
             return F.dropout(x, p=self.dropout, training=self.training)
 
+
 class UnitaryGCNConvLayer(nn.Module):
-    def __init__(self, dim_in, dim_out, dropout = 0.0, residual = False, 
-                 global_bias = True, T = 10, use_hermitian = False,
-                 activation = torch.nn.ReLU, 
+    def __init__(self, dim_in, dim_out, dropout=0.0, residual=False,
+                 global_bias=True, T=10, use_hermitian=False,
+                 activation=torch.nn.ReLU,
                  **kwargs):
         super().__init__()
         self.dim_in = dim_in
@@ -94,7 +79,8 @@ class UnitaryGCNConvLayer(nn.Module):
         self.dropout = dropout
         self.residual = residual
         if global_bias:
-            self.bias = torch.nn.Parameter(torch.zeros(dim_out, dtype=torch.cfloat))
+            self.bias = torch.nn.Parameter(
+                torch.zeros(dim_out, dtype=torch.cfloat))
         else:
             self.register_parameter('bias', None)
 
@@ -107,7 +93,7 @@ class UnitaryGCNConvLayer(nn.Module):
             ComplexActivation(activation()),
             ComplexDropout(self.dropout),
         )
-        self.model = TaylorGCNConv(base_conv(dim_in, dim_out, **kwargs), T = T)
+        self.model = TaylorGCNConv(base_conv(dim_in, dim_out, **kwargs), T=T)
 
     def forward(self, batch):
         x_in = batch.x
@@ -119,8 +105,9 @@ class UnitaryGCNConvLayer(nn.Module):
 
         if self.residual:
             batch.x = x_in + batch.x  # residual connection
-        
+
         return batch
+
 
 class HermitianGCNConv(MessagePassing):
     _cached_edge_index: Optional[OptPairTensor]
@@ -161,10 +148,12 @@ class HermitianGCNConv(MessagePassing):
         # self.lin = Linear(in_channels, out_channels, bias=False,
         #                   weight_initializer='glorot')
         self.lin = torch.nn.Linear(in_channels, out_channels, bias=False)
-        self.lin.weight = torch.nn.Parameter(torch.complex(torch.zeros_like(self.lin.weight), self.lin.weight))
+        self.lin.weight = torch.nn.Parameter(torch.complex(
+            torch.zeros_like(self.lin.weight), self.lin.weight))
 
         if bias:
-            self.bias = torch.nn.Parameter(torch.zeros(out_channels, dtype=torch.cfloat))
+            self.bias = torch.nn.Parameter(
+                torch.zeros(out_channels, dtype=torch.cfloat))
         else:
             self.register_parameter('bias', None)
 
@@ -172,12 +161,12 @@ class HermitianGCNConv(MessagePassing):
 
     def reset_parameters(self):
         super().reset_parameters()
-        self.lin.weight.data = block_diagonal_complex_init(self.lin.weight.data)
+        self.lin.weight.data = block_diagonal_complex_init(
+            self.lin.weight.data)
         self._cached_edge_index = None
         self._cached_adj_t = None
         if self.bias is not None:
             zeros(self.bias)
-
 
     def forward(self, x: Tensor, edge_index: Adj,
                 edge_weight: OptTensor = None,
@@ -196,7 +185,7 @@ class HermitianGCNConv(MessagePassing):
                 x = torch.complex(x, torch.zeros_like(x))
             if return_feature_only:
                 return x
-        
+
         x = x @ self.lin.weight + x @ self.lin.weight.conj().T
         if self.bias is not None:
             x = x + self.bias
@@ -234,6 +223,7 @@ class HermitianGCNConv(MessagePassing):
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
+
 
 class ComplexGCNConv(MessagePassing):
     _cached_edge_index: Optional[OptPairTensor]
@@ -275,14 +265,14 @@ class ComplexGCNConv(MessagePassing):
         #                   weight_initializer='glorot')
         self.lin = torch.nn.Linear(in_channels, out_channels, bias=False)
         self.lin.weight.data = init.orthogonal_(self.lin.weight.data)
-        self.lin.weight = torch.nn.Parameter(torch.complex(self.lin.weight, torch.zeros_like(self.lin.weight)))
+        self.lin.weight = torch.nn.Parameter(torch.complex(
+            self.lin.weight, torch.zeros_like(self.lin.weight)))
 
         if bias:
-            self.bias = torch.nn.Parameter(torch.zeros(out_channels, dtype=torch.cfloat))
+            self.bias = torch.nn.Parameter(
+                torch.zeros(out_channels, dtype=torch.cfloat))
         else:
             self.register_parameter('bias', None)
-
-        
 
         self.reset_parameters()
 
@@ -293,7 +283,6 @@ class ComplexGCNConv(MessagePassing):
         self._cached_adj_t = None
         if self.bias is not None:
             zeros(self.bias)
-
 
     def forward(self, x: Tensor, edge_index: Adj,
                 edge_weight: OptTensor = None,
@@ -349,9 +338,6 @@ class ComplexGCNConv(MessagePassing):
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
-    
-
-
 
 
 class TaylorGCNConv(MessagePassing):
@@ -373,43 +359,47 @@ class TaylorGCNConv(MessagePassing):
 
         c = 1.
         x = self.conv(x, edge_index, edge_weight,
-                      apply_feature_lin = True,
-                      return_feature_only = True)
+                      apply_feature_lin=True,
+                      return_feature_only=True)
         x_k = x.clone()  # Create a copy of the input tensor
 
         for k in range(self.T):
-            x_k = self.conv(x_k, edge_index, edge_weight, apply_feature_lin = False, **kwargs) / (k+1)
+            x_k = self.conv(x_k, edge_index, edge_weight,
+                            apply_feature_lin=False, **kwargs) / (k+1)
             x += x_k
         if self.return_real:
             x = x.real
         return x
-    
+
+
 def block_diagonal_complex_init(weight_matrix, block_size=2, bound=0.5):
     # Get the size of the weight matrix
     n = weight_matrix.size(0)
 
     weight_matrix = torch.zeros_like(weight_matrix)
-    
+
     # Calculate the number of blocks along one dimension
     num_blocks = (n + block_size - 1) // block_size
-    
+
     for i in range(num_blocks):
         # Calculate the actual block size for the current block
         actual_block_size = min(block_size, n - i * block_size)
-        
+
         # Initialize the real and imaginary parts separately with Gaussian noise
         real_part = torch.randn(actual_block_size, actual_block_size) * bound
         imag_part = torch.randn(actual_block_size, actual_block_size) * bound
-        
+
         # Combine real and imaginary parts into a complex tensor
-        block = torch.view_as_complex(torch.stack([real_part, imag_part], dim=-1))
-        
+        block = torch.view_as_complex(
+            torch.stack([real_part, imag_part], dim=-1))
+
         # Place the block on the diagonal of the weight matrix
         start_row = i * block_size
         end_row = start_row + actual_block_size
         weight_matrix[start_row:end_row, start_row:end_row] = block
-    
+
     return weight_matrix
+
 
 @torch.jit._overload
 def gcn_norm(  # noqa: F811
@@ -499,8 +489,8 @@ def gcn_norm(  # noqa: F811
 
 
 class UnitaryGINEConvLayer(nn.Module):
-    def __init__(self, dim_in, dim_out, dropout = 0.0, residual = True, global_bias = True, T = 10, 
-                 use_hermitian = False, return_real: bool = False,
+    def __init__(self, dim_in, dim_out, dropout=0.0, residual=True, global_bias=True, T=10,
+                 use_hermitian=False, return_real: bool = False,
                  **kwargs):
         super().__init__()
         self.dim_in = dim_in
@@ -513,7 +503,8 @@ class UnitaryGINEConvLayer(nn.Module):
             torch.nn.Linear(2*dim_out, 2*dim_out),
         )
         if global_bias:
-            self.bias = torch.nn.Parameter(torch.zeros(dim_out, dtype=torch.cfloat))
+            self.bias = torch.nn.Parameter(
+                torch.zeros(dim_out, dtype=torch.cfloat))
         else:
             self.register_parameter('bias', None)
 
@@ -528,7 +519,7 @@ class UnitaryGINEConvLayer(nn.Module):
             ComplexActivation(torch.nn.ReLU()),
             ComplexDropout(self.dropout),
         )
-        self.model = TaylorGCNConv(base_conv(dim_in, dim_out, **kwargs), T = T)
+        self.model = TaylorGCNConv(base_conv(dim_in, dim_out, **kwargs), T=T)
 
     def forward(self, x, edge_index, batch: OptTensor = None, edge_attr: OptTensor = None):
         x_in = x
@@ -543,7 +534,7 @@ class UnitaryGINEConvLayer(nn.Module):
         x = torch.cat([x_real, x_imag], dim=-1)
         # pass through neural network
         x = self.nn(x)
-        x = torch.view_as_complex(x.view(x.shape[0],-1,2))
+        x = torch.view_as_complex(x.view(x.shape[0], -1, 2))
         if self.return_real:
             x = x.real
         return x
@@ -590,22 +581,25 @@ class ComplexGINEConv(MessagePassing):
         #                   weight_initializer='glorot')
         self.lin = torch.nn.Linear(in_channels, out_channels, bias=False)
         self.lin.weight.data = init.orthogonal_(self.lin.weight.data)
-        self.lin.weight = torch.nn.Parameter(torch.complex(self.lin.weight, torch.zeros_like(self.lin.weight)))
+        self.lin.weight = torch.nn.Parameter(torch.complex(
+            self.lin.weight, torch.zeros_like(self.lin.weight)))
 
         if edge_dim is not None:
             self.edge_lin = torch.nn.Linear(edge_dim, in_channels, bias=False)
-            self.edge_lin.weight.data = init.orthogonal_(self.edge_lin.weight.data)
-            self.edge_lin.weight = torch.nn.Parameter(torch.complex(self.edge_lin.weight, torch.zeros_like(self.edge_lin.weight)))
+            self.edge_lin.weight.data = init.orthogonal_(
+                self.edge_lin.weight.data)
+            self.edge_lin.weight = torch.nn.Parameter(torch.complex(
+                self.edge_lin.weight, torch.zeros_like(self.edge_lin.weight)))
         else:
             self.edge_lin = None
 
         if bias:
-            self.bias = torch.nn.Parameter(torch.zeros(out_channels, dtype=torch.cfloat))
+            self.bias = torch.nn.Parameter(
+                torch.zeros(out_channels, dtype=torch.cfloat))
         else:
             self.register_parameter('bias', None)
 
         self.reset_parameters()
-
 
     def reset_parameters(self):
         super().reset_parameters()
@@ -614,7 +608,6 @@ class ComplexGINEConv(MessagePassing):
         self._cached_adj_t = None
         if self.bias is not None:
             zeros(self.bias)
-
 
     def forward(self, x: Tensor, edge_index: Adj,
                 edge_weight: OptTensor = None,
@@ -664,13 +657,14 @@ class ComplexGINEConv(MessagePassing):
         if self.edge_lin is not None:
             edge_attr = self.edge_lin(edge_attr)
         # propagate_type: (x: Tensor, edge_weight: OptTensor)
-        out = 1j*self.propagate(edge_index, x=x, edge_weight=edge_weight, edge_attr=edge_attr)
+        out = 1j*self.propagate(edge_index, x=x,
+                                edge_weight=edge_weight, edge_attr=edge_attr)
 
         return out
 
     # def message(self, x_j: Tensor, edge_weight: OptTensor) -> Tensor:
         # return x_j if edge_weight is None else edge_weight.view(-1, 1) * x_j
-    
+
     def message(self, x_j: Tensor, edge_attr: Tensor, edge_weight: OptTensor) -> Tensor:
         if edge_weight is not None:
             message = (x_j + edge_attr) * edge_weight.view(-1, 1)
@@ -680,4 +674,3 @@ class ComplexGINEConv(MessagePassing):
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
-

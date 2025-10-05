@@ -1,6 +1,8 @@
 import torch
 from torch_geometric.data import Data
+
 from external.homophily import our_measure
+
 
 def homiphily_classification(graph: Data) -> float:
     """
@@ -16,6 +18,7 @@ def homiphily_classification(graph: Data) -> float:
     labels = graph.y
     return our_measure(edge_index, labels)
 
+
 def homophily_regression(graph: Data) -> float:
     """
     Calculate the R^2 correlation between nodes connected by an edge 
@@ -29,10 +32,8 @@ def homophily_regression(graph: Data) -> float:
     src_labels = labels[edge_index[0]]
     dst_labels = labels[edge_index[1]]
 
-    correlation_matrix = torch.corrcoef(torch.cat([src_labels, dst_labels], dim=1).T)
+    correlation_matrix = torch.corrcoef(
+        torch.cat([src_labels, dst_labels], dim=1).T)
     r_squared = correlation_matrix[0, 1] ** 2
 
     return r_squared.item()
-
-
-

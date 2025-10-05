@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser = LongRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
-    
+
     homiphily = []
     loader = DataLoader(full_dataset, batch_size=1, shuffle=True)
     pbar = tqdm(loader)
@@ -29,7 +29,8 @@ if __name__ == "__main__":
         pbar.set_postfix({"Homophily": f"{h:.4f}"})
 
     num_nans = sum(1 for h in homiphily if np.isnan(h))
-    print(f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
+    print(
+        f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
     homiphily = [h for h in homiphily if not np.isnan(h)]
     print("Homophily PascalVOC-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
 
@@ -39,13 +40,14 @@ if __name__ == "__main__":
     plt.xlabel('Homophily')
     plt.ylabel('Frequency')
     plt.grid(axis='y', alpha=0.75)
-    plt.savefig(os.path.join(save_dir, 'homophily_distribution_pascalvoc_sp.pdf'))
+    plt.savefig(os.path.join(
+        save_dir, 'homophily_distribution_pascalvoc_sp.pdf'))
     plt.close()
 
     parser = LongRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
-    
+
     homiphily = []
     loader = DataLoader(full_dataset, batch_size=1, shuffle=True)
     pbar = tqdm(loader)
@@ -57,10 +59,10 @@ if __name__ == "__main__":
         pbar.set_postfix({"Homophily": f"{h:.4f}"})
 
     num_nans = sum(1 for h in homiphily if np.isnan(h))
-    print(f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
+    print(
+        f"Number of NaNs in homophily values: {num_nans} out of {len(homiphily)}")
     homiphily = [h for h in homiphily if not np.isnan(h)]
     print("Homophily COCO-SP:", np.mean(homiphily), "+/-", np.std(homiphily))
-
 
     plt.figure(figsize=(8, 6))
     plt.hist(homiphily, bins=30, color='skyblue', edgecolor='black')

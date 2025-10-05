@@ -1,14 +1,18 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn import MessagePassing
+
 from external.torch_scatter import scatter_mean
+
 
 class ComplexReLU(nn.Module):
     def forward(self, x):
-        x = x.to(torch.complex64) if x.dtype in [torch.float16, torch.float32, torch.float64] else x
+        x = x.to(torch.complex64) if x.dtype in [
+            torch.float16, torch.float32, torch.float64] else x
         real = torch.relu(x.real)
         imag = torch.relu(x.imag)
         return torch.complex(real, imag)
+
 
 class LieAlgebra(nn.Module):
     def __init__(self, max_matrix_power: int, inverse_method: str = 'taylor'):
@@ -26,8 +30,10 @@ class LieAlgebra(nn.Module):
     def _taylor_truncated_matrix_exponentiation(self, x):
         batch_size, dim, _ = x.size()
         max_power = self.max_matrix_power
-        batch_matrix_exponentials = torch.zeros((batch_size, dim, dim), device=x.device)
-        batch_matrix_exponentials += torch.eye(dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1)
+        batch_matrix_exponentials = torch.zeros(
+            (batch_size, dim, dim), device=x.device)
+        batch_matrix_exponentials += torch.eye(
+            dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1)
 
         current_power = x
         factorial = 1.0
@@ -42,8 +48,11 @@ class LieAlgebra(nn.Module):
         """ Eq 83. https://scipp.ucsc.edu/~haber/webpage/MatrixExpLog.pdf """
         batch_size, dim, _ = x.size()
         max_power = self.max_matrix_power
-        current_power = x - torch.eye(dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1)
-        batch_matrix_logarithms = torch.zeros((batch_size, dim, dim), device=x.device)
+        current_power = x - \
+            torch.eye(dim, device=x.device).unsqueeze(
+                0).expand(batch_size, -1, -1)
+        batch_matrix_logarithms = torch.zeros(
+            (batch_size, dim, dim), device=x.device)
 
         for i in range(1, max_power + 1):
             batch_matrix_logarithms += (-1)**(i + 1) * current_power / i
@@ -56,16 +65,21 @@ class LieAlgebra(nn.Module):
         batch_size, dim, _ = x.size()
         max_power = self.max_matrix_power
 
-        current_power_factor_one = torch.eye(dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1) - x
-        current_power_factor_two = torch.eye(dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1) + x
+        current_power_factor_one = torch.eye(
+            dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1) - x
+        current_power_factor_two = torch.eye(
+            dim, device=x.device).unsqueeze(0).expand(batch_size, -1, -1) + x
         current_power_factor_two = torch.inverse(current_power_factor_two)
-        current_power = torch.bmm(current_power_factor_one, current_power_factor_two)
+        current_power = torch.bmm(
+            current_power_factor_one, current_power_factor_two)
 
-        batch_matrix_logarithms = torch.zeros((batch_size, dim, dim), device=x.device)
+        batch_matrix_logarithms = torch.zeros(
+            (batch_size, dim, dim), device=x.device)
 
         for i in range(1, max_power + 1):
-            batch_matrix_logarithms +=  torch.matrix_power(current_power, 2*i + 1) / (2*i + 1)
+            batch_matrix_logarithms += torch.matrix_power(
+                current_power, 2*i + 1) / (2*i + 1)
 
         return -2 * batch_matrix_logarithms
 
-#class UnitaryConvolution(
+# class UnitaryConvolution(

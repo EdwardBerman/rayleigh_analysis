@@ -14,35 +14,48 @@ class LongRangeGraphBenchmarkParser(Parser):
 
         match name:
             case 'PascalVOC-SP':
-                self.train_dataset = LRGBDataset(root=root, name="PascalVOC-SP", split="train")
-                self.val_dataset = LRGBDataset(root=root, name="PascalVOC-SP", split="val")
-                self.test_dataset = LRGBDataset(root=root, name="PascalVOC-SP", split="test")
+                self.train_dataset = LRGBDataset(
+                    root=root, name="PascalVOC-SP", split="train")
+                self.val_dataset = LRGBDataset(
+                    root=root, name="PascalVOC-SP", split="val")
+                self.test_dataset = LRGBDataset(
+                    root=root, name="PascalVOC-SP", split="test")
                 self._is_classification = True
                 self._level = "node_level"
                 self.num_classes = self.train_dataset.num_classes
             case 'COCO-SP':
-                self.train_dataset = LRGBDataset(root=root, name="COCO-SP", split="train")
-                self.val_dataset = LRGBDataset(root=root, name="COCO-SP", split="val")
-                self.test_dataset = LRGBDataset(root=root, name="COCO-SP", split="test")
+                self.train_dataset = LRGBDataset(
+                    root=root, name="COCO-SP", split="train")
+                self.val_dataset = LRGBDataset(
+                    root=root, name="COCO-SP", split="val")
+                self.test_dataset = LRGBDataset(
+                    root=root, name="COCO-SP", split="test")
                 self._is_classification = True
                 self._level = "node_level"
                 self.num_classes = self.train_dataset.num_classes
             case 'Peptides-func':
-                self.train_dataset = LRGBDataset(root=root, name="Peptides-func", split="train")
-                self.val_dataset = LRGBDataset(root=root, name="Peptides-func", split="val")
-                self.test_dataset = LRGBDataset(root=root, name="Peptides-func", split="test")
+                self.train_dataset = LRGBDataset(
+                    root=root, name="Peptides-func", split="train")
+                self.val_dataset = LRGBDataset(
+                    root=root, name="Peptides-func", split="val")
+                self.test_dataset = LRGBDataset(
+                    root=root, name="Peptides-func", split="test")
                 self._is_classification = True
                 self._level = "graph_level"
                 self.num_classes = self.train_dataset.num_classes
             case 'Peptides-struct':
-                self.train_dataset = LRGBDataset(root=root, name="Peptides-struct", split="train")
-                self.val_dataset = LRGBDataset(root=root, name="Peptides-struct", split="val")
-                self.test_dataset = LRGBDataset(root=root, name="Peptides-struct", split="test")
+                self.train_dataset = LRGBDataset(
+                    root=root, name="Peptides-struct", split="train")
+                self.val_dataset = LRGBDataset(
+                    root=root, name="Peptides-struct", split="val")
+                self.test_dataset = LRGBDataset(
+                    root=root, name="Peptides-struct", split="test")
                 self._is_classification = False
                 self._level = "graph_level"
                 self.num_classes = self.train_dataset.num_classes
             case _:
-                raise ValueError(f"Dataset {name} not recognized. Available datasets are 'PascalVOC-SP' and ''.")
+                raise ValueError(
+                    f"Dataset {name} not recognized. Available datasets are 'PascalVOC-SP' and ''.")
 
         self._node_dim = self.train_dataset.num_node_features
         self._edge_dim = self.train_dataset.num_edge_features
@@ -65,7 +78,7 @@ class LongRangeGraphBenchmarkParser(Parser):
 
     def return_datasets(self):
         return self.train_dataset, self.val_dataset, self.test_dataset
-        
+
     def parse(self):
         datasets_info = {
             'train_dataset': self.train_dataset,
@@ -81,4 +94,3 @@ class LongRangeGraphBenchmarkParser(Parser):
             print("Dataset Information:")
             pprint.pprint(datasets_info)
         return datasets_info
-

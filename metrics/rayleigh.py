@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data
-from torch_geometric.utils import to_torch_coo_tensor  
-from torch_geometric.utils import to_dense_adj
+from torch_geometric.utils import to_dense_adj, to_torch_coo_tensor
+
 
 # TODO: Make these more mem efficient
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
@@ -15,7 +15,7 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     X_prime = f(X)
     edge_indices = X.edge_index
 
-    X = X.x 
+    X = X.x
     num_nodes = X.size(0)
     A_sparse = to_torch_coo_tensor(edge_indices, size=(num_nodes, num_nodes))
     A = A_sparse.to_dense()
@@ -24,9 +24,11 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     I = torch.eye(A.size(0), device=A.device)
     A_tilde = D @ (I - A) @ D
     rayleigh_X = torch.trace(X.T @ A_tilde @ X) / torch.norm(X, p='fro')
-    rayleigh_X_prime = torch.trace(X_prime.T @ A_tilde @ X_prime) / torch.norm(X_prime, p='fro')
+    rayleigh_X_prime = torch.trace(
+        X_prime.T @ A_tilde @ X_prime) / torch.norm(X_prime, p='fro')
 
     return torch.abs(rayleigh_X - rayleigh_X_prime)
+
 
 def integrated_rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """

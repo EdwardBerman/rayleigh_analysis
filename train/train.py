@@ -1,27 +1,27 @@
 import os
-import torch
-import torch.nn as nn
-import numpy as np
-from datetime import datetime
-
-from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
-from simple_parsing import ArgumentParser
-
 import pprint
-from tqdm import tqdm
-import wandb
+from datetime import datetime
 from enum import Enum
 
-from model.model_factory import build_model
-from model.predictor import GraphLevelRegressor, NodeLevelRegressor, GraphLevelClassifier, NodeLevelClassifier
-from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
-from external.weighted_cross_entropy import weighted_cross_entropy
-from metrics.rayleigh import rayleigh_error
-from metrics.accuracy import node_level_accuracy
+import numpy as np
+import torch
+import torch.nn as nn
+import wandb
+from simple_parsing import ArgumentParser
+from torch_geometric.data import Data
+from torch_geometric.loader import DataLoader
+from tqdm import tqdm
 
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
+from external.weighted_cross_entropy import weighted_cross_entropy
+from metrics.accuracy import node_level_accuracy
+from metrics.rayleigh import rayleigh_error
+from model.model_factory import build_model
+from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
+                             NodeLevelClassifier, NodeLevelRegressor)
+from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
+
 
 def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
@@ -29,10 +29,12 @@ def set_seeds(seed: int = 42):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
+
 class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
     TEST = "test"
+
 
 def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
     """
@@ -43,7 +45,7 @@ def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mo
         optimizer.zero_grad()
     else:
         model.eval()
-    
+
     out = model(data)
     l = loss(out, data.y)
 
@@ -53,28 +55,30 @@ def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mo
 
     acc = acc_scorer(out, data.y) if acc_scorer is not None else None
 
-    return l.item(), acc 
+    return l.item(), acc
+
 
 def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
-            entity="rayleigh_analysis_gnn", 
-            project="eb_ll_rule_the_tri_state_area",
-            config={
+        entity="rayleigh_analysis_gnn",
+        project="eb_ll_rule_the_tri_state_area",
+        config={
                 "learning_rate": lr,
                 "architecture": architecture,
                 "dataset": dataset,
                 "epochs": epochs,
-                },
-            )
+        },
+    )
     return run
 
-def train(model: nn.Module, 
-          train_loader: DataLoader, 
-          val_loader: DataLoader, 
-          test_loader: DataLoader, 
-          loss_fn: nn.Module, 
-          optimizer: torch.optim.Optimizer, 
-          run: wandb.run, 
+
+def train(model: nn.Module,
+          train_loader: DataLoader,
+          val_loader: DataLoader,
+          test_loader: DataLoader,
+          loss_fn: nn.Module,
+          optimizer: torch.optim.Optimizer,
+          run: wandb.run,
           epochs: int,
           output_dir: str,
           device: torch.device,
@@ -96,7 +100,8 @@ def train(model: nn.Module,
 
         for batch in val_loader:
             batch = batch.to(device)
-            loss, accuracy = step(model, batch, loss_fn, run, Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
+            loss, accuracy = step(model, batch, loss_fn, run,
+                                  Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
             val_loss += loss
             val_acc += accuracy if accuracy is not None else 0
 
@@ -107,86 +112,117 @@ def train(model: nn.Module,
             run.log({"val_rayleigh_error": np.mean(val_rayleigh_error)})
 
         val_losses.append(val_loss / len(val_loader))
-        val_accuracies.append(val_acc / len(val_loader) if acc_scorer is not None else 0)
-        run.log({"val_loss": val_losses[-1], "val_acc": val_accuracies[-1]}) if acc_scorer is not None else run.log({"val_loss": val_losses[-1]})
+        val_accuracies.append(val_acc / len(val_loader)
+                              if acc_scorer is not None else 0)
+        run.log({"val_loss": val_losses[-1], "val_acc": val_accuracies[-1]}
+                ) if acc_scorer is not None else run.log({"val_loss": val_losses[-1]})
 
         if val_losses[-1] < best_loss:
             best_loss = val_losses[-1]
-            torch.save(model.state_dict(), os.path.join(output_dir, "best_model.pt"))
+            torch.save(model.state_dict(), os.path.join(
+                output_dir, "best_model.pt"))
 
         for batch in test_loader:
             batch = batch.to(device)
-            loss, accuracy = step(model, batch, loss_fn, run, Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
+            loss, accuracy = step(model, batch, loss_fn, run,
+                                  Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
-    
+
         test_losses.append(test_loss / len(test_loader))
-        test_accuracies.append(test_acc / len(test_loader) if acc_scorer is not None else 0)
-        run.log({"test_loss": test_losses[-1], "test_acc": test_accuracies[-1]}) if acc_scorer is not None else run.log({"test_loss": test_losses[-1]})
-        
+        test_accuracies.append(test_acc / len(test_loader)
+                               if acc_scorer is not None else 0)
+        run.log({"test_loss": test_losses[-1], "test_acc": test_accuracies[-1]}
+                ) if acc_scorer is not None else run.log({"test_loss": test_losses[-1]})
+
         for batch in train_loader:
             batch = batch.to(device)
-            loss, accuracy = step(model, batch, loss_fn, run, Mode.TRAIN, optimizer, acc_scorer)
+            loss, accuracy = step(model, batch, loss_fn,
+                                  run, Mode.TRAIN, optimizer, acc_scorer)
             train_loss += loss
             train_acc += accuracy if accuracy is not None else 0
         train_losses.append(train_loss / len(train_loader))
-        train_accuracies.append(train_acc / len(train_loader) if acc_scorer is not None else 0)
-        run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
+        train_accuracies.append(
+            train_acc / len(train_loader) if acc_scorer is not None else 0)
+        run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}
+                ) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
 
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
 
     np.save(os.path.join(output_dir, "train_losses.npy"), np.array(train_losses))
-    np.save(os.path.join(output_dir, "train_accuracies.npy"), np.array(train_accuracies))
+    np.save(os.path.join(output_dir, "train_accuracies.npy"),
+            np.array(train_accuracies))
     np.save(os.path.join(output_dir, "val_losses.npy"), np.array(val_losses))
-    np.save(os.path.join(output_dir, "val_accuracies.npy"), np.array(val_accuracies))
+    np.save(os.path.join(output_dir, "val_accuracies.npy"),
+            np.array(val_accuracies))
     np.save(os.path.join(output_dir, "test_losses.npy"), np.array(test_losses))
-    np.save(os.path.join(output_dir, "test_accuracies.npy"), np.array(test_accuracies))
+    np.save(os.path.join(output_dir, "test_accuracies.npy"),
+            np.array(test_accuracies))
 
     plot_learning_curve(train_losses, val_losses, test_losses, output_dir)
 
+
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--dataset", type=str, help="LRGB Datasets are PascalVOC-SP, COCO-SP, Peptides-func, Peptides-struct", required=True)
-    parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
+    parser.add_argument("--dataset", type=str,
+                        help="LRGB Datasets are PascalVOC-SP, COCO-SP, Peptides-func, Peptides-struct", required=True)
+    parser.add_argument("--architecture", type=str,
+                        help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
     parser.add_argument("--num_layers", type=int, required=True)
-    parser.add_argument("--skip_connections", action="store_true", help="Enable skip connections")
-    parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, GroupSort")
-    parser.add_argument("--batch_size", type=int, required=True) 
-    parser.add_argument("--batch_norm", type=str, required=True, help="None, BatchNorm, LayerNorm, GraphNorm")
-    parser.add_argument("--num_attention_heads", type=int, default=2, required=False, help="Only for GAT") 
-    parser.add_argument("--dropout_rate", type=float, default=0.1, required=False)
-    parser.add_argument("--hidden_size", type=int, default=128, required=False) 
-    parser.add_argument("--edge_aggregator", type=str, default=False, required=False, help="'GINE', 'GATED', or 'NONE'")
+    parser.add_argument("--skip_connections",
+                        action="store_true", help="Enable skip connections")
+    parser.add_argument("--activation_function", type=str,
+                        required=True, help="ReLU, LeakyReLU, Identity, GroupSort")
+    parser.add_argument("--batch_size", type=int, required=True)
+    parser.add_argument("--batch_norm", type=str, required=True,
+                        help="None, BatchNorm, LayerNorm, GraphNorm")
+    parser.add_argument("--num_attention_heads", type=int,
+                        default=2, required=False, help="Only for GAT")
+    parser.add_argument("--dropout_rate", type=float,
+                        default=0.1, required=False)
+    parser.add_argument("--hidden_size", type=int, default=128, required=False)
+    parser.add_argument("--edge_aggregator", type=str, default=False,
+                        required=False, help="'GINE', 'GATED', or 'NONE'")
 
-    parser.add_argument("--optimizer", type=str, default="Adam", required=False, help="Adam or Cosine")
+    parser.add_argument("--optimizer", type=str, default="Adam",
+                        required=False, help="Adam or Cosine")
     parser.add_argument("--lr", type=float, default=0.001, required=False)
     parser.add_argument("--epochs", type=int, default=100, required=False)
-    parser.add_argument("--weight_decay", type=float, default=0.0, required=False)
-    
-    parser.add_argument("--window_size", type=int, default=4, required=False) # For CRAWL 
-    parser.add_argument("--receptive_field", type=int, default=5, required=False) # For CRAWL
-    
-    parser.add_argument("--save_dir", type=str, default='output', required=False) 
+    parser.add_argument("--weight_decay", type=float,
+                        default=0.0, required=False)
 
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument("--log_rq", action="store_true", help="Enable logging of Rayleigh Quotient error")
-    parser.add_argument("--toy", action="store_true", help="Use a much smaller version of the dataset to test")
+    parser.add_argument("--window_size", type=int,
+                        default=4, required=False)  # For CRAWL
+    parser.add_argument("--receptive_field", type=int,
+                        default=5, required=False)  # For CRAWL
+
+    parser.add_argument("--save_dir", type=str,
+                        default='output', required=False)
+
+    parser.add_argument("--verbose", action="store_true",
+                        help="Enable verbose logging")
+    parser.add_argument("--log_rq", action="store_true",
+                        help="Enable logging of Rayleigh Quotient error")
+    parser.add_argument("--toy", action="store_true",
+                        help="Use a much smaller version of the dataset to test")
     args = parser.parse_args()
     print("Arguments:")
     pprint.pprint(vars(args))
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    args.save_dir = os.path.join(args.save_dir, f"{args.architecture}_{args.dataset}_{current_time}")
+    args.save_dir = os.path.join(
+        args.save_dir, f"{args.architecture}_{args.dataset}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
 
     # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, accuracy function, and the predictor head it needs
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
     if args.toy:
         parser = ToyLongRangeGraphBenchmarkParser
-    else: 
+    else:
         parser = LongRangeGraphBenchmarkParser(name=args.dataset)
     dataset = parser.parse()
-    train_dataset, val_dataset, test_dataset = dataset['train_dataset'], dataset['val_dataset'], dataset['test_dataset']
+    train_dataset, val_dataset, test_dataset = dataset[
+        'train_dataset'], dataset['val_dataset'], dataset['test_dataset']
     node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']
 
     base_gnn_model = build_model(node_dim=node_dim,
@@ -208,7 +244,7 @@ if __name__ == "__main__":
 
     if is_classification:
         num_classes = dataset['num_classes']
-        loss_fn = weighted_cross_entropy 
+        loss_fn = weighted_cross_entropy
         acc_scorer = None
         if level == "graph_level":
             model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes)
@@ -224,22 +260,25 @@ if __name__ == "__main__":
         else:
             model = NodeLevelRegressor(base_gnn_model, node_dim)
 
-    run = setup_wandb(lr=args.lr, 
-                      architecture=args.architecture, 
-                      dataset=args.dataset, 
+    run = setup_wandb(lr=args.lr,
+                      architecture=args.architecture,
+                      dataset=args.dataset,
                       epochs=args.epochs)
 
-    #TODO: Set up different optimizers. COSINE LR
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay) if args.optimizer == "Adam" else None
+    # TODO: Set up different optimizers. COSINE LR
+    optimizer = torch.optim.Adam(model.parameters(
+    ), lr=args.lr, weight_decay=args.weight_decay) if args.optimizer == "Adam" else None
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
 
     batch_size = args.batch_size
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False)
 
     # one more param count for the road (cowboy emoji)
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -247,13 +286,13 @@ if __name__ == "__main__":
 
     set_seeds(42)
 
-    train(model=model, 
-          train_loader=train_loader, 
-          val_loader=val_loader, 
-          test_loader=test_loader, 
-          loss_fn=loss_fn, 
-          optimizer=optimizer, 
-          run=run, 
+    train(model=model,
+          train_loader=train_loader,
+          val_loader=val_loader,
+          test_loader=test_loader,
+          loss_fn=loss_fn,
+          optimizer=optimizer,
+          run=run,
           epochs=args.epochs,
           output_dir=args.save_dir,
           device=device,
