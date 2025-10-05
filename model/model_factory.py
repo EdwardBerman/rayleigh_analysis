@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch_geometric.nn import BatchNorm
 from torch_geometric.nn.models import GCN, GAT, GraphSAGE, LINKX
 from model.edge_aggregator import EdgeModel, NodeModel
-from model.lie_operations.model import GroupSort
 from external.unitary_gcn import UnitaryGCNConvLayer, GroupSort, ComplexActivation
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
