@@ -3,23 +3,23 @@ import os
 import torch
 from torch.nn import (BatchNorm1d, Conv1d, Dropout, Identity, Linear, Module,
                       ReLU, Sequential)
-from torch_scatter import scatter_mean, scatter_sum
-from walker import Walker
+from external.torch_scatter import scatter_mean, scatter_sum
+from external.crawl.walker import Walker
 
 
 class VNUpdate(Module):
-    def __init__(self, dim, config):
+    def __init__(self, dim, dropout):
         """
         Intermediate update layer for the virtual node
         :param dim: Dimension of the latent node embeddings
-        :param config: Python Dict with the configuration of the CRaWl network
+        :param dropout: Dropout rate
         """
         super(VNUpdate, self).__init__()
 
         self.mlp = Sequential(Linear(dim, dim, bias=False),
                               BatchNorm1d(dim),
                               ReLU(),
-                              Dropout(config['dropout']),
+                              Dropout(dropout),
                               Linear(dim, dim, bias=False))
 
     def forward(self, data):
@@ -112,77 +112,45 @@ class ConvModule(Module):
 
 
 class CRaWl(Module):
-    def __init__(self, model_dir, config, node_feat_dim, edge_feat_dim, out_dim, loss, node_feat_enc=None, edge_feat_enc=None):
+    def __init__(self, node_feat_dim, edge_feat_dim, layers, hidden, kernel_size, dropout, steps, win_size, train_start_ratio, compute_id_feat, compute_adj_feat, walk_delta, node_feat_enc, edge_feat_enc):
         """
-        :param model_dir: Directory to store model in
-        :param config: Python Dict that specifies the configuration of the model
+        # TODO: Docstrings 
         :param node_feat_dim: Dimension of the node features
         :param edge_feat_dim: Dimension of the edge features
-        :param out_dim: Output dimension
-        :param loss: torch.nn Loss object used for training
         :param node_feat_enc: Optional initial embedding of node features
         :param edge_feat_enc: Optional initial embedding of edge features
         """
         super(CRaWl, self).__init__()
-        self.model_dir = model_dir
-        self.config = config
-        self.out_dim = out_dim
+        self.layers = layers
+        self.hidden = hidden
+        self.kernel_size = kernel_size
+        self.dropout = dropout
         self.node_feat_enc = node_feat_enc
         self.edge_feat_enc = edge_feat_enc
 
-        self.layers = config['layers']
-        self.hidden = config['hidden_dim']
-        self.kernel_size = config['kernel_size']
-        self.dropout = config['dropout']
-
-        self.pool = config['pool'] if 'pool' in config.keys() else 'mean'
-        self.vn = config['vn'] if 'vn' in config.keys() else False
-
-        self.walker = Walker(config)
-
+        self.walker = Walker(steps, win_size, train_start_ratio,
+                             compute_id_feat, compute_adj_feat, walk_delta)
         self.walk_dim = self.walker.struc_feat_dim
-        self.conv_dim = config['conv_dim'] if 'conv_dim' in config.keys(
-        ) else self.hidden
 
         modules = []
         for i in range(self.layers):
-            modules.append(ConvModule(conv_dim=self.conv_dim,
+            modules.append(ConvModule(conv_dim=self.hidden,  # this is always self.hidden for all their configs on github
                                       node_dim_in=node_feat_dim if i == 0 else self.hidden,
                                       edge_dim_in=edge_feat_dim,
                                       w_feat_dim=self.walk_dim,
                                       dim_out=self.hidden,
                                       kernel_size=self.kernel_size))
 
-            if self.vn and i < self.layers - 1:
-                modules.append(VNUpdate(self.hidden, config))
+            if i < self.layers - 1:
+                modules.append(VNUpdate(self.hidden, self.dropout))
 
         self.convs = Sequential(*modules)
 
         self.node_out = Sequential(BatchNorm1d(self.hidden), ReLU())
 
-        if config['graph_out'] == 'linear':
-            self.graph_out = Sequential(Dropout(self.dropout),
-                                        Linear(self.hidden, out_dim))
-        else:
-            self.graph_out = Sequential(Dropout(self.dropout),
-                                        Linear(self.hidden, self.hidden),
-                                        ReLU(),
-                                        Linear(self.hidden, out_dim))
-
-        self.criterion = loss
-
         pytorch_total_params = sum(p.numel()
                                    for p in self.parameters() if p.requires_grad)
         print(f'Number of paramters: {pytorch_total_params}')
-
-    def save(self, name='model'):
-        if not os.path.exists(self.model_dir):
-            os.makedirs(self.model_dir)
-        torch.save(self, os.path.join(self.model_dir, f'{name}.pckl'))
-
-    @staticmethod
-    def load(path, name='model'):
-        return torch.load(os.path.join(path, f'{name}.pckl'))
 
     def forward(self, data, walk_steps=None, walk_start_p=1.0):
         # apply initial node feature encoding (optional)
@@ -202,8 +170,7 @@ class CRaWl(Module):
         data = self.walker.sample_walks(
             data, steps=walk_steps, start_p=walk_start_p)
 
-        if self.vn:
-            data.vn_h = None
+        data.vn_h = None
 
         # apply convolutions
         self.convs(data)
@@ -211,11 +178,4 @@ class CRaWl(Module):
         # pool node embeddings
         data.h = self.node_out(data.h)
 
-        pool = scatter_sum if self.pool == 'sum' else scatter_mean
-        x = pool(data.h, data.batch, dim=0)
-        data.y_pred = self.graph_out(x)
-
         return data
-
-    def loss(self, data):
-        return self.criterion(data.y_pred, data.y)
