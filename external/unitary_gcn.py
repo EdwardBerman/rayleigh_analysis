@@ -54,7 +54,8 @@ class GroupSort(nn.Module):
 class ComplexActivation(nn.Module):
     def __init__(self, activation):
         super().__init__()
-        self.activation = activation
+        #self.activation = activation
+        self.activation = activation if isinstance(activation, nn.Module) else activation()
 
     def forward(self, input):
         # Separate real and imaginary parts
