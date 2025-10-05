@@ -11,7 +11,7 @@ python3 -m train.train \
   --num_attention_heads 2 \
   --dropout_rate 0.1 \
   --hidden_size 128 \
-  --edge_aggregator GATED \
+  --edge_aggregator NONE \
   --optimizer Adam \
   --lr 0.001 \
   --epochs 750 \
