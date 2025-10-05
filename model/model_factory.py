@@ -4,7 +4,7 @@ from torch_geometric.nn import BatchNorm
 from torch_geometric.nn.models import GCN, GAT, GraphSAGE, LINKX
 from model.edge_aggregator import EdgeModel, NodeModel
 from model.lie_operations.model import GroupSort
-from external.unitary_gcn import UnitaryGCNConvLayer
+from external.unitary_gcn import UnitaryGCNConvLayer, GroupSort, ComplexActivation
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
     class ResidualModel(nn.Module):
@@ -29,8 +29,10 @@ def str_to_activation(activation_name: str) -> nn.Module:
             return nn.Identity
         case 'GroupSort':
             return GroupSort
+        case 'ComplexReLU':
+            return ComplexActivation(nn.ReLU)
         case _:
-            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort', 'ComplexReLU'.")
 
 def build_model(node_dim: int,
                 model_type: str,

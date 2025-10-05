@@ -143,7 +143,7 @@ if __name__ == "__main__":
     parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
     parser.add_argument("--num_layers", type=int, required=True)
     parser.add_argument("--skip_connections", type=bool, required=True)
-    parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, GroupSort")
+    parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, ComplexReLU, GroupSort")
     parser.add_argument("--batch_size", type=int, required=True) 
     parser.add_argument("--batch_norm", type=str, required=True, help="None, BatchNorm, LayerNorm, GraphNorm")
     parser.add_argument("--num_attention_heads", type=int, default=2, required=False) # Only for GAT
