@@ -98,15 +98,18 @@ def build_model(node_dim: int,
         case 'Uni':
             pass
         case 'CRAWL':
+            assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
+            assert not edge_aggregator, "Edge aggregator should be false for CRaWl, which already includes an edge aggregator."
             model = CRaWl(node_feat_dim=node_dim,
                           edge_feat_dim=edge_dim,
                           layers=num_layers,
                           hidden=hidden_size,
                           kernel_size=receptive_field,
-                          dropout=kwargs.get('dropout', 0.1),
+                          dropout=dropout_rate,
                           steps=kwargs.get('steps', 50),
                           win_size=window_size,
-                          train_start_ratio=kwargs.get('train_start_ratio', 1.0),
+                          train_start_ratio=kwargs.get(
+                              'train_start_ratio', 1.0),
                           compute_id_feat=kwargs.get('compute_id_feat', True),
                           compute_adj_feat=kwargs.get(
                               'compute_adj_feat', True),
