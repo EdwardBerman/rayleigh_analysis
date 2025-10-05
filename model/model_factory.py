@@ -4,6 +4,7 @@ from torch_geometric.nn import BatchNorm
 from torch_geometric.nn.models import GCN, GAT, GraphSAGE, LINKX
 from model.edge_aggregator import EdgeModel, NodeModel
 from model.lie_operations.model import GroupSort
+from external.unitary_gcn import UnitaryGCNConvLayer
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
     class ResidualModel(nn.Module):
@@ -88,7 +89,20 @@ def build_model(node_dim: int,
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'Uni':
-            pass
+            module_list = []
+            for layer in range(num_layers):
+                input_dim = node_dim if layer == 0 else hidden_size
+                output_dim = node_dim if layer == num_layers - 1 else hidden_size
+                module_list.append(UnitaryGCNConvLayer(input_dim,
+                                                       output_dim, 
+                                                       dropout  =  dropout_rate, 	
+                                                       residual  = skip_connections, 	
+                                                       global_bias  =  True, 		
+                                                       T  =  10, 				
+                                                       use_hermitian  =  False, 		
+                                                       activation  =  activation_function()))
+            model = nn.Sequential(*module_list)
+            return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'CRAWL':
             pass
         case _:
