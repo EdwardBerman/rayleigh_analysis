@@ -1,0 +1,15 @@
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_setup.py:_flush():81] Current SDK version is 0.22.1
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_setup.py:_flush():81] Configure stats pid to 620544
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_setup.py:_flush():81] Loading settings from /home/li.tao/.config/wandb/settings
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_setup.py:_flush():81] Loading settings from /projects/gllab/li.tao/rayleigh_analysis/wandb/settings
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_init.py:setup_run_log_directory():705] Logging user logs to /projects/gllab/li.tao/rayleigh_analysis/wandb/run-20251005_124606-he8i78ki/logs/debug.log
+2025-10-05 12:46:07,059 INFO    MainThread:620544 [wandb_init.py:setup_run_log_directory():706] Logging internal logs to /projects/gllab/li.tao/rayleigh_analysis/wandb/run-20251005_124606-he8i78ki/logs/debug-internal.log
+2025-10-05 12:46:07,060 INFO    MainThread:620544 [wandb_init.py:init():832] calling init triggers
+2025-10-05 12:46:07,060 INFO    MainThread:620544 [wandb_init.py:init():837] wandb.init called with sweep_config: {}
+config: {'learning_rate': 0.001, 'architecture': 'CRAWL', 'dataset': 'COCO-SP', 'epochs': 750, '_wandb': {}}
+2025-10-05 12:46:07,060 INFO    MainThread:620544 [wandb_init.py:init():880] starting backend
+2025-10-05 12:46:07,950 INFO    MainThread:620544 [wandb_init.py:init():883] sending inform_init request
+2025-10-05 12:46:07,985 INFO    MainThread:620544 [wandb_init.py:init():891] backend started and connected
+2025-10-05 12:46:07,986 INFO    MainThread:620544 [wandb_init.py:init():961] updated telemetry
+2025-10-05 12:46:08,010 INFO    MainThread:620544 [wandb_init.py:init():985] communicating run to backend with 90.0 second timeout

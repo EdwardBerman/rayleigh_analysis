@@ -100,7 +100,7 @@ def build_model(node_dim: int,
         case 'CRAWL':
             breakpoint()
             assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
-            assert not edge_aggregator, "Edge aggregator should be false for CRaWl, which already includes an edge aggregator."
+            assert edge_aggregator == "NONE", "Edge aggregator should be None for CRaWl, which already includes an edge aggregator."
             model = CRaWl(node_feat_dim=node_dim,
                           edge_feat_dim=edge_dim,
                           layers=num_layers,
