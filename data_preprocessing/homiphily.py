@@ -1,18 +1,20 @@
 import os
-from external.homiphily import our_measure
-from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
+
+import matplotlib.pyplot as plt
+import numpy as np
 from torch.utils.data import ConcatDataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
+
+from external.homiphily import our_measure
+from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 
 if __name__ == "__main__":
     save_dir = "data_preprocessing/data/LRGB"
     current_dir = os.getcwd()
     os.makedirs(save_dir, exist_ok=True)
 
-    parser = LongeRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
+    parser = LongRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
     
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     plt.savefig(os.path.join(save_dir, 'homophily_distribution_pascalvoc_sp.pdf'))
     plt.close()
 
-    parser = LongeRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
+    parser = LongRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
     

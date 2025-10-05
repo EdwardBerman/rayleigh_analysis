@@ -15,12 +15,13 @@ from enum import Enum
 
 from model.model_factory import build_model
 from model.predictor import GraphLevelRegressor, NodeLevelRegressor, GraphLevelClassifier, NodeLevelClassifier
-from parsers.parser_lrgb import LongeRangeGraphBenchmarkParser
+from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.rayleigh import rayleigh_error
 from metrics.accuracy import node_level_accuracy
 
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
+from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
 class Mode(Enum):
     TRAIN = "train"
@@ -162,6 +163,8 @@ if __name__ == "__main__":
     parser.add_argument("--save_dir", type=str, default='output', required=False) 
     parser.add_argument("--verbose", type=bool, default=True, required=False) 
     parser.add_argument("--log_rq", type=bool, default=False, required=False) 
+    
+    parser.add_argument("--toy", action="store_true", help="Use a much smaller version of the dataset to test")
 
     args = parser.parse_args()
     print("Arguments:")
@@ -173,7 +176,10 @@ if __name__ == "__main__":
 
     # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, accuracy function, and the predictor head it needs
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
-    parser = LongeRangeGraphBenchmarkParser(name=args.dataset)
+    if args.toy:
+        parser = ToyLongRangeGraphBenchmarkParser
+    else: 
+        parser = LongRangeGraphBenchmarkParser(name=args.dataset)
     dataset = parser.parse()
     train_dataset, val_dataset, test_dataset = dataset['train_dataset'], dataset['val_dataset'], dataset['test_dataset']
     node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']

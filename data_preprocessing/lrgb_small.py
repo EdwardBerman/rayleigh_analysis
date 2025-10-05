@@ -17,6 +17,10 @@ datasets = ["PascalVOC-SP", "COCO-SP", "PCQM-Contact",
 for name in datasets:
     dataset = LRGBDataset(root=root, name=name,
                           split="train", pre_filter=one_percent_filter)
+    dataset = LRGBDataset(root=root, name=name,
+                          split="val", pre_filter=one_percent_filter)
+    dataset = LRGBDataset(root=root, name=name,
+                          split="test", pre_filter=one_percent_filter)
     print(f"Dataset: {name}, Data points: {len(dataset)}")
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
     for data in loader:
