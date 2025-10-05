@@ -24,7 +24,7 @@ class Walker(torch.nn.Module):
         if self.compute_adj:
             self.struc_feat_dim += self.win_size - 1
 
-        self.non_backtracking = False if config['walk_mode'] == 'uniform' else True
+        self.non_backtracking = True
         self.delta = config['walk_delta'] if 'walk_delta' in config.keys(
         ) else 0.0
 
