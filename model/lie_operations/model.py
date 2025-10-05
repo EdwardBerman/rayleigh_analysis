@@ -3,14 +3,9 @@ import torch.nn as nn
 from torch_geometric.nn import MessagePassing
 from external.torch_scatter import scatter_mean
 
-class GroupSort(nn.Module):
-    def forward(self, x):
-        a, b = x.split(x.size(-1) // 2, 1)
-        a, b = torch.max(a, b), torch.min(a, b)
-        return torch.cat([a, b], dim=-1)
-
 class ComplexReLU(nn.Module):
     def forward(self, x):
+        x = x.to(torch.complex64) if x.dtype in [torch.float16, torch.float32, torch.float64] else x
         real = torch.relu(x.real)
         imag = torch.relu(x.imag)
         return torch.complex(real, imag)
