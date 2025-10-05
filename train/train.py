@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, help="LRGB Datasets are PascalVOC-SP, COCO-SP, Peptides-func, Peptides-struct", required=True)
     parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
     parser.add_argument("--num_layers", type=int, required=True)
-    parser.add_argument("--skip_connections", type=bool, required=True)
+    parser.add_argument("--skip_connections", action="store_true", help="Enable skip connections")
     parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, ComplexReLU, GroupSort")
     parser.add_argument("--batch_size", type=int, required=True) 
     parser.add_argument("--batch_norm", type=str, required=True, help="None, BatchNorm, LayerNorm, GraphNorm")
