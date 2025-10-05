@@ -1,40 +1,22 @@
 [project]
 name = "rayleigh-analysis"
 version = "0.1.0"
-description = ""
+description = "Poetry environment for Rayleigh quotient analysis"
 authors = [
-    {name = "EdwardBerman",email = "10emb29@gmail.com"}
+    {name = "Edward Berman",email = "berman.ed@northeastern.edu"},
+    {name = "Luisa Li", email = "li.tao@northeastern.edu"}
 ]
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
-
-[tool.poetry]
-name = "rayleigh-analysis"
-version = "0.1.0"
-packages = [
-  { include = "metrics", from = "." },
-  { include = "train", from = "." },
-  { include = "model", from = "." },
-  { include = "data_preprocessing", from = "." },
-  { include = "parsers", from = "." },
-  { include = "evaluation", from = "." },
-  { include = "external", from = "." }
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "torch (>=2.8.0,<3.0.0)",
+    "torch-geometric (>=2.6.1,<3.0.0)",
+    "numpy (>=2.3.3,<3.0.0)",
+    "wandb (>=0.22.1,<0.23.0)",
+    "matplotlib (>=3.10.6,<4.0.0)",
+    "tqdm (>=4.67.1,<5.0.0)",
+    "simple-parsing (>=0.1.7,<0.2.0)"
 ]
 
-[[tool.poetry.source]]
-name = "pyg-cu124"
-url = "https://data.pyg.org/whl/torch-2.5.1+cu124.html"
-priority = "explicit"
-
-
-[[tool.poetry.source]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-priority = "explicit"
-
-[tool.poetry.dependencies]
-torch = {version = "2.5.1+cu124", source = "pytorch-cu124"}
-torch-geometric = "2.6.1"
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry]
+package-mode = false
