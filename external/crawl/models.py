@@ -136,7 +136,6 @@ class CRaWl(Module):
         self.dropout = config['dropout']
 
         self.pool = config['pool'] if 'pool' in config.keys() else 'mean'
-        self.vn = config['vn'] if 'vn' in config.keys() else False
 
         self.walker = Walker(config)
 
@@ -153,7 +152,7 @@ class CRaWl(Module):
                                       dim_out=self.hidden,
                                       kernel_size=self.kernel_size))
 
-            if self.vn and i < self.layers - 1:
+            if i < self.layers - 1:
                 modules.append(VNUpdate(self.hidden, config))
 
         self.convs = Sequential(*modules)
@@ -202,8 +201,7 @@ class CRaWl(Module):
         data = self.walker.sample_walks(
             data, steps=walk_steps, start_p=walk_start_p)
 
-        if self.vn:
-            data.vn_h = None
+        data.vn_h = None
 
         # apply convolutions
         self.convs(data)
