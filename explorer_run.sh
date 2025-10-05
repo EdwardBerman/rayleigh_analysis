@@ -19,7 +19,7 @@ python3 -m train.train \
   --dataset COCO-SP \
   --architecture Uni \
   --num_layers 12 \
-  --activation_function ComplexReLU \
+  --activation_function ReLU \
   --batch_size 64 \
   --batch_norm BatchNorm \
   --num_attention_heads 2 \

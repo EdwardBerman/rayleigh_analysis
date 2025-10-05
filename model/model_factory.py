@@ -5,7 +5,6 @@ from torch_geometric.nn.models import GAT, GCN, LINKX, GraphSAGE
 
 from external.crawl.models import CRaWl
 from model.edge_aggregator import EdgeModel, NodeModel
-from model.lie_operations.model import ComplexReLU
 from external.unitary_gcn import UnitaryGCNConvLayer, GroupSort
 
 
@@ -33,10 +32,8 @@ def str_to_activation(activation_name: str) -> nn.Module:
             return nn.Identity
         case 'GroupSort':
             return lambda: GroupSort
-        case 'ComplexReLU':
-            return ComplexReLU
         case _:
-            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort', 'ComplexReLU'.")
+            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
 
 def build_model(node_dim: int,
                 model_type: str,
