@@ -17,9 +17,8 @@ eval "$(poetry env activate)"
 
 python3 -m train.train \
   --dataset COCO-SP \
-  --architecture GCN \
+  --architecture Uni \
   --num_layers 12 \
-  --skip_connections False \
   --activation_function ReLU \
   --batch_size 64 \
   --batch_norm BatchNorm \
@@ -34,3 +33,5 @@ python3 -m train.train \
   --window_size 4 \
   --receptive_field 5 \
   --save_dir output
+  --verbose
+  #--skip_connections

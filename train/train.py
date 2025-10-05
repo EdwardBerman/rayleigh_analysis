@@ -23,6 +23,12 @@ from metrics.accuracy import node_level_accuracy
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
+def set_seeds(seed: int = 42):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
 class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
@@ -144,15 +150,15 @@ if __name__ == "__main__":
     parser.add_argument("--architecture", type=str, help="GCN, GAT, MPNN, Sage, Uni, Crawl", required=True)
     parser.add_argument("--num_layers", type=int, required=True)
     parser.add_argument("--skip_connections", action="store_true", help="Enable skip connections")
-    parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, ComplexReLU, GroupSort")
+    parser.add_argument("--activation_function", type=str, required=True, help="ReLU, LeakyReLU, Identity, GroupSort")
     parser.add_argument("--batch_size", type=int, required=True) 
     parser.add_argument("--batch_norm", type=str, required=True, help="None, BatchNorm, LayerNorm, GraphNorm")
-    parser.add_argument("--num_attention_heads", type=int, default=2, required=False) # Only for GAT
+    parser.add_argument("--num_attention_heads", type=int, default=2, required=False, help="Only for GAT") 
     parser.add_argument("--dropout_rate", type=float, default=0.1, required=False)
     parser.add_argument("--hidden_size", type=int, default=128, required=False) 
-    parser.add_argument("--edge_aggregator", type=str, default=False, required=False) # For models that don't support edge features on datasets with edge features. One of GINE, GATED, NONE
+    parser.add_argument("--edge_aggregator", type=str, default=False, required=False, help="'GINE', 'GATED', or 'NONE'")
 
-    parser.add_argument("--optimizer", type=str, default="Adam", required=False)
+    parser.add_argument("--optimizer", type=str, default="Adam", required=False, help="Adam or Cosine")
     parser.add_argument("--lr", type=float, default=0.001, required=False)
     parser.add_argument("--epochs", type=int, default=100, required=False)
     parser.add_argument("--weight_decay", type=float, default=0.0, required=False)
@@ -161,11 +167,10 @@ if __name__ == "__main__":
     parser.add_argument("--receptive_field", type=int, default=5, required=False) # For CRAWL
     
     parser.add_argument("--save_dir", type=str, default='output', required=False) 
-    parser.add_argument("--verbose", type=bool, default=True, required=False) 
-    parser.add_argument("--log_rq", type=bool, default=False, required=False) 
-    
-    parser.add_argument("--toy", action="store_true", help="Use a much smaller version of the dataset to test")
 
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--log_rq", action="store_true", help="Enable logging of Rayleigh Quotient error")
+    parser.add_argument("--toy", action="store_true", help="Use a much smaller version of the dataset to test")
     args = parser.parse_args()
     print("Arguments:")
     pprint.pprint(vars(args))
@@ -239,6 +244,8 @@ if __name__ == "__main__":
     # one more param count for the road (cowboy emoji)
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
+
+    set_seeds(42)
 
     train(model=model, 
           train_loader=train_loader, 

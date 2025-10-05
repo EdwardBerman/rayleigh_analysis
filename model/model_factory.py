@@ -5,7 +5,7 @@ from torch_geometric.nn.models import GAT, GCN, LINKX, GraphSAGE
 
 from external.crawl.models import CRaWl
 from model.edge_aggregator import EdgeModel, NodeModel
-from external.unitary_gcn import UnitaryGCNConvLayer, GroupSort, ComplexActivation
+from external.unitary_gcn import UnitaryGCNConvLayer, GroupSort
 
 
 def add_skip_connections(model: nn.Module) -> nn.Module:
@@ -32,10 +32,8 @@ def str_to_activation(activation_name: str) -> nn.Module:
             return nn.Identity
         case 'GroupSort':
             return lambda: GroupSort
-        case 'ComplexReLU':
-            return lambda: ComplexActivation(nn.ReLU)
         case _:
-            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort', 'ComplexReLU'.")
+            raise ValueError(f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
 
 def build_model(node_dim: int,
                 model_type: str,
@@ -79,7 +77,7 @@ def build_model(node_dim: int,
                         heads=num_attention_heads,
                         dropout=dropout_rate,
                         norm=batch_norm,
-                        act=activation_function())
+                        act=activation_function)
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'MPNN':
