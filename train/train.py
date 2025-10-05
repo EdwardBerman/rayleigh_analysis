@@ -244,5 +244,5 @@ if __name__ == "__main__":
           epochs=args.epochs,
           output_dir=args.save_dir,
           device=device,
-          log_rq= args.log_rq,
+          log_rq=args.log_rq,
           acc_scorer=acc_scorer if is_classification else None)
