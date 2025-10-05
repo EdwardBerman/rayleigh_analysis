@@ -22,6 +22,12 @@ from metrics.accuracy import node_level_accuracy
 
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
 
+def set_seeds(seed: int = 42):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
 class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
@@ -160,8 +166,8 @@ if __name__ == "__main__":
     parser.add_argument("--receptive_field", type=int, default=5, required=False) # For CRAWL
     
     parser.add_argument("--save_dir", type=str, default='output', required=False) 
-    parser.add_argument("--verbose", type=bool, default=True, required=False) 
-    parser.add_argument("--log_rq", type=bool, default=False, required=False) 
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--log_rq", action="store_true", help="Enable logging of Rayleigh Quotient error")
 
     args = parser.parse_args()
     print("Arguments:")
@@ -233,6 +239,8 @@ if __name__ == "__main__":
     # one more param count for the road (cowboy emoji)
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
+
+    set_seeds(42)
 
     train(model=model, 
           train_loader=train_loader, 

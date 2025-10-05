@@ -19,3 +19,4 @@ python3 -m train.train \
   --window_size 4 \
   --receptive_field 5 \
   --save_dir output
+  --verbose
