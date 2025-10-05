@@ -79,7 +79,7 @@ def build_model(node_dim: int,
                         heads=num_attention_heads,
                         dropout=dropout_rate,
                         norm=batch_norm,
-                        act=activation_function())
+                        act=activation_function)
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'MPNN':
