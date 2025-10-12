@@ -22,6 +22,8 @@ from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
 from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
+from torch.optim.lr_scheduler import CosineAnnealingLR
+
 
 def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
@@ -35,8 +37,7 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-
-def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
+def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer | torch.optim.lr_scheduler._LRScheduler, acc_scorer: nn.Module | None = None):
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -77,7 +78,7 @@ def train(model: nn.Module,
           val_loader: DataLoader,
           test_loader: DataLoader,
           loss_fn: nn.Module,
-          optimizer: torch.optim.Optimizer,
+          optimizer: torch.optim.Optimizer | torch.optim.lr_scheduler._LRScheduler,
           run: wandb.run,
           epochs: int,
           output_dir: str,
@@ -184,7 +185,7 @@ if __name__ == "__main__":
     parser.add_argument("--edge_aggregator", type=str, default=False,
                         required=False, help="'GINE', 'GATED', or 'NONE'")
 
-    parser.add_argument("--optimizer", type=str, default="Adam",
+    parser.add_argument("--optimizer", type=str, default="Cosine",
                         required=False, help="Adam or Cosine")
     parser.add_argument("--lr", type=float, default=0.001, required=False)
     parser.add_argument("--epochs", type=int, default=100, required=False)
@@ -267,8 +268,14 @@ if __name__ == "__main__":
                       epochs=args.epochs)
 
     # TODO: Set up different optimizers. COSINE LR
-    optimizer = torch.optim.Adam(model.parameters(
-    ), lr=args.lr, weight_decay=args.weight_decay) if args.optimizer == "Adam" else None
+    match args.optimizer:
+        case "Cosine":
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+            optimizer = CosineAnnealingLR(optimizer, T_max=args.epochs) # Typically you would name this scheduler
+        case "Adam":
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        case _:
+            raise ValueError(f"Unsupported optimizer: {args.optimizer}")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
