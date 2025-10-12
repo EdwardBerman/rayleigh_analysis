@@ -31,7 +31,7 @@ def str_to_activation(activation_name: str) -> nn.Module:
         case 'Identity':
             return nn.Identity
         case 'GroupSort':
-            return lambda: GroupSort
+            return GroupSort
         case _:
             raise ValueError(
                 f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")

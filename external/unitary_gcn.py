@@ -90,7 +90,7 @@ class UnitaryGCNConvLayer(nn.Module):
             base_conv = ComplexGCNConv
 
         self.act = nn.Sequential(
-            ComplexActivation(activation()),
+            ComplexActivation(activation),
             ComplexDropout(self.dropout),
         )
         self.model = TaylorGCNConv(base_conv(dim_in, dim_out, **kwargs), T=T)
