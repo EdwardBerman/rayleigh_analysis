@@ -131,7 +131,7 @@ def train(model: nn.Module,
         for batch in val_loader:
             batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn, run,
-                                  Mode.EVAL, optimizer=None, acc_scorer=acc_scorer)
+                                  Mode.EVAL, optimizer=None, scheduler=None, acc_scorer=acc_scorer)
             val_loss += loss
             val_acc += accuracy if accuracy is not None else 0
 
@@ -155,7 +155,7 @@ def train(model: nn.Module,
         for batch in test_loader:
             batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn, run,
-                                  Mode.TEST, optimizer=None, acc_scorer=acc_scorer)
+                                  Mode.TEST, optimizer=None, scheduler=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
 
@@ -168,7 +168,7 @@ def train(model: nn.Module,
         for batch in train_loader:
             batch = batch.to(device)
             loss, accuracy = step(model, batch, loss_fn,
-                                  run, Mode.TRAIN, optimizer, acc_scorer)
+                                  run, Mode.TRAIN, optimizer, scheduler, acc_scorer)
             train_loss += loss
             train_acc += accuracy if accuracy is not None else 0
 
