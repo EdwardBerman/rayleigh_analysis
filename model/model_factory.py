@@ -20,7 +20,16 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
             x += x_res
             return x
     return ResidualModel(model)
+ 
+class UniStack(nn.Module):
+    def __init__(self, layers: list[nn.Module]):
+        super().__init__()
+        self.layers = nn.ModuleList(layers)
 
+    def forward(self, x, edge_index):
+        for layer in self.layers:
+            x = layer(x, edge_index)  
+        return x   
 
 def str_to_activation(activation_name: str) -> nn.Module:
     match activation_name:
@@ -31,7 +40,7 @@ def str_to_activation(activation_name: str) -> nn.Module:
         case 'Identity':
             return nn.Identity
         case 'GroupSort':
-            return lambda: GroupSort
+            return GroupSort
         case _:
             raise ValueError(
                 f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
@@ -79,7 +88,7 @@ def build_model(node_dim: int,
                         heads=num_attention_heads,
                         dropout=dropout_rate,
                         norm=batch_norm,
-                        act=activation_function)
+                        act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'MPNN':
@@ -108,7 +117,7 @@ def build_model(node_dim: int,
                                                        T=10,
                                                        use_hermitian=False,
                                                        activation=activation_function()))
-            model = nn.Sequential(*module_list)
+            model = UniStack(module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'CRAWL':
             assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
