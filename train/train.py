@@ -241,24 +241,25 @@ if __name__ == "__main__":
 
     is_classification = dataset['is_classification']
     level = dataset['level']
+    complex_floats = True if args.architecture == "Uni" else False
 
     if is_classification:
         num_classes = dataset['num_classes']
         loss_fn = weighted_cross_entropy
         acc_scorer = None
         if level == "graph_level":
-            model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes)
+            model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             # TODO: Make an accuracy function for classification at graph level
         else:
-            model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes)
+            model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             acc_scorer = node_level_accuracy
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
         if level == "graph_level":
-            model = GraphLevelRegressor(base_gnn_model, node_dim)
+            model = GraphLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
         else:
-            model = NodeLevelRegressor(base_gnn_model, node_dim)
+            model = NodeLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
 
     run = setup_wandb(lr=args.lr,
                       architecture=args.architecture,
