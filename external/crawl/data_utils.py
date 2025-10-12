@@ -4,7 +4,8 @@ import torch_geometric as pygeo
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
-from torch_scatter import scatter_sum
+
+from external.torch_scatter import scatter_sum
 
 
 def preproc(data):
@@ -59,10 +60,6 @@ def preproc(data):
     adj_offset = torch.zeros((order,), dtype=torch.int64)
     adj_offset[1:] = torch.cumsum(data.degrees, dim=0)[:-1]
     data.adj_offset = adj_offset
-
-    if not torch.is_tensor(data.y):
-        data.y = torch.tensor(data.y)
-    data.y = data.y.view(1, -1)
 
     return data
 
@@ -120,6 +117,7 @@ def merge_batch(graph_data):
     data.num_graphs = num_graphs
     data.node_id = node_id
     data.adj_bits = adj_bits
+
     return data
 
 
