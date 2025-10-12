@@ -20,7 +20,7 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
             x += x_res
             return x
  
- class UniStack(nn.Module):
+class UniStack(nn.Module):
     def __init__(self, layers: list[nn.Module]):
         super().__init__()
         self.layers = nn.ModuleList(layers)
