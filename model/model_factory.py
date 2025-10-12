@@ -19,6 +19,7 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
             x = self.model(x, edge_index)
             x += x_res
             return x
+    return ResidualModel(model)
  
 class UniStack(nn.Module):
     def __init__(self, layers: list[nn.Module]):
@@ -28,7 +29,7 @@ class UniStack(nn.Module):
     def forward(self, x, edge_index):
         for layer in self.layers:
             x = layer(x, edge_index)  
-        return x   return ResidualModel(model)
+        return x   
 
 def str_to_activation(activation_name: str) -> nn.Module:
     match activation_name:
