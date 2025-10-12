@@ -149,8 +149,8 @@ def train(model: nn.Module,
 
         if val_losses[-1] < best_loss:
             best_loss = val_losses[-1]
-            torch.save(model.state_dict(), os.path.join(
-                output_dir, "best_model.pt"))
+            torch.save(model.state_dict(), os.path.join(output_dir, "best_model.pt"))
+            torch.save(model.base_model.state_dict(), os.path.join(output_dir, "best_model_gnn.pt"))
 
         for batch in test_loader:
             batch = batch.to(device)
@@ -179,6 +179,7 @@ def train(model: nn.Module,
                 ) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
 
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
+    torch.save(model.base_model.state_dict(), os.path.join(output_dir, "final_model_gnn.pt"))
 
     np.save(os.path.join(output_dir, "train_losses.npy"), np.array(train_losses))
     np.save(os.path.join(output_dir, "train_accuracies.npy"),
@@ -245,7 +246,6 @@ if __name__ == "__main__":
         args.save_dir, f"{args.architecture}_{args.dataset}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
 
-    # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, accuracy function, and the predictor head it needs
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
 
     postprocess = determine_data_postprocessing(args.architecture)
@@ -303,11 +303,10 @@ if __name__ == "__main__":
                       dataset=args.dataset,
                       epochs=args.epochs)
 
-    # TODO: Set up different optimizers. COSINE LR
     match args.optimizer:
         case "Cosine":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-            scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) # Typically you would name this scheduler
+            scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) 
         case "Adam":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
