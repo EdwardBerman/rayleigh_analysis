@@ -111,7 +111,6 @@ def build_model(node_dim: int,
             model = nn.Sequential(*module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'CRAWL':
-            breakpoint()
             assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
             assert edge_aggregator == "NONE", "Edge aggregator should be None for CRaWl, which already includes an edge aggregator."
             model = CRaWl(node_feat_dim=node_dim,
@@ -130,6 +129,7 @@ def build_model(node_dim: int,
                           walk_delta=kwargs.get('walk_delta', 0.0),
                           node_feat_enc=kwargs.get('node_feat_enc', None),
                           edge_feat_enc=kwargs.get('edge_feat_enc', None))
+            return model
         case _:
             raise ValueError(
                 f"Unsupported model type: {model_type}. Accepts 'GCN', 'GAT', 'MPNN', 'Sage', 'Uni', 'CRAWL'.")

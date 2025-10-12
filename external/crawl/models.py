@@ -139,7 +139,7 @@ class CRaWl(Module):
                                       node_dim_in=node_feat_dim if i == 0 else self.hidden,
                                       edge_dim_in=edge_feat_dim,
                                       w_feat_dim=self.walk_dim,
-                                      dim_out=self.hidden,
+                                      dim_out=node_feat_dim if i == self.layers - 1 else self.hidden,
                                       kernel_size=self.kernel_size))
 
             if i < self.layers - 1:
@@ -147,12 +147,12 @@ class CRaWl(Module):
 
         self.convs = Sequential(*modules)
 
-        self.node_out = Sequential(BatchNorm1d(self.hidden), ReLU())
+        self.node_out = Sequential(BatchNorm1d(node_feat_dim), ReLU())
 
         pytorch_total_params = sum(p.numel()
                                    for p in self.parameters() if p.requires_grad)
         print(f'Number of paramters: {pytorch_total_params}')
-
+        
     def forward(self, data, walk_steps=None, walk_start_p=1.0):
         # apply initial node feature encoding (optional)
         data.h = data.x
@@ -179,4 +179,4 @@ class CRaWl(Module):
         # pool node embeddings
         data.h = self.node_out(data.h)
 
-        return data
+        return data.h

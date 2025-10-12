@@ -1,5 +1,6 @@
 import pprint
 import random
+from typing import Callable
 
 from torch_geometric.data import Data
 from torch_geometric.datasets import LRGBDataset
@@ -13,57 +14,38 @@ def one_percent_filter(data: Data) -> bool:
 
 
 class ToyLongRangeGraphBenchmarkParser(Parser):
-    def __init__(self, name: str, path: str | None = None, verbose: bool = True):
+    def __init__(self, name: str, transform: Callable, path: str | None = None, verbose: bool = True):
         self._level = "node_level"
 
         root = 'data_preprocessing/data/LRGB/' if path is None else path
+        self.transform = transform
         self.verbose = verbose
+
+        assert name in ['PascalVOL-SP', 'COCO-SP', 'Peptides-func',
+                        'Peptides-struct'], "Dataset name must be one of PascalVOL-SP', 'COCO-SP', 'Peptides-func', 'Peptides-struct'"
+
+        self.train_dataset = LRGBDataset(
+            root=root, name=name, split="train", pre_filter=one_percent_filter, transform=transform)
+        self.val_dataset = LRGBDataset(
+            root=root, name=name, split="val", pre_filter=one_percent_filter, transform=transform)
+        self.test_dataset = LRGBDataset(
+            root=root, name=name, split="test", pre_filter=one_percent_filter, transform=transform)
 
         match name:
             case 'PascalVOC-SP':
-                self.train_dataset = LRGBDataset(
-                    root=root, name="PascalVOC-SP", split="train", pre_filter=one_percent_filter)
-                self.val_dataset = LRGBDataset(
-                    root=root, name="PascalVOC-SP", split="val", pre_filter=one_percent_filter)
-                self.test_dataset = LRGBDataset(
-                    root=root, name="PascalVOC-SP", split="test", pre_filter=one_percent_filter)
                 self._is_classification = True
                 self._level = "node_level"
-                self.num_classes = self.train_dataset.num_classes
             case 'COCO-SP':
-                self.train_dataset = LRGBDataset(
-                    root=root, name="COCO-SP", split="train", pre_filter=one_percent_filter)
-                self.val_dataset = LRGBDataset(
-                    root=root, name="COCO-SP", split="val", pre_filter=one_percent_filter)
-                self.test_dataset = LRGBDataset(
-                    root=root, name="COCO-SP", split="test", pre_filter=one_percent_filter)
                 self._is_classification = True
                 self._level = "node_level"
-                self.num_classes = self.train_dataset.num_classes
             case 'Peptides-func':
-                self.train_dataset = LRGBDataset(
-                    root=root, name="Peptides-func", split="train", pre_filter=one_percent_filter)
-                self.val_dataset = LRGBDataset(
-                    root=root, name="Peptides-func", split="val", pre_filter=one_percent_filter)
-                self.test_dataset = LRGBDataset(
-                    root=root, name="Peptides-func", split="test", pre_filter=one_percent_filter)
                 self._is_classification = True
                 self._level = "graph_level"
-                self.num_classes = self.train_dataset.num_classes
             case 'Peptides-struct':
-                self.train_dataset = LRGBDataset(
-                    root=root, name="Peptides-struct", split="train", pre_filter=one_percent_filter)
-                self.val_dataset = LRGBDataset(
-                    root=root, name="Peptides-struct", split="val", pre_filter=one_percent_filter)
-                self.test_dataset = LRGBDataset(
-                    root=root, name="Peptides-struct", split="test", pre_filter=one_percent_filter)
                 self._is_classification = False
                 self._level = "graph_level"
-                self.num_classes = self.train_dataset.num_classes
-            case _:
-                raise ValueError(
-                    f"Dataset {name} not recognized. Available datasets are 'PascalVOC-SP' and ''.")
 
+        self.num_classes = self.train_dataset.num_classes
         self._node_dim = self.train_dataset.num_node_features
         self._edge_dim = self.train_dataset.num_edge_features
 

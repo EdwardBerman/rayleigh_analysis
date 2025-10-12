@@ -6,12 +6,12 @@ from enum import Enum
 import numpy as np
 import torch
 import torch.nn as nn
-import wandb
 from simple_parsing import ArgumentParser
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
+import wandb
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
 from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.accuracy import node_level_accuracy
@@ -30,13 +30,30 @@ def set_seeds(seed: int = 42):
         torch.cuda.manual_seed_all(seed)
 
 
+def determine_data_postprocessing(model: str):
+    if model == "CRAWL":
+        from external.crawl.data_utils import preproc
+        return preproc
+    else:
+        # return preprocessing function that does nothing
+        return lambda x: x
+
+
+def determine_dataloader(model: str):
+    if model == "CRAWL":
+        from external.crawl.data_utils import CRaWlLoader
+        return CRaWlLoader
+    else:
+        return DataLoader
+
+
 class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
     TEST = "test"
 
 
-def step(model: nn.Module, data: DataLoader, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
+def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer, acc_scorer: nn.Module | None = None):
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -141,6 +158,7 @@ def train(model: nn.Module,
                                   run, Mode.TRAIN, optimizer, acc_scorer)
             train_loss += loss
             train_acc += accuracy if accuracy is not None else 0
+
         train_losses.append(train_loss / len(train_loader))
         train_accuracies.append(
             train_acc / len(train_loader) if acc_scorer is not None else 0)
@@ -216,10 +234,16 @@ if __name__ == "__main__":
 
     # node_dim and edge_dim will be determined by dataset. Parser should return node_dim, edge_dim, loss function, accuracy function, and the predictor head it needs
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
+
+    postprocess = determine_data_postprocessing(args.architecture)
+
     if args.toy:
-        parser = ToyLongRangeGraphBenchmarkParser
+        parser = ToyLongRangeGraphBenchmarkParser(
+            name=args.dataset, transform=postprocess)
     else:
-        parser = LongRangeGraphBenchmarkParser(name=args.dataset)
+        parser = LongRangeGraphBenchmarkParser(
+            name=args.dataset, transform=postprocess)
+
     dataset = parser.parse()
     train_dataset, val_dataset, test_dataset = dataset[
         'train_dataset'], dataset['val_dataset'], dataset['test_dataset']
@@ -274,10 +298,12 @@ if __name__ == "__main__":
 
     batch_size = args.batch_size
 
-    train_loader = DataLoader(
+    dataloader = determine_dataloader(args.architecture)
+
+    train_loader = dataloader(
         train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(
+    val_loader = dataloader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = dataloader(
         test_dataset, batch_size=batch_size, shuffle=False)
 
     # one more param count for the road (cowboy emoji)
