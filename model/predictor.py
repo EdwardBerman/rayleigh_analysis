@@ -33,7 +33,7 @@ class Regressor(nn.Module):
 class ComplexClassifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(ComplexClassifier, self).__init__()
-        self.fc1 = nn.Linear(2*input_dim, hidden_dim)
+        self.fc1_complex = nn.Linear(2*input_dim, hidden_dim)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.relu2 = nn.ReLU()
@@ -42,7 +42,7 @@ class ComplexClassifier(nn.Module):
     def forward(self, x):
         x_real, x_imag = x.real, x.imag
         x = torch.cat([x_real, x_imag], dim=-1).float()
-        x = self.fc1(x)
+        x = self.fc1_complex(x)
         x = self.relu(x)
         x = self.fc2(x)
         x = self.relu2(x)
