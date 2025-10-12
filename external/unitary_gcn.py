@@ -95,7 +95,7 @@ class UnitaryGCNConvLayer(nn.Module):
         )
         self.model = TaylorGCNConv(base_conv(dim_in, dim_out, **kwargs), T=T)
 
-    def forward(self, batch):
+    def forward_batch(self, batch):
         x_in = batch.x
 
         batch.x = self.model(batch.x, batch.edge_index)
@@ -107,6 +107,19 @@ class UnitaryGCNConvLayer(nn.Module):
             batch.x = x_in + batch.x  # residual connection
 
         return batch
+    
+    def forward(self, x, edge_index):
+        x_in = x
+
+        x = self.model(x, edge_index)
+        if self.bias is not None:
+            x = x + self.bias
+        x = self.act(x)
+
+        if self.residual:
+            x = x_in + x
+
+        return x
 
 
 class HermitianGCNConv(MessagePassing):
