@@ -308,7 +308,6 @@ if __name__ == "__main__":
         case "Cosine":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) # Typically you would name this scheduler
-            optimizer = None
         case "Adam":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
