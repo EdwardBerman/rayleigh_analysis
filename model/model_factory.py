@@ -19,8 +19,16 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
             x = self.model(x, edge_index)
             x += x_res
             return x
-    return ResidualModel(model)
+ 
+ class UniStack(nn.Module):
+    def __init__(self, layers: list[nn.Module]):
+        super().__init__()
+        self.layers = nn.ModuleList(layers)
 
+    def forward(self, x, edge_index):
+        for layer in self.layers:
+            x = layer(x, edge_index)  
+        return x   return ResidualModel(model)
 
 def str_to_activation(activation_name: str) -> nn.Module:
     match activation_name:
@@ -108,7 +116,7 @@ def build_model(node_dim: int,
                                                        T=10,
                                                        use_hermitian=False,
                                                        activation=activation_function()))
-            model = nn.Sequential(*module_list)
+            model = UniStack(module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'CRAWL':
             breakpoint()
