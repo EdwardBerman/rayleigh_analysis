@@ -54,13 +54,20 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: str, optimizer: torch.optim.Optimizer | torch.optim.lr_scheduler._LRScheduler, acc_scorer: nn.Module | None = None):
+def step(model: nn.Module, 
+         data: Data, 
+         loss: nn.Module, 
+         run: wandb.run, 
+         mode: str, 
+         optimizer: torch.optim.Optimizer | None, 
+         scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
+         acc_scorer: nn.Module | None = None):
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
     if mode == Mode.TRAIN:
         model.train()
-        if type(optimizer) == torch.optim.Optimizer:
+        if optimizer is not None:
             optimizer.zero_grad()
     else:
         model.eval()
@@ -70,7 +77,10 @@ def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: st
 
     if mode == Mode.TRAIN:
         l.backward()
-        optimizer.step()
+        if optimizer is not None:
+            optimizer.step()
+        if scheduler is not None:
+            scheduler.step()
 
     acc = acc_scorer(out, data.y) if acc_scorer is not None else None
 
@@ -96,7 +106,8 @@ def train(model: nn.Module,
           val_loader: DataLoader,
           test_loader: DataLoader,
           loss_fn: nn.Module,
-          optimizer: torch.optim.Optimizer | torch.optim.lr_scheduler._LRScheduler,
+          optimizer: torch.optim.Optimizer,
+          scheduler: torch.optim.lr_scheduler._LRScheduler,
           run: wandb.run,
           epochs: int,
           output_dir: str,
@@ -296,9 +307,11 @@ if __name__ == "__main__":
     match args.optimizer:
         case "Cosine":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-            optimizer = CosineAnnealingLR(optimizer, T_max=args.epochs) # Typically you would name this scheduler
+            scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) # Typically you would name this scheduler
+            optimizer = None
         case "Adam":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+            scheduler = None
         case _:
             raise ValueError(f"Unsupported optimizer: {args.optimizer}")
 
@@ -327,6 +340,7 @@ if __name__ == "__main__":
           test_loader=test_loader,
           loss_fn=loss_fn,
           optimizer=optimizer,
+          scheduler=scheduler,
           run=run,
           epochs=args.epochs,
           output_dir=args.save_dir,
