@@ -28,17 +28,19 @@ class LongRangeGraphBenchmarkParser(Parser):
             case 'PascalVOC-SP':
                 self._is_classification = True
                 self._level = "node_level"
+                self.num_classes = self.train_dataset.num_classes
             case 'COCO-SP':
                 self._is_classification = True
                 self._level = "node_level"
+                self.num_classes = self.train_dataset.num_classes
             case 'Peptides-func':
                 self._is_classification = True
                 self._level = "graph_level"
+                self.num_classes = self.train_dataset.num_classes
             case 'Peptides-struct':
                 self._is_classification = False
                 self._level = "graph_level"
 
-        self.num_classes = self.train_dataset.num_classes
         self._node_dim = self.train_dataset.num_node_features
         self._edge_dim = self.train_dataset.num_edge_features
 
