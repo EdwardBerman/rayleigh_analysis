@@ -60,7 +60,8 @@ def step(model: nn.Module, data: Data, loss: nn.Module, run: wandb.run, mode: st
     """
     if mode == Mode.TRAIN:
         model.train()
-        optimizer.zero_grad()
+        if type(optimizer) == torch.optim.Optimizer:
+            optimizer.zero_grad()
     else:
         model.eval()
 
