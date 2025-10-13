@@ -14,8 +14,8 @@ class LongRangeGraphBenchmarkParser(Parser):
         self.transform = transform
         self.verbose = verbose
 
-        assert name in ['PascalVOL-SP', 'COCO-SP', 'Peptides-func',
-                        'Peptides-struct'], "Dataset name must be one of PascalVOL-SP', 'COCO-SP', 'Peptides-func', 'Peptides-struct'"
+        assert name in ['PascalVOC-SP', 'COCO-SP', 'Peptides-func',
+                        'Peptides-struct'], "Dataset name must be one of PascalVOC-SP', 'COCO-SP', 'Peptides-func', 'Peptides-struct'"
 
         self.train_dataset = LRGBDataset(
             root=root, name=name, split="train", transform=transform)
