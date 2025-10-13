@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
     args.save_dir = os.path.join(
-        args.save_dir, f"{args.architecture}_{args.dataset}_{current_time}")
+        args.save_dir, f"architecture_{args.architecture}_dataset_{args.dataset}_num_layers_{args.num_layers}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
 
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
