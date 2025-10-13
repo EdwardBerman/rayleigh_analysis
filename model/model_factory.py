@@ -77,12 +77,12 @@ def build_model(node_dim: int,
                         out_channels=node_dim,
                         dropout=dropout_rate,
                         norm=batch_norm,
-                        act=activation_function()) if batch_norm is not None else GCN(num_layers=num_layers,
-                                                                                      in_channels=node_dim,
-                                                                                      hidden_channels=hidden_size,
-                                                                                      out_channels=node_dim,
-                                                                                      dropout=dropout_rate,
-                                                                                      act=activation_function())
+                        act=activation_function()) if batch_norm != "None" else GCN(num_layers=num_layers,
+                                                                                    in_channels=node_dim,
+                                                                                    hidden_channels=hidden_size,
+                                                                                    out_channels=node_dim,
+                                                                                    dropout=dropout_rate,
+                                                                                    act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'GAT':
@@ -93,13 +93,13 @@ def build_model(node_dim: int,
                         heads=num_attention_heads,
                         dropout=dropout_rate,
                         norm=batch_norm,
-                        act=activation_function()) if batch_norm is not None else GAT(num_layers=num_layers,
-                                                                                      in_channels=node_dim,
-                                                                                      hidden_channels=hidden_size,
-                                                                                      out_channels=node_dim,
-                                                                                      heads=num_attention_heads,
-                                                                                      dropout=dropout_rate,
-                                                                                      act=activation_function())
+                        act=activation_function()) if batch_norm != "None" else GAT(num_layers=num_layers,
+                                                                                    in_channels=node_dim,
+                                                                                    hidden_channels=hidden_size,
+                                                                                    out_channels=node_dim,
+                                                                                    heads=num_attention_heads,
+                                                                                    dropout=dropout_rate,
+                                                                                    act=activation_function())
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'MPNN':
