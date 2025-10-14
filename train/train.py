@@ -12,7 +12,7 @@ from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
 import wandb
-from evaluation.basic_learning_curve_diagnostics import plot_learning_curve
+from evaluation.basic_learning_curve_diagnostics import plot_learning_curve, plot_accuracy_curve
 from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.accuracy import node_level_accuracy
 from metrics.rayleigh import rayleigh_error
@@ -192,6 +192,8 @@ def train(model: nn.Module,
             np.array(test_accuracies))
 
     plot_learning_curve(train_losses, val_losses, test_losses, output_dir)
+    if acc_scorer is not None:
+        plot_accuracy_curve(train_accuracies, val_accuracies, test_accuracies, output_dir)
 
 
 if __name__ == "__main__":
