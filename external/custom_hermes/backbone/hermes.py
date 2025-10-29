@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.utils import remove_isolated_nodes
 
-from external.hermes.src.nn.hermes_conv import HermesLayer
+from external.custom_hermes.nn.hermes_conv import HermesLayer
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
 
 
