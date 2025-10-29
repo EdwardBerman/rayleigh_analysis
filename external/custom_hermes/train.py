@@ -49,12 +49,51 @@ def main(cfg):
         loader_keys=loaders_dict.keys(),
     )
 
-    engine.set_epoch_loggers(loaders_dict)
+    # This now uses deprecated wandb logger from ignite (or will cause issues with sync at least)
+    
+    #engine.set_epoch_loggers(loaders_dict)
+    #wandb_config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+    #wandb_config["num_params"] = num_params
+    #_ = engine.create_wandb_logger(
+    #    log_interval=1, optimizer=optimizer, config=wandb_config, **cfg.wandb
+    #)
+
+    # ------------------------------
+    # W&B setup WITHOUT using Ignite's WandBLogger (which passes sync=...)
+    # ------------------------------
     wandb_config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     wandb_config["num_params"] = num_params
-    _ = engine.create_wandb_logger(
-        log_interval=1, optimizer=optimizer, config=wandb_config, **cfg.wandb
+    wandb_kwargs = dict(cfg.wandb)
+    run = wandb.init(
+        **wandb_kwargs,  # e.g. project, name, group, etc. from your config
+        config=wandb_config,
     )
+
+    def log_metrics_without_sync(engine):
+        step = engine.state.iteration  # global iteration counter
+        metrics = dict(engine.state.metrics)
+        metrics["epoch"] = engine.state.epoch
+        metrics["iteration"] = engine.state.iteration
+        wandb.log(metrics, step=step)
+
+    engine.trainer.add_event_handler(
+        Events.ITERATION_COMPLETED,
+        log_metrics_without_sync,
+    )
+
+    def log_epoch_summary(engine):
+        step = engine.state.iteration
+        summary_metrics = dict(engine.state.metrics)
+        summary_metrics["epoch_completed"] = engine.state.epoch
+        wandb.log(summary_metrics, step=step)
+
+    engine.trainer.add_event_handler(
+        Events.EPOCH_COMPLETED,
+        log_epoch_summary,
+    )
+
+    engine.set_epoch_loggers(loaders_dict)
+
 
     if cfg.get("save_dir"):
         gst = lambda *_: engine.trainer.state.epoch
