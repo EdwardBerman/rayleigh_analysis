@@ -10,7 +10,7 @@ from hydra.utils import instantiate
 from pyvista import examples
 
 from external.hermes.src.data.pde.utils import screenshot_mesh
-from external.hermes.src.run.utils import create_dataset_loaders
+from external.custom_hermes.utils import create_dataset_loaders
 
 objects = {
     "armadillo": examples.download_armadillo(),
