@@ -7,7 +7,7 @@ device: cuda
 batch_size: 1
 # add save_path to model at runtime
 # save_path: "${work_dir}/model_checkpoints"
-model_save_path: ???
+model_save_path: "${work_dir}/model_checkpoints"
 
 save_dir: "${work_dir}/rollouts"
 
