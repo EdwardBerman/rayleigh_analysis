@@ -6,7 +6,7 @@
 import torch
 from external.torch_scatter import scatter
 
-from src.utils.parallel_transport import spherical_parallel_transport
+from external.hermes.src.utils.parallel_transport import spherical_parallel_transport
 
 
 def find_first_neighbour(edge_index):
