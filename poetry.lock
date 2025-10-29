@@ -3412,6 +3412,29 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "trimesh"
+version = "4.9.0"
+description = "Import, export, process, analyze and view triangular meshes."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "trimesh-4.9.0-py3-none-any.whl", hash = "sha256:934265a1de4b472bee21094c4e88d0a7522054b9911adb06e9b8062bb8757178"},
+    {file = "trimesh-4.9.0.tar.gz", hash = "sha256:ad907a223867f614ef1598d85a4c978845f39365cb7ccc93fa5800901fba3ef9"},
+]
+
+[package.dependencies]
+numpy = ">=1.20"
+
+[package.extras]
+all = ["trimesh[deprecated,easy,recommend,test,test-more]"]
+deprecated = ["openctm"]
+easy = ["charset-normalizer", "colorlog", "embreex ; platform_machine == \"x86_64\"", "httpx", "jsonschema", "lxml", "manifold3d (>=2.3.0)", "mapbox_earcut (>=1.0.2) ; python_version >= \"3.9\"", "networkx", "pillow", "pycollada (<=0.9.0) ; python_version < \"3.9\"", "pycollada ; python_version >= \"3.9\"", "rtree", "scipy", "shapely", "svg.path", "vhacdx ; python_version >= \"3.9\"", "xxhash"]
+recommend = ["cascadio", "fast-simplification", "meshio", "psutil", "pyglet (<2)", "python-fcl", "scikit-image", "sympy"]
+test = ["pyinstrument", "pytest", "pytest-cov", "ruff"]
+test-more = ["coveralls", "ezdxf", "ipython", "marimo", "matplotlib", "pymeshlab", "pytest-beartype ; python_version >= \"3.10\"", "triangle", "xatlas"]
+
+[[package]]
 name = "triton"
 version = "3.4.0"
 description = "A language and compiler for custom Deep Learning operations"
@@ -3896,4 +3919,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "f9ea4fae97016c8d679d5619eed8ca68c1432f8e38a3838c7971ba242c5ebbfa"
+content-hash = "cf7e27ea6dc348ee0df068d246b223b0a97a5ef99eba35d2ac23ec1bd2e4d7bc"
