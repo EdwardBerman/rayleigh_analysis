@@ -1,7 +1,7 @@
 name: Hermes
 
 net:
-  _target_: src.backbone.hermes.Hermes
+  _target_: external.custom_hermes.backbone.hermes.Hermes
   reltan_features: false
   null_isolated: false
   n_rings: 2
