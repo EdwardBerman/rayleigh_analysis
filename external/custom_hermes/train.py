@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 
 from external.custom_hermes.utils import create_dataset_loaders, numel, prepare_batch_fn, set_seed
 
-@hydra.main(version_base=None, config_path="../hermes/conf", config_name="train")
+@hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
     set_seed(cfg.seed)
 
