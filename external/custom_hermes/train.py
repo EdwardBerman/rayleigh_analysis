@@ -3,6 +3,7 @@ from hydra.utils import instantiate
 from ignite.engine import Events
 from ignite.handlers import LRScheduler, ModelCheckpoint
 from omegaconf import OmegaConf
+import wandb
 
 from external.custom_hermes.utils import create_dataset_loaders, numel, prepare_batch_fn, set_seed
 
