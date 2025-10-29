@@ -49,7 +49,7 @@ def get_mesh(name):
     return mesh
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="eval_rollout")
+@hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
