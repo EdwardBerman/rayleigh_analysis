@@ -93,7 +93,7 @@ def main(cfg):
         log_epoch_summary,
     )
 
-    engine.set_epoch_loggers(loaders_dict)
+    #engine.set_epoch_loggers(loaders_dict)
 
 
     if cfg.get("save_dir"):
