@@ -4,7 +4,7 @@ from ignite.engine import Events
 from ignite.handlers import LRScheduler, ModelCheckpoint
 from omegaconf import OmegaConf
 
-from external.hermes.src.run.utils import create_dataset_loaders, numel, prepare_batch_fn, set_seed
+from external.custom_hermes.utils import create_dataset_loaders, numel, prepare_batch_fn, set_seed
 
 @hydra.main(version_base=None, config_path="../hermes/conf", config_name="train")
 def main(cfg):
