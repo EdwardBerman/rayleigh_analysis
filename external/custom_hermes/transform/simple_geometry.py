@@ -4,7 +4,7 @@
 # Modified by Hermes authors
 
 import torch
-from external.torch_scatter import scatter
+from external.torch_scatter import scatter, scatter_min
 
 from external.hermes.src.utils.parallel_transport import spherical_parallel_transport
 
