@@ -19,10 +19,10 @@ loss:
   _target_: torch.nn.MSELoss
 
 model:
-  _target_: src.run.pde.PDERegressor
+  _target_: external.hermes.src.run.pde.PDERegressor
 
 engine:
-  _target_: src.run.pde.PDEEngine
+  _target_: external.hermes.src.run.pde.PDEEngine
   device: ${device}
   disable_tqdm: false
   grad_accum_steps: 1
