@@ -6,6 +6,7 @@ import hydra
 import numpy as np
 import pyvista as pv
 import torch
+from torch_geometric.utils import degree
 from hydra.utils import instantiate
 from pyvista import examples
 
@@ -39,6 +40,31 @@ decimate_ratio = {
 
 pv.set_plot_theme("paraview")
 
+def normalize_by_sqrt_degree(x: torch.Tensor, edge_index: torch.Tensor):
+    # x: [N, ...] (scalar or features)
+    N = x.shape[0]
+    deg = degree(edge_index[0], num_nodes=N)  # in-degree of dst? Here it’s src-degree; choose side you intend
+    scale = (deg.clamp(min=1).rsqrt()).view(N, *([1] * (x.ndim - 1)))
+    return x * scale
+
+def gather_edge_node_feats(y_true: torch.Tensor,
+                           y_pred: torch.Tensor,
+                           edge_index: torch.Tensor):
+    """
+    y_true: [N, F] or [N, T, F]   # node features (ground truth)
+    y_pred: [N, F] or [N, T, F]   # node features (prediction)
+    edge_index: [2, E]            # COO edges (src = edge_index[0], dst = edge_index[1])
+
+    Returns:
+      y_true_src, y_true_dst, y_pred_src, y_pred_dst
+      Each has shape [E, F] or [E, T, F] matching input.
+    """
+    src, dst = edge_index
+    y_true_src = y_true[src]   # features of source nodes for every edge
+    y_true_dst = y_true[dst]   # features of destination nodes for every edge
+    y_pred_src = y_pred[src]
+    y_pred_dst = y_pred[dst]
+    return y_true_src, y_true_dst, y_pred_src, y_pred_dst
 
 def get_mesh(name):
     mesh = objects[name]
@@ -47,7 +73,6 @@ def get_mesh(name):
     _ = mesh.clean(inplace=True)
 
     return mesh
-
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
@@ -76,6 +101,19 @@ def main(cfg):
             mesh_idx = data.mesh_idx.item()
             sample_idx = data.sample_idx.item()
 
+            # Sketchy asf over here
+            edge_index = data.edge_index.to(values.device).long()
+            src, dst = edge_index[0], edge_index[1]
+            N = values.shape[0]
+            deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
+            inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
+
+            def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
+                return x * inv_sqrt_deg
+
+            edge_mse_true_per_t = []
+            edge_mse_pred_per_t = []
+
             all_preds = []
             all_losses = []
             all_gts = []
@@ -94,6 +132,18 @@ def main(cfg):
 
                     loss = loss_fn(y_pred, y)
                     all_losses.append(loss.item())
+
+                    # Sketchy over here
+                    y_norm      = norm_sqrt_deg(y)       
+                    y_pred_norm = norm_sqrt_deg(y_pred)  
+                    diff_true = y_norm[src, 0] - y_norm[dst, 0]         
+                    diff_pred = y_pred_norm[src, 0] - y_pred_norm[dst, 0]
+                    edge_mse_true = (diff_true ** 2).mean()
+                    edge_mse_pred = (diff_pred ** 2).mean()
+                    edge_mse_true_per_t.append(edge_mse_true.item())
+                    edge_mse_pred_per_t.append(edge_mse_pred.item())
+                    # end sketchy
+                    print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
 
                     data.x = torch.cat([data.x[:, y_pred.shape[1] :, 0], y_pred], 1)[
                         :, :, None
@@ -140,7 +190,7 @@ def main(cfg):
             np.save(save_path / "ground_truth.npy", results["ground_truth"][mesh_idx])
 
             for s in range(1):
-                for t in [10, 30, 50, 100]:
+                for t in range(10, 101, 10):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
 
                     screenshot_mesh(
