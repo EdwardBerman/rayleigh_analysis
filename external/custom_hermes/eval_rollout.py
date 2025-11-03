@@ -210,12 +210,12 @@ def main(cfg):
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
-            plt.savefig(save_path / "rayleigh_quotients.png")
-            plt.savefig(save_path / "rayleigh_quotients.pdf")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}.pdf")
 
             plt.yscale("log")
-            plt.savefig(save_path / "rayleigh_quotients_log.png")
-            plt.savefig(save_path / "rayleigh_quotients_log.pdf")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.pdf")
 
 
             for s in range(1):
