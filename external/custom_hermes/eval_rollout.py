@@ -205,6 +205,7 @@ def main(cfg):
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
+            plt.legend()
             plt.savefig(save_path / "rayleigh_quotients.png")
             plt.savefig(save_path / "rayleigh_quotients.pdf")
 
