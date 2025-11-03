@@ -119,7 +119,7 @@ def main(cfg):
                     edge_mse_true_per_t.append(edge_mse_true.item())
                     edge_mse_pred_per_t.append(edge_mse_pred.item())
                     # end sketchy
-                    print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
+                    #print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
 
                     data.x = torch.cat([data.x[:, y_pred.shape[1] :, 0], y_pred], 1)[
                         :, :, None
