@@ -2,3 +2,4 @@
 *.zip
 data_preprocessing/data/*
 wandb/*
+data/
