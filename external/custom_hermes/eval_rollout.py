@@ -40,32 +40,6 @@ decimate_ratio = {
 
 pv.set_plot_theme("paraview")
 
-def normalize_by_sqrt_degree(x: torch.Tensor, edge_index: torch.Tensor):
-    # x: [N, ...] (scalar or features)
-    N = x.shape[0]
-    deg = degree(edge_index[0], num_nodes=N)  # in-degree of dst? Here it’s src-degree; choose side you intend
-    scale = (deg.clamp(min=1).rsqrt()).view(N, *([1] * (x.ndim - 1)))
-    return x * scale
-
-def gather_edge_node_feats(y_true: torch.Tensor,
-                           y_pred: torch.Tensor,
-                           edge_index: torch.Tensor):
-    """
-    y_true: [N, F] or [N, T, F]   # node features (ground truth)
-    y_pred: [N, F] or [N, T, F]   # node features (prediction)
-    edge_index: [2, E]            # COO edges (src = edge_index[0], dst = edge_index[1])
-
-    Returns:
-      y_true_src, y_true_dst, y_pred_src, y_pred_dst
-      Each has shape [E, F] or [E, T, F] matching input.
-    """
-    src, dst = edge_index
-    y_true_src = y_true[src]   # features of source nodes for every edge
-    y_true_dst = y_true[dst]   # features of destination nodes for every edge
-    y_pred_src = y_pred[src]
-    y_pred_dst = y_pred[dst]
-    return y_true_src, y_true_dst, y_pred_src, y_pred_dst
-
 def get_mesh(name):
     mesh = objects[name]
 
@@ -100,6 +74,7 @@ def main(cfg):
 
             mesh_idx = data.mesh_idx.item()
             sample_idx = data.sample_idx.item()
+            values = copy.copy(data.x)
 
             # Sketchy asf over here
             edge_index = data.edge_index.to(values.device).long()
@@ -118,7 +93,6 @@ def main(cfg):
             all_losses = []
             all_gts = []
 
-            values = copy.copy(data.x)
             with torch.no_grad():
                 data.x = values[:, 0 : dataset.input_length][..., None]
                 for t in range(dataset.input_length, values.shape[1]):
