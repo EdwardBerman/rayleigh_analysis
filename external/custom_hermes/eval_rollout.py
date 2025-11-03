@@ -121,9 +121,11 @@ def main(cfg):
                     edge_mse_true = (diff_true ** 2).mean()
                     edge_mse_pred = (diff_pred ** 2).mean()
 
-                    traj_true_rq.append(edge_mse_true.item()*0.5)
-                    traj_pred_rq.append(edge_mse_pred.item()*0.5)
-                    # TODO: add the 1/norm_sq F denominator term 
+                    sum_nodes_sq_gt = y.pow(2).sum()
+                    sum_nodes_sq_pred = y_pred.pow(2).sum()
+
+                    traj_true_rq.append(edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
+                    traj_pred_rq.append(edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))
 
                     # end sketchy
                     #print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
