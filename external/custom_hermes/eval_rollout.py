@@ -65,6 +65,8 @@ def main(cfg):
             "losses": defaultdict(list),
             "predictions": defaultdict(list),
             "ground_truth": defaultdict(list),
+            "predicted_rayleigh_quotients": defaultdict(list),
+            "true_rayleigh_quotients": defaultdict(list),
         }
 
         model.eval()
@@ -131,6 +133,13 @@ def main(cfg):
                 np.array(all_preds).T
             )  # [Num_nodes, T]
             results["losses"][mesh_idx].append(np.array(all_losses))
+
+            results["true_rayleigh_quotients"][mesh_idx].append(
+                np.array(edge_mse_true_per_t)
+            )
+            results["predicted_rayleigh_quotients"][mesh_idx].append(
+                np.array(edge_mse_pred_per_t)
+            )
 
         return results
 
