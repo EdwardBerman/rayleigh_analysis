@@ -6,11 +6,14 @@ import hydra
 import numpy as np
 import pyvista as pv
 import torch
+from torch_geometric.utils import degree
 from hydra.utils import instantiate
 from pyvista import examples
 
 from external.hermes.src.data.pde.utils import screenshot_mesh
 from external.custom_hermes.utils import create_dataset_loaders
+
+import matplotlib.pyplot as plt
 
 objects = {
     "armadillo": examples.download_armadillo(),
@@ -39,7 +42,6 @@ decimate_ratio = {
 
 pv.set_plot_theme("paraview")
 
-
 def get_mesh(name):
     mesh = objects[name]
 
@@ -47,7 +49,6 @@ def get_mesh(name):
     _ = mesh.clean(inplace=True)
 
     return mesh
-
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
@@ -66,6 +67,8 @@ def main(cfg):
             "losses": defaultdict(list),
             "predictions": defaultdict(list),
             "ground_truth": defaultdict(list),
+            "predicted_rayleigh_quotients": defaultdict(list),
+            "true_rayleigh_quotients": defaultdict(list),
         }
 
         model.eval()
@@ -75,14 +78,29 @@ def main(cfg):
 
             mesh_idx = data.mesh_idx.item()
             sample_idx = data.sample_idx.item()
+            values = copy.copy(data.x)
+
+            # Sketchy asf over here
+            edge_index = data.edge_index.to(values.device).long()
+            src, dst = edge_index[0], edge_index[1]
+            N = values.shape[0]
+            deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
+            inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
+
+            def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
+                return x * inv_sqrt_deg
+
 
             all_preds = []
             all_losses = []
             all_gts = []
 
-            values = copy.copy(data.x)
+            traj_true_rq = []
+            traj_pred_rq = []
+
             with torch.no_grad():
                 data.x = values[:, 0 : dataset.input_length][..., None]
+
                 for t in range(dataset.input_length, values.shape[1]):
                     y = values[:, t].unsqueeze(-1)
 
@@ -95,9 +113,33 @@ def main(cfg):
                     loss = loss_fn(y_pred, y)
                     all_losses.append(loss.item())
 
+                    # Sketchy over here
+                    y_norm      = norm_sqrt_deg(y)       
+                    y_pred_norm = norm_sqrt_deg(y_pred)  
+                    diff_true = y_norm[src, 0] - y_norm[dst, 0]         
+                    diff_pred = y_pred_norm[src, 0] - y_pred_norm[dst, 0]
+                    edge_mse_true = (diff_true ** 2).mean()
+                    edge_mse_pred = (diff_pred ** 2).mean()
+
+                    sum_nodes_sq_gt = y.pow(2).sum()
+                    sum_nodes_sq_pred = y_pred.pow(2).sum()
+
+                    traj_true_rq.append(edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
+                    traj_pred_rq.append(edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))
+
+                    # end sketchy
+                    #print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
+
                     data.x = torch.cat([data.x[:, y_pred.shape[1] :, 0], y_pred], 1)[
                         :, :, None
                     ]
+
+            results["true_rayleigh_quotients"][mesh_idx].append(
+                np.array(traj_true_rq, dtype=np.float64)
+            )
+            results["predicted_rayleigh_quotients"][mesh_idx].append(
+                np.array(traj_pred_rq, dtype=np.float64)
+            )
 
             results["ground_truth"][mesh_idx].append(
                 np.array(all_gts).T
@@ -107,6 +149,7 @@ def main(cfg):
                 np.array(all_preds).T
             )  # [Num_nodes, T]
             results["losses"][mesh_idx].append(np.array(all_losses))
+
 
         return results
 
@@ -139,8 +182,44 @@ def main(cfg):
             np.save(save_path / "predictions.npy", results["predictions"][mesh_idx])
             np.save(save_path / "ground_truth.npy", results["ground_truth"][mesh_idx])
 
+            true_rq = np.stack(
+                results["true_rayleigh_quotients"][mesh_idx], axis=0
+            )  # [num_traj, T_out]
+            pred_rq = np.stack(
+                results["predicted_rayleigh_quotients"][mesh_idx], axis=0
+            )  # [num_traj, T_out]
+
+            np.save(save_path / "rayleigh_true.npy", true_rq)
+            np.save(save_path / "rayleigh_pred.npy", pred_rq)
+
+            plt.figure()
+            t = np.arange(true_rq.shape[1])
+            plt.plot(
+                t,
+                true_rq.mean(axis=0),
+                label=f"Ground Truth Rayleigh Quotient, Mesh idx {mesh_idx}",
+                color="blue",
+            )
+            plt.plot(
+                t,
+                pred_rq.mean(axis=0),
+                label=f"Prediction Rayleigh Quotient, Mesh idx {mesh_idx}",
+                color="orange",
+            )
+            plt.xlabel("Time step")
+            plt.ylabel("Rayleigh Quotient")
+            plt.title("Rayleigh Quotient over Time")
+            plt.legend()
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}.pdf")
+
+            plt.yscale("log")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.pdf")
+
+
             for s in range(1):
-                for t in [10, 30, 50, 100]:
+                for t in range(10, 101, 10):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
 
                     screenshot_mesh(
@@ -161,6 +240,9 @@ def main(cfg):
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
+
+        # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
+
 
 
 if __name__ == "__main__":
