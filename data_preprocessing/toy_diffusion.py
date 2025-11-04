@@ -72,10 +72,10 @@ def visualize_heat_diffusion(G, X, times, save_dir=None):
         fig, ax = plt.subplots(figsize=(6, 6))
         G.plot(X[:, i], vertex_size=50, edge_width=1.0, ax=ax)
         ax.set_title(f"Heat diffusion at t={t}")
-        
+
         if save_dir:
             plt.savefig(os.path.join(save_dir, f"heat_t{t}.png"))
-        
+
         plt.close(fig)
 
 
