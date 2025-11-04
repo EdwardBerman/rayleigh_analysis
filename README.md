@@ -1,4 +1,4 @@
-# CS 7180: Special Topics in AI Final Project
+# You've been hit by, you've been hit by, an (over-)smooth criminal
 
 From yours truly
 
