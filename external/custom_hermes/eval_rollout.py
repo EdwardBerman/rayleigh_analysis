@@ -11,7 +11,7 @@ from hydra.utils import instantiate
 from pyvista import examples
 
 from external.hermes.src.data.pde.utils import screenshot_mesh
-from external.custom_hermes.utils import create_dataset_loaders
+from external.custom_hermes.utils import create_dataset_loaders, rotate_mesh_video
 
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -277,6 +277,26 @@ def main(cfg):
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
+
+                    rotate_mesh_video(
+                            mesh=mesh,
+                            scalars=gt,
+                            dataset_name=cfg.dataset.name,
+                            name=object_name,
+                            save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt_video.mp4",
+                            n_frames=240,
+                            framerate=30,
+                            )
+
+                    rotate_mesh_video(
+                            mesh=mesh,
+                            scalars=preds,
+                            dataset_name=cfg.dataset.name,
+                            name=object_name,
+                            save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds_video.mp4",
+                            n_frames=240,
+                            framerate=30,
+                            )
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
 
