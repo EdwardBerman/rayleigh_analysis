@@ -31,9 +31,8 @@ import torch
 import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
 
-from src.nn.gem_conv import GemConv
-from src.nn.regular_nonlin import RegularNonlinearity
-
+from external.custom_hermes.nn.gem_conv import GemConv
+from external.custom_hermes.nn.regular_nonlin import RegularNonlinearity
 
 class GemResNetBlock(torch.nn.Module):
     """

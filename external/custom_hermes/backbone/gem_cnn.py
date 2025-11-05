@@ -1,9 +1,8 @@
 import torch
 from torch_geometric.utils import remove_isolated_nodes
 
-from src.nn.gem_res_net_block import GemResNetBlock
-from src.transform.gem_precomp import GemPrecomp
-
+from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
+from external.custom_hermes.transform.gem_precomp import GemPrecomp
 
 class GemCNN(torch.nn.Module):
     def __init__(
