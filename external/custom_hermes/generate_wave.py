@@ -40,7 +40,7 @@ n_samples = 5
 Tmax = 200
 sigma = 5e-3
 names = objects.keys()
-plot = False
+plot = True
 
 pv.set_plot_theme("paraview")
 
