@@ -1886,6 +1886,22 @@ files = [
 ]
 
 [[package]]
+name = "muon-optimizer"
+version = "0.1.0"
+description = "Muon opimizer"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/KellerJordan/Muon.git"
+reference = "HEAD"
+resolved_reference = "f90a42b28e00b8d9d2d05865fe90d9f39abcbcbd"
+
+[[package]]
 name = "nest-asyncio"
 version = "1.6.0"
 description = "Patch asyncio to allow nested event loops"
@@ -4344,4 +4360,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "cfae95f3a3fe7356e8db85828b51ef15d237de2f1d359c05b82943f3ba8a63cb"
+content-hash = "d857b573c14199e5e3b77fe299ca99ee7a7200058cb366643e424d35f709a957"
