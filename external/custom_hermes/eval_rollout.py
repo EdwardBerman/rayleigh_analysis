@@ -256,7 +256,7 @@ def main(cfg):
 
 
             for s in range(1):
-                for t in range(10, 201, 10):
+                for t in range(10, 191, 10):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
 
                     screenshot_mesh(
