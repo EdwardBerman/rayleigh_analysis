@@ -87,10 +87,18 @@ def step(model: nn.Module,
     return l.item(), acc
 
 
-def setup_wandb(entity: str, project: str, lr: float, architecture: str, dataset: str, epochs: int):
+def setup_wandb(entity: str, 
+                project: str, 
+                name: str, 
+                lr: float, 
+                architecture: str, 
+                dataset: str, 
+                epochs: int) -> wandb.run:
+
     run = wandb.init(
         entity=entity,
         project=project,
+        name=name,
         config={
                 "learning_rate": lr,
                 "architecture": architecture,
@@ -252,6 +260,7 @@ if __name__ == "__main__":
     args.save_dir = os.path.join(
         args.save_dir, f"architecture_{args.architecture}_dataset_{args.dataset}_num_layers_{args.num_layers}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
+    wandb_name = f"arch_{args.architecture}_data_{args.dataset}_layers_{args.num_layers}_{current_time}"
 
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
 
@@ -308,6 +317,7 @@ if __name__ == "__main__":
 
     run = setup_wandb(entity=args.entity,
                       project=args.project,
+                      name=wandb_name,
                       lr=args.lr,
                       architecture=args.architecture,
                       dataset=args.dataset,
