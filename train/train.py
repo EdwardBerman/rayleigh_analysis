@@ -6,6 +6,7 @@ from enum import Enum
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from simple_parsing import ArgumentParser
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
@@ -48,6 +49,20 @@ def determine_dataloader(model: str):
         return CRaWlLoader
     else:
         return DataLoader
+
+def bce_multilabel_loss(pred, true):
+    """
+    pred: [B, C] raw logits
+    true: [B, C] or [B, 1, C] with 0/1 labels
+    """
+    true = true.float()
+    if true.ndim > 2:
+        true = true.view(true.size(0), -1)
+
+    if true.shape != pred.shape:
+        true = true.view_as(pred)
+
+    return F.binary_cross_entropy_with_logits(pred, true)
 
 
 class Mode(Enum):
@@ -307,12 +322,13 @@ if __name__ == "__main__":
 
     if is_classification:
         num_classes = dataset['num_classes']
-        loss_fn = weighted_cross_entropy
         acc_scorer = None
         if level == "graph_level":
+            loss_fn = bce_multilabel_loss
             model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             # TODO: Make an accuracy function for classification at graph level
         else:
+            loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             acc_scorer = node_level_accuracy
     else:

@@ -14,11 +14,7 @@ def weighted_cross_entropy(pred, true):
     # calculating label weights for weighted loss computation
     V = true.size(0)
     n_classes = pred.shape[1] if pred.ndim > 1 else 2
-    try:
-        label_count = torch.bincount(true)
-    except:
-        true = true.view(-1).to(torch.long)
-        label_count = torch.bincount(true)
+    label_count = torch.bincount(true)
     label_count = label_count[label_count.nonzero(as_tuple=True)].squeeze()
     cluster_sizes = torch.zeros(n_classes, device=pred.device).long()
     cluster_sizes[torch.unique(true)] = label_count
