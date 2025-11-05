@@ -12,21 +12,31 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     A^~ = D^(-1/2)AD^(-1/2)
     """
     X_prime = f(X)
-    edge_indices = X.edge_index
+            
+    edge_index = X.edge_index.to(values.device).long()
+    src, dst = edge_index[0], edge_index[1]
+    N = values.shape[0]
+    deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
+    inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
 
-    X = X.x
-    num_nodes = X.size(0)
-    A_sparse = to_torch_coo_tensor(edge_indices, size=(num_nodes, num_nodes))
-    A = A_sparse.to_dense()
+    def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
+        return x * inv_sqrt_deg
+                    
+    X_norm       = norm_sqrt_deg(X.x)       
+    X_prime_norm = norm_sqrt_deg(X_prime)  
+    diff_X = x_norm[src, 0] - x_norm[dst, 0]         
+    diff_X_prime = x_prime_norm[src, 0] - x_prime_norm[dst, 0]
 
-    D = torch.diag(A.sum(dim=1)**(-0.5))
-    I = torch.eye(A.size(0), device=A.device)
-    A_tilde = D @ (I - A) @ D
-    rayleigh_X = torch.trace(X.T @ A_tilde @ X) / torch.norm(X, p='fro')
-    rayleigh_X_prime = torch.trace(
-        X_prime.T @ A_tilde @ X_prime) / torch.norm(X_prime, p='fro')
+    x_numerator = (diff_true.pow(2).sum(dim=-1)).mean()
+    x_prime_numerator = (diff_pred.pow(2).sum(dim=-1)).mean()
 
-    return F.relu(rayleigh_X - rayleigh_X_prime)
+    X_denom       = X.pow(2).sum()       # ||X||_F^2
+    X_prime_denom = X_prime.pow(2).sum() # ||X'||_F^2
+
+    rayleigh_X = x_numerator*0.5/(X_denom+1e-16)
+    rayleigh_X_prime = x_prime_numerator*0.5/(X_prime_denom+1e-16)
+
+    return torch.abs(rayleigh_X - rayleigh_X_prime)
 
 
 def integrated_rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
@@ -39,3 +49,6 @@ def integrated_rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
             total_error += rayleigh_error(layer, X)
             X = layer(X)
     return total_error
+
+
+
