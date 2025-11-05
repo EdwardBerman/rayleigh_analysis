@@ -1,4 +1,4 @@
-# How smooth is too smooth? A systematic investigation of oversmoothing in GNNs via the Rayleigh Quotient
+# A systematic investigation of oversmoothing in GNNs via the Rayleigh Quotient
 
 From yours truly
 
