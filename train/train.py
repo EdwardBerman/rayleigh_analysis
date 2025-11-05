@@ -2,6 +2,7 @@ import os
 import pprint
 from datetime import datetime
 from enum import Enum
+from collections.abc import Sequence
 
 import numpy as np
 import torch
