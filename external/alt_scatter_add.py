@@ -1,4 +1,5 @@
 import torch
+from typing import Optional, Tuple
 
 def broadcast(src: torch.Tensor, other: torch.Tensor, dim: int):
     if dim < 0:
