@@ -13,7 +13,7 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """
     X_prime = f(X)
             
-    edge_index = X.edge_index.to(X.device).long()
+    edge_index = X.edge_index.long()
     src, dst = edge_index[0], edge_index[1]
     N = values.shape[0]
     deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
