@@ -332,9 +332,9 @@ if __name__ == "__main__":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
         case "Muon":
-            hidden_weights = [p for p in model.body.parameters() if p.ndim >= 2]
-            hidden_gains_biases = [p for p in model.body.parameters() if p.ndim < 2]
-            nonhidden_params = [*model.head.parameters(), *model.embed.parameters()]
+            hidden_weights = [p for p in model.base_model.parameters() if p.ndim >= 2]
+            hidden_gains_biases = [p for p in model.base_model.parameters() if p.ndim < 2]
+            nonhidden_params = [*model.Regressor.parameters()]
             param_groups = [
                 dict(params=hidden_weights, use_muon=True,
                      lr=0.02, weight_decay=0.01),
