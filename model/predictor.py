@@ -85,7 +85,7 @@ class NodeLevelRegressor(nn.Module):
     def __init__(self, base_model: nn.Module, node_dim: int, output_dim: int, complex_floats: bool = False):
         super(NodeLevelRegressor, self).__init__()
         self.base_model = base_model
-        hidden_dim = node_dim // 2 if node_dim // 2 > 0 output_dim else node_dim
+        hidden_dim = node_dim // 2 if node_dim // 2 > output_dim else node_dim
         self.Regressor = Regressor(node_dim, node_dim // 2, output_dim) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
 
     def forward(self, x: Data):
