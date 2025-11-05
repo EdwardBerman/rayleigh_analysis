@@ -58,7 +58,7 @@ def scatter_mean(src: torch.Tensor,
         out.true_divide_(count)
     else:
         #out.div_(count, rounding_mode='floor')
-        out.div_(count) # changed to handle complex out
+        out /= count
     return out
 
 def complex_global_mean_pool(x: Tensor, batch: Optional[Tensor],
