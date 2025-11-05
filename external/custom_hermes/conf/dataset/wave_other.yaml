@@ -6,7 +6,7 @@ dataset:
   edge_dim: 0
   out_dim: 1
   cls:
-    _target_: src.data.dataset.single_mesh_pde.SingleMeshPDE
+    _target_: external.hermes.src.data.dataset.single_mesh_pde.SingleMeshPDE
     root: "${work_dir}/data/fineness/wave/reduce_0.998"
     pre_transform_str: ""
     processed_dir_str: "processed_train"

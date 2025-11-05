@@ -6,7 +6,7 @@ dataset:
   edge_dim: 0
   out_dim: 1
   cls:
-    _target_: src.data.dataset.heatwave_pde.HeatWavePDEonMesh
+    _target_: external.custom_hermes.dataset.heatwave_pde.HeatWavePDEonMesh
     root: "${work_dir}/data/wave"
     pre_transform_str: ""
     processed_dir_str: "processed_train"
