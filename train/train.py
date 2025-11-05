@@ -23,7 +23,7 @@ from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from muon import MuonWithAuxAdam
+from muon import SingleDeviceMuon
 
 
 def set_seeds(seed: int = 42):
@@ -341,7 +341,7 @@ if __name__ == "__main__":
                 dict(params=hidden_gains_biases+nonhidden_params, use_muon=False,
                      lr=3e-4, betas=(0.9, 0.95), weight_decay=0.01),
             ]
-            optimizer = MuonWithAuxAdam(param_groups)
+            optimizer = SingleDeviceMuon(param_groups)
             scheduler = None
         case _:
             raise ValueError(f"Unsupported optimizer: {args.optimizer}")
