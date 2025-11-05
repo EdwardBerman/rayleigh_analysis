@@ -69,10 +69,11 @@ class ComplexRegressor(nn.Module):
         return x
 
 class GraphLevelRegressor(nn.Module):
-    def __init__(self, base_model: nn.Module, node_dim: int, complex_floats: bool = False):
+    def __init__(self, base_model: nn.Module, node_dim: int, output_dim: int, complex_floats: bool = False):
         super(GraphLevelRegressor, self).__init__()
         self.base_model = base_model
-        self.Regressor = Regressor(node_dim, node_dim // 2, 1) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
+        hidden_dim = node_dim // 2 if node_dim // 2 > output_dim else node_dim
+        self.Regressor = Regressor(node_dim, hidden_dim, output_dim) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
 
     def forward(self, x: Data):
         x = self.base_model(x)
@@ -86,7 +87,7 @@ class NodeLevelRegressor(nn.Module):
         super(NodeLevelRegressor, self).__init__()
         self.base_model = base_model
         hidden_dim = node_dim // 2 if node_dim // 2 > output_dim else node_dim
-        self.Regressor = Regressor(node_dim, node_dim // 2, output_dim) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
+        self.Regressor = Regressor(node_dim, hidden_dim, output_dim) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
 
     def forward(self, x: Data):
         # Input [n, d] treated by the regressor as a batch of n samples of dimension d

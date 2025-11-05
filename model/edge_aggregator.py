@@ -11,7 +11,7 @@ class EdgeAggregatorGINE(torch.nn.Module):
     """
 
     def __init__(self, edge_dim, node_dim):
-        super(EdgeAggregator, self).__init__()
+        super(EdgeAggregatorGINE, self).__init__()
         update_mlp = nn.Sequential(
             torch.nn.Linear(node_dim, node_dim),
             torch.nn.ReLU(),
@@ -53,6 +53,7 @@ class EdgeModel(torch.nn.Module):
 
     def forward(self, data: Data) -> torch.Tensor:
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
+        x = x.float()
         edge_attr = edge_attr.float()
         x = self.edge_aggregator(x, edge_index, edge_attr)
         return self.base_model(x, edge_index)

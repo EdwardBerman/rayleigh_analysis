@@ -300,7 +300,7 @@ if __name__ == "__main__":
         loss_fn = nn.MSELoss()
         acc_scorer = None
         if level == "graph_level":
-            model = GraphLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
+            model = GraphLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
         else:
             output_dim = dataset['num_classes'] # corresponds to output dimension for regression
             model = NodeLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
