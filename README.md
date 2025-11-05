@@ -10,7 +10,7 @@ From yours truly
 2. Install poetry and run `poetry install`
 3. Install wandb via and login via `wandb login [api key]`
 
-## Simulation
+### Simulation
 
 ### PDEs on Meshes
 
