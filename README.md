@@ -16,4 +16,9 @@ From yours truly
 7. Then eval using `eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=hermes model_save_path=model_checkpoints/Heat_Hermes_seed1_model.pt`
 8. [Optional] Poke around with the datasets. Run `python3 -m data_preprocessing.homophily` to get the homophily distribution of graphs for the node level classification tasks. 
 
+### Heat diffusion on graphs
+
+1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --density 0.2 --n_sources 5 --minheat 5 --maxheat 15 --times 0 1 2 3 4 5 6 7 8 9 --num_graphs 1000 --size_mean 50 --size_std 5`
+
+
 To reproduce, install the poetry env and wandb

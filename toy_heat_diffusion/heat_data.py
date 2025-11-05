@@ -85,8 +85,6 @@ def main(save_dir: str):
     parser = argparse.ArgumentParser(
         description="Parameters to generate graph heat diffusion data")
 
-    parser.add_argument("--n_nodes", type=int, default=100,
-                        help="Number of nodes in the graph")
     parser.add_argument("--density", type=float, default=0.10,
                         help="Edge density of the graph")
     parser.add_argument("--n_sources", type=int, default=5,
@@ -108,7 +106,6 @@ def main(save_dir: str):
 
     print(args)
 
-    n_nodes = args.n_nodes
     density = args.density
     n_sources = args.n_sources
     heat_min = args.minheat
@@ -146,4 +143,4 @@ def main(save_dir: str):
 
 
 if __name__ == "__main__":
-    main(save_dir="./data/heat/toy")
+    main(save_dir="toy_heat_diffusion/data")
