@@ -57,7 +57,8 @@ def scatter_mean(src: torch.Tensor,
     if out.is_floating_point():
         out.true_divide_(count)
     else:
-        out.div_(count, rounding_mode='floor')
+        #out.div_(count, rounding_mode='floor')
+        out.div_(count) # changed to handle complex out
     return out
 
 def complex_global_mean_pool(x: Tensor, batch: Optional[Tensor],
