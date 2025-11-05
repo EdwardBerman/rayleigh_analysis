@@ -70,8 +70,8 @@ def step(model: nn.Module,
         model.train()
         if optimizer is not None:
             if isinstance(optimizer, Sequence):
-                    for opt in optimizer:
-                        opt.zero_grad()
+                for opt in optimizer:
+                    opt.zero_grad()
                 else:
                     optimizer.zero_grad()
     else:
