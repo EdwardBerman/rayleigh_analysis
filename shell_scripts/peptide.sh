@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Grid search ranges
-layers=(8)
+layers=(12)
 datasets=("Peptides-struct")
 architectures=("GCN" "GAT" "Sage" "Uni" "Crawl")
 
@@ -36,7 +36,7 @@ for dataset in "${datasets[@]}"; do
       fi
       
       if [ "${arch}" = "GCN" ]; then
-        CURRENT_HIDDEN_SIZE=1024
+        CURRENT_HIDDEN_SIZE=512
       else
         CURRENT_HIDDEN_SIZE="${HIDDEN_SIZE}"
       fi
