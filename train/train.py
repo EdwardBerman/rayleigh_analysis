@@ -122,6 +122,7 @@ def train(model: nn.Module,
     best_loss = float('inf')
 
     for epoch in tqdm(range(epochs)):
+        run.log({"epoch": epoch + 1})
 
         train_loss, train_acc = 0, 0
         val_loss, val_acc = 0, 0
