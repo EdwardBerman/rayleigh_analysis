@@ -8,7 +8,7 @@ from torch.utils.checkpoint import checkpoint
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import glorot, zeros
 from torch_geometric.utils import softmax
-from external.alt_scatter import scatter
+from external.alt_scatter_add import scatter_add
 
 from external.hermes.src.utils.einsum import einsum
 from external.hermes.src.utils.kernel import build_kernel, build_self_kernel
