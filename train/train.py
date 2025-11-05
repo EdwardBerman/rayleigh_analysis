@@ -72,8 +72,8 @@ def step(model: nn.Module,
             if isinstance(optimizer, list):
                 for opt in optimizer:
                     opt.zero_grad()
-                else:
-                    optimizer.zero_grad()
+            else:
+                optimizer.zero_grad()
     else:
         model.eval()
 
