@@ -23,6 +23,7 @@ from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from muon import MuonWithAuxAdam
 
 
 def set_seeds(seed: int = 42):
@@ -228,7 +229,7 @@ if __name__ == "__main__":
                         required=False, help="'GINE', 'GATED', or 'NONE'")
 
     parser.add_argument("--optimizer", type=str, default="Cosine",
-                        required=False, help="Adam or Cosine")
+                        required=False, help="Adam, Cosine, or Muon")
     parser.add_argument("--lr", type=float, default=0.001, required=False)
     parser.add_argument("--epochs", type=int, default=100, required=False)
     parser.add_argument("--weight_decay", type=float,
@@ -329,6 +330,18 @@ if __name__ == "__main__":
             scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) 
         case "Adam":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+            scheduler = None
+        case "Muon":
+            hidden_weights = [p for p in model.body.parameters() if p.ndim >= 2]
+            hidden_gains_biases = [p for p in model.body.parameters() if p.ndim < 2]
+            nonhidden_params = [*model.head.parameters(), *model.embed.parameters()]
+            param_groups = [
+                dict(params=hidden_weights, use_muon=True,
+                     lr=0.02, weight_decay=0.01),
+                dict(params=hidden_gains_biases+nonhidden_params, use_muon=False,
+                     lr=3e-4, betas=(0.9, 0.95), weight_decay=0.01),
+            ]
+            optimizer = MuonWithAuxAdam(param_groups)
             scheduler = None
         case _:
             raise ValueError(f"Unsupported optimizer: {args.optimizer}")
