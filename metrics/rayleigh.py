@@ -18,10 +18,10 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     edge_index = X.edge_index.to(values.device).long()
     src, dst = edge_index[0], edge_index[1]
     N = values.shape[0]
-    deg = degree(dst, num_nodes=N, dtype=values.dtype)
-    # check if deg is complex data type 
-    if torch.is_complex(deg):
-        deg = deg.abs()
+
+    dtype = values.real.dtype if torch.is_complex(values) else values.dtype
+    deg = degree(dst, num_nodes=N, dtype=dtype)
+
     deg_in = deg.clamp(min=1.0)
     inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
 
@@ -33,8 +33,8 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     diff_X = X_norm[src, 0] - X_norm[dst, 0]         
     diff_X_prime = X_prime_norm[src, 0] - X_prime_norm[dst, 0]
 
-    x_numerator = (diff_X.pow(2).sum(dim=-1)).mean()
-    x_prime_numerator = (diff_X_prime.pow(2).sum(dim=-1)).mean()
+    x_numerator = (diff_X.abs().pow(2).sum(dim=-1)).mean()
+    x_prime_numerator = (diff_X_prime.abs().pow(2).sum(dim=-1)).mean()
 
     X_denom       = X.x.pow(2).sum()       # ||X||_F^2
     X_prime_denom = X_prime.pow(2).sum() # ||X'||_F^2
