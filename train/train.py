@@ -64,6 +64,25 @@ def bce_multilabel_loss(pred, true):
 
     return F.binary_cross_entropy_with_logits(pred, true)
 
+def graph_level_accuracy(pred, true):
+    """
+    pred: [B, C] raw logits
+    true: [B, C] or [B, 1, C] with 0/1 labels
+    """
+    true = true.float()
+    if true.ndim > 2:
+        true = true.view(true.size(0), -1)
+
+    if true.shape != pred.shape:
+        true = true.view_as(pred)
+
+    probs = torch.sigmoid(pred)
+    preds = (probs > 0.5).float()
+
+    correct = (preds == true).float().mean(dim=1)
+    return correct.mean()
+
+
 
 class Mode(Enum):
     TRAIN = "train"
@@ -326,7 +345,7 @@ if __name__ == "__main__":
         if level == "graph_level":
             loss_fn = bce_multilabel_loss
             model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            # TODO: Make an accuracy function for classification at graph level
+            acc_scorer = graph_level_accuracy
         else:
             loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
