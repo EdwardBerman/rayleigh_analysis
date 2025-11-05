@@ -14,6 +14,7 @@ from external.hermes.src.data.pde.utils import screenshot_mesh
 from external.custom_hermes.utils import create_dataset_loaders
 
 import matplotlib.pyplot as plt
+from matplotlib import rc
 
 def set_rc_params(fontsize=None):
     '''
