@@ -18,7 +18,11 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     edge_index = X.edge_index.to(values.device).long()
     src, dst = edge_index[0], edge_index[1]
     N = values.shape[0]
-    deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
+    deg = degree(dst, num_nodes=N, dtype=values.dtype)
+    # check if deg is complex data type 
+    if torch.is_complex(deg):
+        deg = deg.abs()
+    deg_in = deg.clamp(min=1.0)
     inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
 
     def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
