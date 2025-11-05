@@ -36,8 +36,8 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     x_numerator = (diff_X.abs().pow(2).sum(dim=-1)).mean()
     x_prime_numerator = (diff_X_prime.abs().pow(2).sum(dim=-1)).mean()
 
-    X_denom       = X.x.pow(2).sum()       # ||X||_F^2
-    X_prime_denom = X_prime.pow(2).sum() # ||X'||_F^2
+    X_denom       = X.x.abs().pow(2).sum()       # ||X||_F^2
+    X_prime_denom = X_prime.abs().pow(2).sum() # ||X'||_F^2
 
     rayleigh_X = x_numerator*0.5/(X_denom+1e-16)
     rayleigh_X_prime = x_prime_numerator*0.5/(X_prime_denom+1e-16)
