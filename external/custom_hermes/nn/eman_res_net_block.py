@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
 
-from src.nn.eman_conv import EmanAttConv
-from src.nn.regular_nonlin import RegularNonlinearity
+from external.custom_hermes.nn.eman_conv import EmanAttConv
+from external.custom_hermes.nn.regular_nonlin import RegularNonlinearity
 
 
 class EmanAttResNetBlock(torch.nn.Module):
