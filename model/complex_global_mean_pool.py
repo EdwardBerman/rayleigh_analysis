@@ -85,7 +85,7 @@ def complex_global_mean_pool(x: Tensor, batch: Optional[Tensor],
         return x.mean(dim=dim, keepdim=x.dim() <= 2)
     return scatter(x, batch, dim=dim, dim_size=size, reduce='mean')
  
- def scatter(src: torch.Tensor,
+def scatter(src: torch.Tensor,
             index: torch.Tensor,
             dim: int = -1,
             out: Optional[torch.Tensor] = None,
