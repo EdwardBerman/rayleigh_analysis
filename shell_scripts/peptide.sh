@@ -36,7 +36,7 @@ for dataset in "${datasets[@]}"; do
       fi
       
       if [ "${arch}" = "GCN" ]; then
-        CURRENT_HIDDEN_SIZE=526
+        CURRENT_HIDDEN_SIZE=1024
       else
         CURRENT_HIDDEN_SIZE="${HIDDEN_SIZE}"
       fi
