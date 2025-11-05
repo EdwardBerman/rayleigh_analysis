@@ -104,8 +104,9 @@ class GraphLevelClassifier(nn.Module):
         self.Classifier = Classifier(node_dim, node_dim // 2, num_classes) if not complex_floats else ComplexClassifier(node_dim, node_dim // 2, num_classes)
 
     def forward(self, x: Data):
-        x = self.base_model(x)
-        x = x.mean(dim=0, keepdim=True)
+        x_new = self.base_model(x)
+        batch = x.batch
+        x = global_mean_pool(x_new, batch)
         x = self.Classifier(x)
         return x
 
