@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Grid search ranges
-layers=(5)
+layers=(8)
 datasets=("Peptides-struct")
 architectures=("GCN" "GAT" "Sage" "Uni" "Crawl")
 
