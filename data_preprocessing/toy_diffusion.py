@@ -1,5 +1,6 @@
 """Generates toy examples for graph smoothness."""
 
+import argparse
 import os
 import pickle
 
@@ -81,14 +82,41 @@ def visualize_heat_diffusion(G, X, times, save_dir=None):
 
 def main(save_dir: str):
 
-    n_nodes = 100
-    density = 0.05
-    n_sources = 10
-    heat_min, heat_max = 8, 10
-    times = list(range(10))
-    num_graphs = 10
-    size_mean = 100
-    size_std = 5
+    parser = argparse.ArgumentParser(
+        description="Parameters to generate graph heat diffusion data")
+
+    parser.add_argument("--n_nodes", type=int, default=100,
+                        help="Number of nodes in the graph")
+    parser.add_argument("--density", type=float, default=0.10,
+                        help="Edge density of the graph")
+    parser.add_argument("--n_sources", type=int, default=5,
+                        help="Number of heat sources")
+    parser.add_argument("--minheat", type=float,
+                        default=5, help="Minimum heat value")
+    parser.add_argument("--maxheat", type=float,
+                        default=10, help="Maximum heat value")
+    parser.add_argument("--times", type=int, nargs="+",
+                        default=list(range(10)), help="List of time steps")
+    parser.add_argument("--num_graphs", type=int, default=10,
+                        help="Number of graphs to generate")
+    parser.add_argument("--size_mean", type=float, default=100,
+                        help="Mean of graph size distribution")
+    parser.add_argument("--size_std", type=float, default=5,
+                        help="Standard deviation of graph size distribution")
+
+    args = parser.parse_args()
+
+    print(args)
+
+    n_nodes = args.n_nodes
+    density = args.density
+    n_sources = args.n_sources
+    heat_min = args.minheat
+    heat_max = args.maxheat
+    times = args.times
+    num_graphs = args.num_graphs
+    size_mean = args.size_mean
+    size_std = args.size_std
 
     num_nodes_list = generate_num_nodes(num_graphs, size_mean, size_std)
     data_by_time = {t: [] for t in times}
