@@ -2,7 +2,6 @@ import os
 import pprint
 from datetime import datetime
 from enum import Enum
-from collections.abc import Sequence
 
 import numpy as np
 import torch
@@ -70,7 +69,7 @@ def step(model: nn.Module,
     if mode == Mode.TRAIN:
         model.train()
         if optimizer is not None:
-            if isinstance(optimizer, Sequence):
+            if isinstance(optimizer, list):
                 for opt in optimizer:
                     opt.zero_grad()
                 else:
@@ -84,7 +83,7 @@ def step(model: nn.Module,
     if mode == Mode.TRAIN:
         l.backward()
         if optimizer is not None:
-            if isinstance(optimizer, Sequence):
+            if isinstance(optimizer, list):
                 for opt in optimizer:
                     opt.step()
             else:
