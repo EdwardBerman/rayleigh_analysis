@@ -188,7 +188,7 @@ def train(model: nn.Module,
             val_acc += accuracy if accuracy is not None else 0
 
             if log_rq:
-                val_rayleigh_error.append(rayleigh_error(model, batch).item())
+                val_rayleigh_error.append(rayleigh_error(model.base_model, batch).item())
 
         if log_rq:
             run.log({"val_rayleigh_error": np.mean(val_rayleigh_error)})
