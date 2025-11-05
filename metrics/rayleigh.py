@@ -26,8 +26,8 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
                     
     X_norm       = norm_sqrt_deg(X.x)       
     X_prime_norm = norm_sqrt_deg(X_prime)  
-    diff_X = x_norm[src, 0] - x_norm[dst, 0]         
-    diff_X_prime = x_prime_norm[src, 0] - x_prime_norm[dst, 0]
+    diff_X = X_norm[src, 0] - X_norm[dst, 0]         
+    diff_X_prime = X_prime_norm[src, 0] - X_prime_norm[dst, 0]
 
     x_numerator = (diff_true.pow(2).sum(dim=-1)).mean()
     x_prime_numerator = (diff_pred.pow(2).sum(dim=-1)).mean()
