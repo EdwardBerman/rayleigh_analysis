@@ -302,7 +302,8 @@ if __name__ == "__main__":
         if level == "graph_level":
             model = GraphLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
         else:
-            model = NodeLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
+            output_dim = dataset['num_classes'] # corresponds to output dimension for regression
+            model = NodeLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
 
     run = setup_wandb(entity=args.entity,
                       project=args.project,

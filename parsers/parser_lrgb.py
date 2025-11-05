@@ -40,6 +40,7 @@ class LongRangeGraphBenchmarkParser(Parser):
             case 'Peptides-struct':
                 self._is_classification = False
                 self._level = "graph_level"
+                self.num_classes = self.train_dataset.num_tasks
 
         self._node_dim = self.train_dataset.num_node_features
         self._edge_dim = self.train_dataset.num_edge_features
@@ -72,7 +73,7 @@ class LongRangeGraphBenchmarkParser(Parser):
             'edge_dim': self.edge_dim,
             'is_classification': self.is_classification,
             'level': self.level,
-            'num_classes': self.num_classes if self.is_classification else None
+            'num_classes': self.num_classes 
         }
         if self.verbose:
             print("Dataset Information:")
