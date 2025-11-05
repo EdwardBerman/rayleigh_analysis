@@ -87,10 +87,10 @@ def step(model: nn.Module,
     return l.item(), acc
 
 
-def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
+def setup_wandb(entity: str, project: str, lr: float, architecture: str, dataset: str, epochs: int):
     run = wandb.init(
-        entity="rayleigh_analysis_gnn",
-        project="eb_ll_rule_the_tri_state_area",
+        entity=entity,
+        project=project,
         config={
                 "learning_rate": lr,
                 "architecture": architecture,
@@ -239,6 +239,10 @@ if __name__ == "__main__":
                         help="Enable logging of Rayleigh Quotient error")
     parser.add_argument("--toy", action="store_true",
                         help="Use a much smaller version of the dataset to test")
+    parser.add_argument("--entity", type=str,
+                        default="rayleigh_analysis_gnn", help="Wandb entity name", required=False)
+    parser.add_argument("--project", type=str,
+                        default="eb_ll_rule_the_tri_state_area", help="Wandb project name", required=False)
     args = parser.parse_args()
     print("Arguments:")
     pprint.pprint(vars(args))
@@ -300,7 +304,9 @@ if __name__ == "__main__":
         else:
             model = NodeLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
 
-    run = setup_wandb(lr=args.lr,
+    run = setup_wandb(entity=args.entity,
+                      project=args.project,
+                      lr=args.lr,
                       architecture=args.architecture,
                       dataset=args.dataset,
                       epochs=args.epochs)
