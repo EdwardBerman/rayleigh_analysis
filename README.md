@@ -1,4 +1,4 @@
-# A systematic investigation of oversmoothing in GNNs via the Rayleigh Quotient
+# A systematic investigation of smoothing in GNNs via the Rayleigh Quotient
 
 From yours truly
 
