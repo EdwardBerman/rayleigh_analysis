@@ -332,16 +332,7 @@ if __name__ == "__main__":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
         case "Muon":
-            hidden_weights = [p for p in model.base_model.parameters() if p.ndim >= 2]
-            hidden_gains_biases = [p for p in model.base_model.parameters() if p.ndim < 2]
-            nonhidden_params = [*model.Regressor.parameters()]
-            param_groups = [
-                dict(params=hidden_weights, use_muon=True,
-                     lr=0.02, weight_decay=0.01),
-                dict(params=hidden_gains_biases+nonhidden_params, use_muon=False,
-                     lr=3e-4, betas=(0.9, 0.95), weight_decay=0.01),
-            ]
-            optimizer = SingleDeviceMuon(param_groups)
+            optimizer = SingleDeviceMuon(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
         case _:
             raise ValueError(f"Unsupported optimizer: {args.optimizer}")
