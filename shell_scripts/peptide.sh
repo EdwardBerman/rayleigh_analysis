@@ -34,6 +34,12 @@ for dataset in "${datasets[@]}"; do
       else
         CURRENT_EDGE_AGG="${EDGE_AGG}"
       fi
+      
+      if [ "${arch}" = "GCN" ]; then
+        CURRENT_HIDDEN_SIZE=526
+      else
+        CURRENT_HIDDEN_SIZE="${HIDDEN_SIZE}"
+      fi
 
       run_dir="${SAVE_DIR}/${dataset}_${arch}_${layer}layers"
 
@@ -51,7 +57,7 @@ for dataset in "${datasets[@]}"; do
         --batch_norm "${BATCH_NORM}" \
         --num_attention_heads "${NUM_HEADS}" \
         --dropout_rate "${DROPOUT}" \
-        --hidden_size "${HIDDEN_SIZE}" \
+        --hidden_size "${CURRENT_HIDDEN_SIZE}" \
         --edge_aggregator "${CURRENT_EDGE_AGG}" \
         --optimizer "${OPTIMIZER}" \
         --lr "${LR}" \
