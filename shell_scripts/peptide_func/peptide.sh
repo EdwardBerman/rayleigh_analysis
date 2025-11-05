@@ -2,7 +2,7 @@
 
 # Grid search ranges
 layers=(8)
-datasets=("Peptides-struct")
+datasets=("Peptides-func")
 architectures=("GCN")
 
 # Default hyperparameters (based on your provided baseline)
