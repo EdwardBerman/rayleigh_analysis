@@ -66,6 +66,7 @@ for dataset in "${datasets[@]}"; do
         --window_size "${WINDOW_SIZE}" \
         --receptive_field "${RECEPTIVE_FIELD}" \
         --save_dir "${run_dir}" \
+        --log_rq \
         ${VERBOSE} \
         ${SKIP}
     done
