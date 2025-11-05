@@ -247,12 +247,12 @@ def main(cfg):
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
-            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{backbone.name}.png")
-            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{backbone.name}.pdf")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
-            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.png")
-            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.pdf")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
 
             for s in range(1):
