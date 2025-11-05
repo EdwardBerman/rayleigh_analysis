@@ -15,7 +15,7 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
             
     edge_index = X.edge_index.long()
     src, dst = edge_index[0], edge_index[1]
-    N = values.shape[0]
+    N = X.shape[0]
     deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
     inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
 
