@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.data import Data
-from torch_geometric.utils import to_dense_adj, to_torch_coo_tensor
+from torch_geometric.utils import degree
 
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """ 
