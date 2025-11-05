@@ -48,6 +48,9 @@ def scatter_mean(src: torch.Tensor,
         index_dim = index.dim() - 1
 
     ones = torch.ones(index.size(), dtype=src.dtype, device=src.device)
+    # if dtype is complex make ones real 
+    if torch.is_complex(src):
+        ones = ones.to(torch.float)
     count = scatter_sum(ones, index, index_dim, None, dim_size)
     count[count < 1] = 1
     count = broadcast(count, out, dim)
