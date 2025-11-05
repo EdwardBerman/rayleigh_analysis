@@ -175,12 +175,9 @@ def rotate_mesh_video(
     pl.add_mesh(mesh, clim=clim)
     pl.remove_scalar_bar()
 
-    # --- Camera setup: z is vertical in the image ---
     center = np.asarray(mesh.center)
     radius = float(mesh.length) if mesh.length != 0 else 1.0
 
-    # Camera starts somewhere on +x side, looking toward the center,
-    # with z as the "up" direction in the image.
     distance = 2.5 * radius
     camera_position = [
         (center[0] + distance, center[1], center[2] + 0.25 * radius),  # position
@@ -189,17 +186,13 @@ def rotate_mesh_video(
     ]
     pl.camera_position = camera_position
 
-    # --- Movie writing ---
-    # save_path like 'spin.mp4' or 'spin.gif'
     pl.open_movie(save_path, framerate=framerate)
 
-    # Need an initial render before writing frames
     pl.show(auto_close=False, interactive=False)
-
     az_step = 360.0 / n_frames
+
     for _ in range(n_frames):
-        # Rotate camera around the view-up vector (global z-axis here)
-        pl.camera.azimuth(az_step)
+        pl.camera.azimuth += az_step    # <-- FIXED: no parentheses, just increment
         pl.render()
         pl.write_frame()
 
