@@ -338,6 +338,7 @@ if __name__ == "__main__":
     is_classification = dataset['is_classification']
     level = dataset['level']
     complex_floats = True if args.architecture == "Uni" else False
+    print(f"Complex floats enabled: {complex_floats}")
 
     if is_classification:
         num_classes = dataset['num_classes']

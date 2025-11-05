@@ -73,7 +73,7 @@ class GraphLevelRegressor(nn.Module):
         super(GraphLevelRegressor, self).__init__()
         self.base_model = base_model
         hidden_dim = node_dim // 2 if node_dim // 2 > output_dim else node_dim
-        self.Regressor = Regressor(node_dim, hidden_dim, output_dim) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
+        self.Regressor = Regressor(node_dim, hidden_dim, output_dim) if not complex_floats else ComplexRegressor(node_dim, hidden_dim, output_dim)
 
     def forward(self, x: Data):
         x_new = self.base_model(x)
