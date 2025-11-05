@@ -28,6 +28,13 @@ VERBOSE="--verbose"
 for dataset in "${datasets[@]}"; do
   for arch in "${architectures[@]}"; do
     for layer in "${layers[@]}"; do
+
+      if [ "${arch}" = "Crawl" ]; then
+        CURRENT_EDGE_AGG="NONE"
+      else
+        CURRENT_EDGE_AGG="${EDGE_AGG}"
+      fi
+
       run_dir="${SAVE_DIR}/${dataset}_${arch}_${layer}layers"
 
       echo "=============================================="
@@ -45,7 +52,7 @@ for dataset in "${datasets[@]}"; do
         --num_attention_heads "${NUM_HEADS}" \
         --dropout_rate "${DROPOUT}" \
         --hidden_size "${HIDDEN_SIZE}" \
-        --edge_aggregator "${EDGE_AGG}" \
+        --edge_aggregator "${CURRENT_EDGE_AGG}" \
         --optimizer "${OPTIMIZER}" \
         --lr "${LR}" \
         --epochs "${EPOCHS}" \
