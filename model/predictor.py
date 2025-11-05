@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.data import Data
 from torch_geometric.nn import global_mean_pool
+from model.complex_global_mean_pool import complex_global_mean_pool
 
 class Classifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -74,11 +75,12 @@ class GraphLevelRegressor(nn.Module):
         self.base_model = base_model
         hidden_dim = node_dim // 2 if node_dim // 2 > output_dim else node_dim
         self.Regressor = Regressor(node_dim, hidden_dim, output_dim) if not complex_floats else ComplexRegressor(node_dim, hidden_dim, output_dim)
+        self.complex_floats = complex_floats
 
     def forward(self, x: Data):
         x_new = self.base_model(x)
         batch = x.batch
-        x = global_mean_pool(x_new, batch)
+        x = global_mean_pool(x_new, batch) if not self.complex_floats else complex_global_mean_pool(x_new, batch)
         x = self.Regressor(x)
         return x
 
@@ -102,11 +104,12 @@ class GraphLevelClassifier(nn.Module):
         super(GraphLevelClassifier, self).__init__()
         self.base_model = base_model
         self.Classifier = Classifier(node_dim, node_dim // 2, num_classes) if not complex_floats else ComplexClassifier(node_dim, node_dim // 2, num_classes)
+        self.complex_floats = complex_floats
 
     def forward(self, x: Data):
         x_new = self.base_model(x)
         batch = x.batch
-        x = global_mean_pool(x_new, batch)
+        x = global_mean_pool(x_new, batch) if not self.complex_floats else complex_global_mean_pool(x_new, batch)
         x = self.Classifier(x)
         return x
 
