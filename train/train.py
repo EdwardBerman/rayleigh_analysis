@@ -60,7 +60,7 @@ def step(model: nn.Module,
          loss: nn.Module, 
          run: wandb.run, 
          mode: str, 
-         optimizer: torch.optim.Optimizer | None, 
+         optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None, 
          scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
          acc_scorer: nn.Module | None = None):
     """
@@ -69,7 +69,11 @@ def step(model: nn.Module,
     if mode == Mode.TRAIN:
         model.train()
         if optimizer is not None:
-            optimizer.zero_grad()
+            if isinstance(optimizer, Sequence):
+                    for opt in optimizer:
+                        opt.zero_grad()
+                else:
+                    optimizer.zero_grad()
     else:
         model.eval()
 
@@ -79,7 +83,11 @@ def step(model: nn.Module,
     if mode == Mode.TRAIN:
         l.backward()
         if optimizer is not None:
-            optimizer.step()
+            if isinstance(optimizer, Sequence):
+                for opt in optimizer:
+                    opt.step()
+            else:
+                optimizer.step()
         if scheduler is not None:
             scheduler.step()
 
@@ -332,7 +340,12 @@ if __name__ == "__main__":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
         case "Muon":
-            optimizer = SingleDeviceMuon(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+            all_params = list(model.parameters())
+            muon_params = [p for p in all_params if p.ndim >= 2]   # matrices only
+            other_params = [p for p in all_params if p.ndim < 2]
+            optimizer_muon = SingleDeviceMuon(muon_params, lr=args.lr, weight_decay=args.weight_decay)
+            optimizer_other = torch.optim.Adam(other_params, lr=args.lr, weight_decay=args.weight_decay)
+            optimizer = [optimizer_muon, optimizer_other]
             scheduler = None
         case _:
             raise ValueError(f"Unsupported optimizer: {args.optimizer}")
