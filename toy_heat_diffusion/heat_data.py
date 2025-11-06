@@ -1,4 +1,4 @@
-"""Generates toy examples for graph smoothness."""
+"""Generates toy examples for graph smoothness based on heat diffusion on graphs. Simulates different levels of smoothness by taking different time steps in the heat diffusion process."""
 
 import argparse
 import os

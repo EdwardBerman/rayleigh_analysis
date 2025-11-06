@@ -1,7 +1,7 @@
-# autoregressive_pyg.py
+"""Contains the functions to read in generated pickles of heat diffusion graph data, and turns them into an autoregressive dataset based on some number of training and evaluation steps."""
+
 import os
 import pickle
-import re
 
 import numpy as np
 import torch
