@@ -1,8 +1,3 @@
-"""
-TODO: Need to add Rayleigh error calculation
-TODO: Need to add Wandb tracking
-"""
-
 import argparse
 import os
 from datetime import datetime
