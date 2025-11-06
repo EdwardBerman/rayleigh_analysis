@@ -3,29 +3,11 @@ import pickle
 
 import torch
 import torch.nn.functional as F
-from models import GATReg, GCNReg, MPNNReg
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 
-
-def graphs_to_pyg_data(graphs_list):
-    """
-    Converts a list of graphs (from one time step) to PyTorch Geometric Data objects.
-    """
-    pyg_graphs = []
-    for g in graphs_list:
-        x_t = torch.tensor(g["xt"], dtype=torch.float).unsqueeze(1)
-        x0 = torch.tensor(g["x0"], dtype=torch.float).unsqueeze(1)
-        node_features = torch.cat([x0, x_t], dim=1)
-
-        A = g["A"]
-        src, dst = A.nonzero()
-        edge_index = torch.tensor([src, dst], dtype=torch.long)
-
-        y = torch.tensor(g["xt"], dtype=torch.float)
-
-        pyg_graphs.append(Data(x=node_features, edge_index=edge_index, y=y))
-    return pyg_graphs
+from toy_heat_diffusion.models import GATReg, GCNReg, MPNNReg
+from toy_heat_diffusion.pyg_toy import graphs_to_pyg_data
 
 
 def train_one_epoch(model, loader, optimizer, device):
@@ -45,13 +27,15 @@ def train_one_epoch(model, loader, optimizer, device):
 @torch.no_grad()
 def evaluate(model, loader, device):
     model.eval()
-    total_mse = 0
+    total_mse, total_nodes = 0, 0
     for data in loader:
         data = data.to(device)
         out = model(data.x, data.edge_index)
-        total_mse += F.mse_loss(out, data.y).item() * data.num_nodes
-    avg_mse = total_mse / sum(d.num_nodes for d in loader.dataset)
-    return avg_mse ** 0.5  # RMSE
+        mse = F.mse_loss(out.unsqueeze(-1), data.y, reduction="sum").item()
+        total_mse += mse
+        total_nodes += data.num_nodes
+    avg_mse = total_mse / total_nodes
+    return avg_mse, avg_mse ** 0.5  # (MSE, RMSE)
 
 
 def main():
@@ -61,7 +45,7 @@ def main():
                         help="Path to .pkl file")
     parser.add_argument(
         "--model", choices=["gcn", "gat", "mpnn"], default="gcn")
-    parser.add_argument("--hidden", type=int, default=64)
+    parser.add_argument("--hidden", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=4)
@@ -92,13 +76,40 @@ def main():
 
     optimizer = torch.optim.Adam(
         model.parameters(), lr=args.lr, weight_decay=1e-4)
+    criterion = torch.nn.MSELoss()
+    
+    print(f"{'Epoch':>5} | {'Train Loss':>10} | {'Train RMSE':>10} | {'Test Loss':>10} | {'Test RMSE':>10} | {'LR':>8} | {'GradNorm':>9}")
+    print("-" * 80)
 
     for epoch in range(1, args.epochs + 1):
-        loss = train_one_epoch(model, train_loader, optimizer, device)
-        rmse = evaluate(model, test_loader, device)
+        model.train()
+        total_loss, total_nodes = 0, 0
+        for data in train_loader:
+            data = data.to(device)
+            optimizer.zero_grad()
+            out = model(data.x, data.edge_index)
+            loss = criterion(out.unsqueeze(-1), data.y)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item() * data.num_nodes
+            total_nodes += data.num_nodes
+
+        avg_train_loss = total_loss / total_nodes
+        train_rmse = avg_train_loss ** 0.5
+        test_mse, test_rmse = evaluate(model, test_loader, device)
+
+        # gradient norm
+        total_norm = 0
+        for p in model.parameters():
+            if p.grad is not None:
+                param_norm = p.grad.data.norm(2)
+                total_norm += param_norm.item() ** 2
+        grad_norm = total_norm ** 0.5
+        lr = optimizer.param_groups[0]["lr"]
+
         if epoch % 10 == 0 or epoch == 1:
-            print(
-                f"Epoch {epoch:03d} | Train Loss: {loss:.4f} | Test RMSE: {rmse:.4f}")
+            print(f"{epoch:5d} | {avg_train_loss:10.4f} | {train_rmse:10.4f} | "
+                  f"{test_mse:10.4f} | {test_rmse:10.4f} | {lr:8.6f} | {grad_norm:9.4f}")
 
 
 if __name__ == "__main__":
