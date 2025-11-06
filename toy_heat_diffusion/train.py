@@ -4,45 +4,67 @@ TODO: Need to add Wandb tracking
 """
 
 import argparse
+import os
+from datetime import datetime
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
+import wandb
+from metrics.rayleigh import rayleigh_error
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
+def setup_wandb(config):
+    run = wandb.init(
+        entity="rayleigh_analysis_gnn",
+        project="toy_heat_diffusion_graphs",
+        config=config,
+    )
+    return run
+
+
 def train_one_epoch(model, loader, optimizer, device):
     model.train()
-    total_loss = 0
+    total_mse, total_nodes = 0, 0
     for data in loader:
         data = data.to(device)
         optimizer.zero_grad()
         out = model(data)
-        loss = F.mse_loss(out, data.y)
+        loss = F.mse_loss(out, data.y, reduction='sum')
         loss.backward()
         optimizer.step()
-        total_loss += loss.item() * data.num_nodes
-    return total_loss / sum(d.num_nodes for d in loader.dataset)
+        total_mse += loss.item()
+        total_nodes += data.num_nodes
+    return total_mse / total_nodes
 
 
 @torch.no_grad()
 def evaluate(model, loader, device):
     model.eval()
     total_mse, total_nodes = 0, 0
+    rayleigh_errors = []
+
     for data in loader:
         data = data.to(device)
         out = model(data)
         mse = F.mse_loss(out, data.y, reduction="sum").item()
         total_mse += mse
         total_nodes += data.num_nodes
+
+        rayleigh_errors.append(rayleigh_error(model, data).item())
+
     avg_mse = total_mse / total_nodes
-    return avg_mse, avg_mse ** 0.5
+
+    return avg_mse, np.mean(rayleigh_errors)
 
 
 def main():
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
     parser.add_argument("--start_time", type=float, default=0.0)
@@ -56,8 +78,14 @@ def main():
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--save_dir", type=str, default="runs")
 
     args = parser.parse_args()
+
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    args.save_dir = os.path.join(
+        args.save_dir, f"{current_time}")
+    os.makedirs(args.save_dir, exist_ok=True)
 
     train_graphs, eval_graphs = load_autoregressive_dataset(
         args.data_dir, args.start_time, args.train_steps, args.eval_steps
@@ -89,12 +117,20 @@ def main():
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of parameters: {params}")
 
-    for epoch in range(1, args.epochs + 1):
+    run = setup_wandb(args)
+
+    for _ in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
-        test_mse, test_rmse = evaluate(model, eval_loader, device)
-        print(
-            f"Epoch {epoch:03d} | Train MSE: {avg_train_loss:.4f} | Eval MSE: {test_mse:.4f} | Eval RMSE: {test_rmse:.4f}")
+        test_mse, rayleigh = evaluate(model, eval_loader, device)
+        run.log({
+            "train_mse": avg_train_loss,
+            "val_mse": test_mse,
+            "val_rayleigh": rayleigh
+        })
+
+    torch.save(model.state_dict(), os.path.join(
+        args.save_dir, "model.pt"))
 
 
 if __name__ == "__main__":
