@@ -30,6 +30,7 @@ class Regressor(nn.Module):
         x = self.fc2(x)
         return x
 
+
 class ComplexClassifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(ComplexClassifier, self).__init__()
@@ -48,6 +49,7 @@ class ComplexClassifier(nn.Module):
         x = self.relu2(x)
         x = self.fc3(x)
         return x
+
 
 class ComplexRegressor(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -68,11 +70,13 @@ class ComplexRegressor(nn.Module):
         x = self.fc3(x)
         return x
 
+
 class GraphLevelRegressor(nn.Module):
     def __init__(self, base_model: nn.Module, node_dim: int, complex_floats: bool = False):
         super(GraphLevelRegressor, self).__init__()
         self.base_model = base_model
-        self.Regressor = Regressor(node_dim, node_dim // 2, 1) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
+        self.Regressor = Regressor(
+            node_dim, node_dim // 2, 1) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
 
     def forward(self, x: Data):
         x = self.base_model(x)
@@ -85,7 +89,12 @@ class NodeLevelRegressor(nn.Module):
     def __init__(self, base_model: nn.Module, node_dim: int, complex_floats: bool = False):
         super(NodeLevelRegressor, self).__init__()
         self.base_model = base_model
-        self.Regressor = Regressor(node_dim, node_dim // 2, 1) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
+        if node_dim == 1:
+            # this prevents the bug where if node_dim = 1 out_features is somehow 0.
+            self.Regressor = Regressor(1, 1, 1)
+        else:
+            self.Regressor = Regressor(
+                node_dim, node_dim // 2, 1) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
 
     def forward(self, x: Data):
         # Input [n, d] treated by the regressor as a batch of n samples of dimension d
@@ -98,7 +107,8 @@ class GraphLevelClassifier(nn.Module):
     def __init__(self, base_model: nn.Module, node_dim: int, num_classes: int, complex_floats: bool = False):
         super(GraphLevelClassifier, self).__init__()
         self.base_model = base_model
-        self.Classifier = Classifier(node_dim, node_dim // 2, num_classes) if not complex_floats else ComplexClassifier(node_dim, node_dim // 2, num_classes)
+        self.Classifier = Classifier(
+            node_dim, node_dim // 2, num_classes) if not complex_floats else ComplexClassifier(node_dim, node_dim // 2, num_classes)
 
     def forward(self, x: Data):
         x = self.base_model(x)
@@ -111,7 +121,8 @@ class NodeLevelClassifier(nn.Module):
     def __init__(self, base_model: nn.Module, node_dim: int, num_classes: int, complex_floats: bool = False):
         super(NodeLevelClassifier, self).__init__()
         self.base_model = base_model
-        self.Classifier = Classifier(node_dim, node_dim // 2, num_classes) if not complex_floats else ComplexClassifier(node_dim, node_dim // 2, num_classes)
+        self.Classifier = Classifier(
+            node_dim, node_dim // 2, num_classes) if not complex_floats else ComplexClassifier(node_dim, node_dim // 2, num_classes)
 
     def forward(self, x: Data):
         # Input [n, d] treated by the classifier as a batch of n samples of dimension d

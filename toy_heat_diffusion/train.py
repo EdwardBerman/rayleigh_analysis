@@ -114,8 +114,12 @@ def main():
     optimizer = torch.optim.Adam(
         model.parameters(), lr=args.lr, weight_decay=1e-4)
 
+    params_gnn = sum(p.numel()
+                     for p in base_gnn.parameters() if p.requires_grad)
+    print(f"Total parameters in base GNN: {params_gnn}")
+
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"Number of parameters: {params}")
+    print(f"Total parameters: {params}")
 
     run = setup_wandb(args)
 
