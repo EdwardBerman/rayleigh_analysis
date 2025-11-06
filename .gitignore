@@ -6,3 +6,4 @@ data/
 Hermes/
 toy
 runs/*
+*/__pycache__

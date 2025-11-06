@@ -23,3 +23,4 @@ From yours truly
 3. To train the equivalent(ish) Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 100 --epochs 750`
 
 To reproduce, install the poetry env and wandb
+"test"
