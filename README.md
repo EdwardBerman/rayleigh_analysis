@@ -18,8 +18,8 @@ From yours truly
 
 ### Heat diffusion on graphs
 
-1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --density 0.2 --n_sources 5 --minheat 5 --maxheat 15 --times 0 1 2 3 4 5 6 7 8 9 --num_graphs 1000 --size_mean 50 --size_std 5`
+1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --density 0.2 --n_sources 5 --minheat 5 --maxheat 15  --num_graphs 10000 --size_mean 50 --size_std 5`
 2. To train a GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 100 --epochs 750`
-3. To train the equivalent(ish) Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model unitary --layers 12 --hidden 100 --epochs 750`
+3. To train the equivalent(ish) Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 100 --epochs 750`
 
 To reproduce, install the poetry env and wandb

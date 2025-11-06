@@ -105,6 +105,7 @@ def main():
     # build the full model with the regressor head for both
     model = NodeLevelRegressor(
         base_gnn, in_ch, complex_floats=args.model == "unitary")
+    model.to(device)
 
     optimizer = torch.optim.Adam(
         model.parameters(), lr=args.lr, weight_decay=1e-4)
