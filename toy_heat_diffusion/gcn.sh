@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --time=07:59:59
-#SBATCH --job-name=-m
+#SBATCH --job-name=[heatgraph]
 #SBATCH --mem=32GB
 #SBATCH --ntasks=1
 #SBATCH --partition=gpu
