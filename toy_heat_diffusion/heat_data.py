@@ -130,7 +130,6 @@ def main(save_dir: str):
             graph_data = {
                 'xt': X[:, t_idx],
                 'A': A,
-                'x0': x0
             }
             data_by_time[t].append(graph_data)
 
