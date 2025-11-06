@@ -49,33 +49,29 @@ def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: 
 
 def visualize_heat_diffusion(G, X, times, save_dir=None):
     """
-    Visualizes the heat diffusion on the graph at each time step.
-
-    Parameters
-    ----------
-    G : pygsp.graphs.Graph
-        The graph object.
-    X : np.ndarray
-        Heat values at each node over time (shape: [n_nodes, n_times]).
-    x0 : np.ndarray
-        Initial heat values at nodes.
-    times : list[int]
-        Time steps corresponding to columns of X.
-    save_dir : str, optional
-        Directory to save the plots. If None, plots are shown but not saved.
+    Visualizes graph heat diffusion with a fixed colormap scale across time.
     """
     if save_dir and not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
     G.set_coordinates()
 
+    vmin, vmax = X.min(), X.max()
+
     for i, t in enumerate(times):
         fig, ax = plt.subplots(figsize=(6, 6))
-        G.plot(X[:, i], vertex_size=50, edge_width=1.0, ax=ax)
+
+        G.plot(
+            X[:, i],
+            vertex_size=50,
+            edge_width=1.0,
+            ax=ax,
+            limits=(vmin, vmax)
+        )
         ax.set_title(f"Heat diffusion at t={t}")
 
         if save_dir:
-            plt.savefig(os.path.join(save_dir, f"heat_t{t}.png"))
+            plt.savefig(os.path.join(save_dir, f"heat_t{t:.2f}.png"), dpi=200)
 
         plt.close(fig)
 
@@ -93,8 +89,10 @@ def main(save_dir: str):
                         default=5, help="Minimum heat value")
     parser.add_argument("--maxheat", type=float,
                         default=10, help="Maximum heat value")
-    parser.add_argument("--times", type=int, nargs="+",
-                        default=list(range(10)), help="List of time steps")
+    parser.add_argument("--time_max", type=float, default=10.0,
+                        help="Maximum time value (exclusive)")
+    parser.add_argument("--time_step", type=float, default=0.5,
+                        help="Step size for time values (can be fractional)")
     parser.add_argument("--num_graphs", type=int, default=10,
                         help="Number of graphs to generate")
     parser.add_argument("--size_mean", type=float, default=100,
@@ -110,7 +108,7 @@ def main(save_dir: str):
     n_sources = args.n_sources
     heat_min = args.minheat
     heat_max = args.maxheat
-    times = args.times
+    times = np.arange(0, args.time_max, args.time_step).tolist()
     num_graphs = args.num_graphs
     size_mean = args.size_mean
     size_std = args.size_std
