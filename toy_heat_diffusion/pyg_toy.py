@@ -3,6 +3,7 @@ import os
 import pickle
 import re
 
+import numpy as np
 import torch
 from torch_geometric.data import Data
 
@@ -22,12 +23,19 @@ def graphs_to_autoregressive_pyg(graphs_by_time, start_index, end_index):
         graphs_prev, graphs_next = graphs_by_time[t_prev], graphs_by_time[t_next]
 
         for g_prev, g_next in zip(graphs_prev, graphs_next):
-            x_prev = torch.tensor(g_prev['xt'], dtype=torch.float).unsqueeze(1)
-            x_next = torch.tensor(g_next['xt'], dtype=torch.float).unsqueeze(1)
-            edge_index = torch.tensor(
-                list(zip(*g_prev['A'].nonzero())), dtype=torch.long)
 
-            pyg_graphs.append(Data(x=x_prev, edge_index=edge_index, y=x_next))
+            x_prev = torch.from_numpy(
+                np.array(g_prev['xt'], dtype=np.float32)).unsqueeze(1)
+            x_next = torch.from_numpy(
+                np.array(g_next['xt'], dtype=np.float32)).unsqueeze(1)
+
+            rows, cols = g_prev['A'].nonzero()
+            edge_index = torch.from_numpy(
+                np.stack([rows, cols], axis=0)).long().contiguous()
+
+            graph = Data(x=x_prev, edge_index=edge_index,
+                         y=x_next, tstart=times[i], tend=times[i+1])
+            pyg_graphs.append(graph)
 
     return pyg_graphs
 

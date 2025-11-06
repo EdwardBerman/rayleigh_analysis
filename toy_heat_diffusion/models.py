@@ -5,7 +5,7 @@ from torch_geometric.nn import BatchNorm, GATConv, GCNConv, MessagePassing
 
 
 class GCNReg(nn.Module):
-    def __init__(self, in_ch, hidden=16, num_layers=10):
+    def __init__(self, in_ch, hidden=32, num_layers=4):
         super().__init__()
         self.layers = nn.ModuleList()
         self.norms = nn.ModuleList()

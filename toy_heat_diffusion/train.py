@@ -16,7 +16,7 @@ def train_one_epoch(model, loader, optimizer, device):
         data = data.to(device)
         optimizer.zero_grad()
         out = model(data.x, data.edge_index)
-        loss = F.mse_loss(out, data.y)
+        loss = F.mse_loss(out.unsqueeze(-1), data.y)
         loss.backward()
         optimizer.step()
         total_loss += loss.item() * data.num_nodes
@@ -30,7 +30,7 @@ def evaluate(model, loader, device):
     for data in loader:
         data = data.to(device)
         out = model(data.x, data.edge_index)
-        mse = F.mse_loss(out, data.y, reduction="sum").item()
+        mse = F.mse_loss(out.unsqueeze(-1), data.y, reduction="sum").item()
         total_mse += mse
         total_nodes += data.num_nodes
     avg_mse = total_mse / total_nodes
@@ -48,8 +48,7 @@ def main():
     parser.add_argument("--hidden", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
-    # batch_size=1 for variable nodes
-    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=64)
     args = parser.parse_args()
 
     train_graphs, eval_graphs = load_autoregressive_dataset(

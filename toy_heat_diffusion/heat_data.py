@@ -44,7 +44,7 @@ def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: 
     X = np.stack([pg.filters.Heat(G, scale=t).filter(x0)
                   for t in times], axis=1)
     A = G.W.toarray()
-    return X, A, G, x0
+    return X, A, G
 
 
 def visualize_heat_diffusion(G, X, times, save_dir=None):
@@ -118,7 +118,7 @@ def main(save_dir: str):
 
     for i, n_nodes in enumerate(num_nodes_list):
 
-        X, A, G, x0 = generate_heat_graph(
+        X, A, G = generate_heat_graph(
             n_nodes, density, n_sources, heat_max, heat_min, times
         )
 
