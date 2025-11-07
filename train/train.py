@@ -6,6 +6,7 @@ from enum import Enum
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from simple_parsing import ArgumentParser
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
@@ -23,6 +24,7 @@ from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from muon import SingleDeviceMuon
 
 
 def set_seeds(seed: int = 42):
@@ -48,6 +50,39 @@ def determine_dataloader(model: str):
     else:
         return DataLoader
 
+def bce_multilabel_loss(pred, true):
+    """
+    pred: [B, C] raw logits
+    true: [B, C] or [B, 1, C] with 0/1 labels
+    """
+    true = true.float()
+    if true.ndim > 2:
+        true = true.view(true.size(0), -1)
+
+    if true.shape != pred.shape:
+        true = true.view_as(pred)
+
+    return F.binary_cross_entropy_with_logits(pred, true)
+
+def graph_level_accuracy(pred, true):
+    """
+    pred: [B, C] raw logits
+    true: [B, C] or [B, 1, C] with 0/1 labels
+    """
+    true = true.float()
+    if true.ndim > 2:
+        true = true.view(true.size(0), -1)
+
+    if true.shape != pred.shape:
+        true = true.view_as(pred)
+
+    probs = torch.sigmoid(pred)
+    preds = (probs > 0.5).float()
+
+    correct = (preds == true).float().mean(dim=1)
+    return correct.mean()
+
+
 
 class Mode(Enum):
     TRAIN = "train"
@@ -59,7 +94,7 @@ def step(model: nn.Module,
          loss: nn.Module, 
          run: wandb.run, 
          mode: str, 
-         optimizer: torch.optim.Optimizer | None, 
+         optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None, 
          scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
          acc_scorer: nn.Module | None = None):
     """
@@ -68,7 +103,11 @@ def step(model: nn.Module,
     if mode == Mode.TRAIN:
         model.train()
         if optimizer is not None:
-            optimizer.zero_grad()
+            if isinstance(optimizer, list):
+                for opt in optimizer:
+                    opt.zero_grad()
+            else:
+                optimizer.zero_grad()
     else:
         model.eval()
 
@@ -78,7 +117,11 @@ def step(model: nn.Module,
     if mode == Mode.TRAIN:
         l.backward()
         if optimizer is not None:
-            optimizer.step()
+            if isinstance(optimizer, list):
+                for opt in optimizer:
+                    opt.step()
+            else:
+                optimizer.step()
         if scheduler is not None:
             scheduler.step()
 
@@ -87,10 +130,18 @@ def step(model: nn.Module,
     return l.item(), acc
 
 
-def setup_wandb(lr: float, architecture: str, dataset: str, epochs: int):
+def setup_wandb(entity: str, 
+                project: str, 
+                name: str, 
+                lr: float, 
+                architecture: str, 
+                dataset: str, 
+                epochs: int) -> wandb.run:
+
     run = wandb.init(
-        entity="rayleigh_analysis_gnn",
-        project="eb_ll_rule_the_tri_state_area",
+        entity=entity,
+        project=project,
+        name=name,
         config={
                 "learning_rate": lr,
                 "architecture": architecture,
@@ -122,6 +173,7 @@ def train(model: nn.Module,
     best_loss = float('inf')
 
     for epoch in tqdm(range(epochs)):
+        run.log({"epoch": epoch + 1})
 
         train_loss, train_acc = 0, 0
         val_loss, val_acc = 0, 0
@@ -136,7 +188,7 @@ def train(model: nn.Module,
             val_acc += accuracy if accuracy is not None else 0
 
             if log_rq:
-                val_rayleigh_error.append(rayleigh_error(model, batch).item())
+                val_rayleigh_error.append(rayleigh_error(model.base_model, batch).item())
 
         if log_rq:
             run.log({"val_rayleigh_error": np.mean(val_rayleigh_error)})
@@ -219,7 +271,7 @@ if __name__ == "__main__":
                         required=False, help="'GINE', 'GATED', or 'NONE'")
 
     parser.add_argument("--optimizer", type=str, default="Cosine",
-                        required=False, help="Adam or Cosine")
+                        required=False, help="Adam, Cosine, or Muon")
     parser.add_argument("--lr", type=float, default=0.001, required=False)
     parser.add_argument("--epochs", type=int, default=100, required=False)
     parser.add_argument("--weight_decay", type=float,
@@ -239,6 +291,10 @@ if __name__ == "__main__":
                         help="Enable logging of Rayleigh Quotient error")
     parser.add_argument("--toy", action="store_true",
                         help="Use a much smaller version of the dataset to test")
+    parser.add_argument("--entity", type=str,
+                        default="rayleigh_analysis_gnn", help="Wandb entity name", required=False)
+    parser.add_argument("--project", type=str,
+                        default="eb_ll_rule_the_tri_state_area", help="Wandb project name", required=False)
     args = parser.parse_args()
     print("Arguments:")
     pprint.pprint(vars(args))
@@ -247,6 +303,7 @@ if __name__ == "__main__":
     args.save_dir = os.path.join(
         args.save_dir, f"architecture_{args.architecture}_dataset_{args.dataset}_num_layers_{args.num_layers}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
+    wandb_name = f"arch_{args.architecture}_data_{args.dataset}_layers_{args.num_layers}_{current_time}"
 
     # TODO: When this gets bigger, we can abstract a function that will figure out the dataset based on the keyword. For now, we assume lrgb.
 
@@ -281,26 +338,32 @@ if __name__ == "__main__":
     is_classification = dataset['is_classification']
     level = dataset['level']
     complex_floats = True if args.architecture == "Uni" else False
+    print(f"Complex floats enabled: {complex_floats}")
 
     if is_classification:
         num_classes = dataset['num_classes']
-        loss_fn = weighted_cross_entropy
         acc_scorer = None
         if level == "graph_level":
+            loss_fn = bce_multilabel_loss
             model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            # TODO: Make an accuracy function for classification at graph level
+            acc_scorer = graph_level_accuracy
         else:
+            loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             acc_scorer = node_level_accuracy
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
+        output_dim = dataset['num_classes'] # corresponds to output dimension for regression
         if level == "graph_level":
-            model = GraphLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
+            model = GraphLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
         else:
-            model = NodeLevelRegressor(base_gnn_model, node_dim, complex_floats=complex_floats)
+            model = NodeLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
 
-    run = setup_wandb(lr=args.lr,
+    run = setup_wandb(entity=args.entity,
+                      project=args.project,
+                      name=wandb_name,
+                      lr=args.lr,
                       architecture=args.architecture,
                       dataset=args.dataset,
                       epochs=args.epochs)
@@ -311,6 +374,14 @@ if __name__ == "__main__":
             scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) 
         case "Adam":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+            scheduler = None
+        case "Muon":
+            all_params = list(model.parameters())
+            muon_params = [p for p in all_params if p.ndim >= 2]   # matrices only
+            other_params = [p for p in all_params if p.ndim < 2]
+            optimizer_muon = SingleDeviceMuon(muon_params, lr=args.lr, weight_decay=args.weight_decay)
+            optimizer_other = torch.optim.Adam(other_params, lr=args.lr, weight_decay=args.weight_decay)
+            optimizer = [optimizer_muon, optimizer_other]
             scheduler = None
         case _:
             raise ValueError(f"Unsupported optimizer: {args.optimizer}")

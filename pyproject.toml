@@ -31,6 +31,10 @@ dependencies = [
     "opt-einsum (>=3.4.0,<4.0.0)",
     "ipython (>=9.6.0,<10.0.0)",
     "pygsp (>=0.6.1,<0.7.0)"
+    "imageio[ffmpeg] (>=2.37.2,<3.0.0)",
+    "imageio-ffmpeg (>=0.6.0,<0.7.0)",
+    "scipy (>=1.16.3,<2.0.0)",
+    "muon-optimizer @ git+https://github.com/KellerJordan/Muon.git"
 ]
 
 [tool.poetry]

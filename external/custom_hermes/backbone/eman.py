@@ -1,8 +1,8 @@
 import torch
 from torch_geometric.utils import remove_isolated_nodes
 
-from src.nn.eman_res_net_block import EmanAttResNetBlock
-from src.transform.gem_precomp import GemPrecomp
+from external.custom_hermes.nn.eman_res_net_block import EmanAttResNetBlock
+from external.custom_hermes.transform.gem_precomp import GemPrecomp
 
 
 class EMAN(torch.nn.Module):

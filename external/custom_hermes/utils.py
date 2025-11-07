@@ -15,6 +15,8 @@ from external.custom_hermes.transform.edge_features import empty_edge_attr
 from external.custom_hermes.transform.simple_geometry import SimpleGeometry
 from external.custom_hermes.transform.vector_normals import compute_vertex_normals
 
+import pyvista as pv
+import pyvistaqt as pvqt
 
 def set_seed(seed):
     random.seed(seed)
@@ -127,3 +129,71 @@ class GaugeInvarianceNLLLoss(Metric):
             )
         return self._gauge_error.item() / self._num_examples
 
+def rotate_mesh_video(
+    mesh,
+    scalars,
+    dataset_name,
+    name,
+    save_path,
+    n_frames: int = 180,
+    framerate: int = 30,
+):
+    """
+    Rotate a mesh around the global z-axis (z is vertical in the image)
+    and save the result as a video.
+
+    Parameters
+    ----------
+    mesh : pv.DataSet
+        PyVista mesh.
+    scalars : array-like
+        Point-wise scalar values to color the mesh with.
+    dataset_name : str
+        Used to set color limits, like in screenshot_mesh.
+    name : str
+        Unused here but kept for API symmetry with screenshot_mesh.
+    save_path : str
+        Path to output video file (e.g. 'spin.mp4' or 'spin.gif').
+    n_frames : int
+        Number of frames for a full 360° rotation.
+    framerate : int
+        Video framerate.
+    """
+    pl = pv.Plotter(off_screen=True)
+    pl.set_background("white")
+
+    # Attach scalars
+    mesh.point_data["c"] = scalars
+    mesh.set_active_scalars("c")
+
+    # Same clim logic as screenshot_mesh
+    if dataset_name == "Wave":
+        clim = [-1, 1]
+    else:
+        clim = [0, 1]
+
+    pl.add_mesh(mesh, clim=clim)
+    pl.remove_scalar_bar()
+
+    center = np.asarray(mesh.center)
+    radius = float(mesh.length) if mesh.length != 0 else 1.0
+
+    distance = 2.5 * radius
+    camera_position = [
+        (center[0] + distance, center[1], center[2] + 0.25 * radius),  # position
+        (center[0], center[1], center[2]),                             # focal point
+        (0.0, 0.0, 1.0),                                               # view-up (z-axis)
+    ]
+    pl.camera_position = camera_position
+
+    pl.open_movie(save_path, framerate=framerate)
+
+    pl.show(auto_close=False, interactive=False)
+    az_step = 360.0 / n_frames
+
+    for _ in range(n_frames):
+        pl.camera.azimuth += az_step    # <-- FIXED: no parentheses, just increment
+        pl.render()
+        pl.write_frame()
+
+    pl.close()

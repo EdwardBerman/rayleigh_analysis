@@ -11,9 +11,46 @@ from hydra.utils import instantiate
 from pyvista import examples
 
 from external.hermes.src.data.pde.utils import screenshot_mesh
-from external.custom_hermes.utils import create_dataset_loaders
+from external.custom_hermes.utils import create_dataset_loaders, rotate_mesh_video
 
 import matplotlib.pyplot as plt
+from matplotlib import rc
+
+def set_rc_params(fontsize=None):
+    '''
+    Set figure parameters
+    '''
+
+    if fontsize is None:
+        fontsize = 16
+    else:
+        fontsize = int(fontsize)
+
+    rc('font', **{'family': 'serif'})
+    rc('text', usetex=False)
+
+    plt.rcParams.update({'axes.linewidth': 1.3})
+    plt.rcParams.update({'xtick.labelsize': fontsize})
+    plt.rcParams.update({'ytick.labelsize': fontsize})
+    plt.rcParams.update({'xtick.major.size': 8})
+    plt.rcParams.update({'xtick.major.width': 1.3})
+    plt.rcParams.update({'xtick.minor.visible': True})
+    plt.rcParams.update({'xtick.minor.width': 1.})
+    plt.rcParams.update({'xtick.minor.size': 6})
+    plt.rcParams.update({'xtick.direction': 'out'})
+    plt.rcParams.update({'ytick.major.width': 1.3})
+    plt.rcParams.update({'ytick.major.size': 8})
+    plt.rcParams.update({'ytick.minor.visible': True})
+    plt.rcParams.update({'ytick.minor.width': 1.})
+    plt.rcParams.update({'ytick.minor.size': 6})
+    plt.rcParams.update({'ytick.direction': 'out'})
+    plt.rcParams.update({'axes.labelsize': fontsize})
+    plt.rcParams.update({'axes.titlesize': fontsize})
+    plt.rcParams.update({'legend.fontsize': int(fontsize-2)})
+    plt.rcParams['text.usetex'] = False
+    plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
+
+set_rc_params(10)
 
 objects = {
     "armadillo": examples.download_armadillo(),
@@ -206,20 +243,24 @@ def main(cfg):
                 label=f"Prediction Rayleigh Quotient, Mesh idx {mesh_idx}",
                 color="orange",
             )
+            true_rq_std = true_rq.std(axis=0)
+            pred_rq_std = pred_rq.std(axis=0)
+            plt.fill_between(t, true_rq.mean(axis=0) - true_rq_std, true_rq.mean(axis=0) + true_rq_std, color="blue", alpha=0.3)
+            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="orange", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
-            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}.png")
-            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}.pdf")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
-            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.png")
-            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}.pdf")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
 
             for s in range(1):
-                for t in range(10, 101, 10):
+                for t in range(10, 191, 10):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
 
                     screenshot_mesh(
@@ -240,6 +281,26 @@ def main(cfg):
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
+
+                    rotate_mesh_video(
+                            mesh=mesh,
+                            scalars=gt,
+                            dataset_name=cfg.dataset.name,
+                            name=object_name,
+                            save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt_video.mp4",
+                            n_frames=240,
+                            framerate=30,
+                            )
+
+                    rotate_mesh_video(
+                            mesh=mesh,
+                            scalars=preds,
+                            dataset_name=cfg.dataset.name,
+                            name=object_name,
+                            save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds_video.mp4",
+                            n_frames=240,
+                            framerate=30,
+                            )
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
 

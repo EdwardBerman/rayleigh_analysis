@@ -18,10 +18,9 @@ from torch.utils.checkpoint import checkpoint
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import glorot
 
-from src.utils.einsum import einsum
-from src.utils.kernel import build_kernel
-from src.utils.rep_act import rep_act
-
+from external.hermes.src.utils.einsum import einsum
+from external.hermes.src.utils.kernel import build_kernel, build_self_kernel
+from external.hermes.src.utils.rep_act import rep_act
 
 class GemConv(MessagePassing):
     """
