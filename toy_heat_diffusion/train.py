@@ -54,7 +54,6 @@ def evaluate(model, loader, device):
         total_nodes += data.num_nodes
 
         computed_error = rayleigh_error(model, data).item()
-        print(computed_error)
         rayleigh_errors.append(computed_error)
 
     avg_mse = total_mse / total_nodes
