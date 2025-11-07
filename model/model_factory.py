@@ -131,13 +131,13 @@ def build_model(node_dim: int,
             model = UniStack(module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'LieUni':
-            if input_dim == output_dim:
-                print("Warning: For Lie Unitary GCN, input and output dimensions must be the same. \nSetting output dim to be input dim")
-                output_dim = input_dim
             module_list = []
             for layer in range(num_layers):
                 input_dim = node_dim if layer == 0 else hidden_size
                 output_dim = node_dim if layer == num_layers - 1 else hidden_size
+                if input_dim == output_dim:
+                    print("Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct hidden size was set. \nSetting output dim to be input dim\n Did you mean Seperable Unitary Convolution?")
+                    output_dim = input_dim
                 module_list.append(UnitaryGCNConvLayer(input_dim,
                                                        input_dim,
                                                        dropout=dropout_rate,
