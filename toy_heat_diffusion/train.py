@@ -1,5 +1,3 @@
-"""TODO: Figure out why the Rayleigh quotient is all NaN? And also figure out why regression head for unitary thing is not working."""
-
 import argparse
 import os
 from datetime import datetime
