@@ -69,9 +69,9 @@ def main():
     parser.add_argument("--train_steps", type=int, default=10)
     parser.add_argument("--eval_steps", type=int, default=5)
     parser.add_argument(
-        "--model", choices=["gcn", "unitary"], default="gcn")
+        "--model", choices=["gcn", "seperable_unitary, lie_unitary"], default="gcn")
     parser.add_argument("--layers", type=int, default=8)
-    parser.add_argument("--act", type=str, default="ReLU")
+    parser.add_argument("--act", type=str, default="ReLU") # Choices ReLU, GroupSort
     parser.add_argument("--hidden", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -99,7 +99,10 @@ def main():
     if args.model == "gcn":
         base_gnn = build_model(node_dim=in_ch, model_type="GCN", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
-    elif args.model == 'unitary':
+    elif args.model == 'lie_unitary':
+        base_gnn = build_model(node_dim=in_ch, model_type="LieUni", num_layers=args.layers,
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+    elif args.model == 'seperable_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="Uni", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
     else:
