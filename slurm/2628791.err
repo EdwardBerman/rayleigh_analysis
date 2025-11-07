@@ -1,0 +1,42 @@
+wandb: W&B API key is configured. Use `wandb login --relogin` to force relogin
+wandb: setting up run n97qomgx
+wandb: Tracking run with wandb version 0.22.1
+wandb: Run data is saved locally in /projects/gllab/li.tao/rayleigh_analysis/wandb/run-20251106_154829-n97qomgx
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run robust-yogurt-11
+wandb: ⭐️ View project at https://wandb.ai/rayleigh_analysis_gnn/toy_heat_diffusion_graphs
+wandb: 🚀 View run at https://wandb.ai/rayleigh_analysis_gnn/toy_heat_diffusion_graphs/runs/n97qomgx
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/projects/gllab/li.tao/rayleigh_analysis/toy_heat_diffusion/train.py", line 137, in <module>
+    main()
+    ~~~~^^
+  File "/projects/gllab/li.tao/rayleigh_analysis/toy_heat_diffusion/train.py", line 123, in main
+    avg_train_loss = train_one_epoch(
+        model, train_loader, optimizer, device)
+  File "/projects/gllab/li.tao/rayleigh_analysis/toy_heat_diffusion/train.py", line 32, in train_one_epoch
+    out = model(data)
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projects/gllab/li.tao/rayleigh_analysis/model/predictor.py", line 102, in forward
+    x = self.Regressor(x)
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projects/gllab/li.tao/rayleigh_analysis/model/predictor.py", line 28, in forward
+    x = self.fc1(x)
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/li.tao/.cache/pypoetry/virtualenvs/rayleigh-analysis-FI45fQBK-py3.13/lib/python3.13/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: mat1 and mat2 must have the same dtype, but got ComplexFloat and Float
