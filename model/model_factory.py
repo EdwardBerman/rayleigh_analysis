@@ -130,6 +130,21 @@ def build_model(node_dim: int,
                                                        activation=activation_function()))
             model = UniStack(module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
+        case 'LieUni':
+            module_list = []
+            for layer in range(num_layers):
+                input_dim = node_dim if layer == 0 else hidden_size
+                output_dim = node_dim if layer == num_layers - 1 else hidden_size
+                module_list.append(UnitaryGCNConvLayer(input_dim,
+                                                       output_dim,
+                                                       dropout=dropout_rate,
+                                                       residual=skip_connections,
+                                                       global_bias=True,
+                                                       T=10,
+                                                       use_hermitian=True,
+                                                       activation=activation_function()))
+            model = UniStack(module_list)
+            return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'Crawl':
             assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
             assert edge_aggregator == "NONE", "Edge aggregator should be None for CRaWl, which already includes an edge aggregator."
