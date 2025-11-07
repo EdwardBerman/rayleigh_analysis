@@ -108,8 +108,9 @@ def main():
     else:
         raise Exception("We do not like anything else here.")
 
+    complex_floats = args.model in ["seperable_unitary", "lie_unitary"]
     model = NodeLevelRegressor(
-        base_gnn, in_ch, 1, complex_floats=args.model == "unitary")
+        base_gnn, in_ch, 1, complex_floats=complex_floats)
     model.to(device)
 
     optimizer = torch.optim.Adam(
