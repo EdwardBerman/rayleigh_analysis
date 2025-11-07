@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import wandb
-from metrics.rayleigh import rayleigh_error
+from metrics.rayleigh import rayleigh_error, rayleigh_quotients
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
@@ -42,7 +42,8 @@ def train_one_epoch(model, loader, optimizer, device):
 def evaluate(model, loader, device):
     model.eval()
     total_mse, total_nodes = 0, 0
-    rayleigh_errors = []
+    rayleigh_quotients_x = []
+    rayleigh_quotients_xprime = []
 
     for data in loader:
         data = data.to(device)
@@ -51,12 +52,13 @@ def evaluate(model, loader, device):
         total_mse += mse
         total_nodes += data.num_nodes
 
-        computed_error = rayleigh_error(model, data).item()
-        rayleigh_errors.append(computed_error)
+        x, xprime = rayleigh_quotients(model, data)
+        rayleigh_quotients_x.append(x.item())
+        rayleigh_quotients_xprime.append(xprime.item())
 
     avg_mse = total_mse / total_nodes
 
-    return avg_mse, np.mean(rayleigh_errors)
+    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime)
 
 
 def main():
@@ -104,7 +106,7 @@ def main():
         raise Exception("We do not like anything else here.")
 
     model = NodeLevelRegressor(
-        base_gnn, in_ch, complex_floats=args.model == "unitary")
+        base_gnn, in_ch, 1, complex_floats=args.model == "unitary")
     model.to(device)
 
     optimizer = torch.optim.Adam(
@@ -122,11 +124,13 @@ def main():
     for _ in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
-        test_mse, rayleigh = evaluate(model, eval_loader, device)
+        test_mse, rayleigh_x, rayleigh_xprime = evaluate(
+            model, eval_loader, device)
         run.log({
             "train_mse": avg_train_loss,
             "val_mse": test_mse,
-            "val_rayleigh": rayleigh
+            "val_rayleigh_x": rayleigh_x,
+            "val_rayleigh_xprime": rayleigh_xprime
         })
 
     torch.save(model.state_dict(), os.path.join(
