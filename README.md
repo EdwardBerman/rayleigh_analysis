@@ -14,7 +14,7 @@ From yours truly
 
 1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --density 0.2 --n_sources 2 --minheat -1 --maxheat 1  --num_graphs 10000 --size_mean 50 --size_std 5 --time_max 2 --time_step 0.1`
 2. To train a GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 128 --epochs 200`
-3. To train the equivalent(ish) Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model unitary --layers 12 --hidden 128 --epochs 200`
+3. To train the equivalent(ish) Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model unitary --layers 12 --hidden 128 --epochs 200 --act GroupSort`
 
 ### PDEs on Meshes
 
