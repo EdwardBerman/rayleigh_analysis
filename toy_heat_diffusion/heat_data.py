@@ -36,7 +36,7 @@ def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: 
     times : list[int]
         Discrete time steps at which to take snapshots of the graph. 
     """
-    G = pg.graphs.ErdosRenyi(n_nodes, density)
+    G = pg.graphs.ErdosRenyi(n_nodes, density, connected=True)
     G.compute_fourier_basis()
     sources = np.random.choice(G.N, n_sources, replace=False)
     x0 = np.zeros(G.N)

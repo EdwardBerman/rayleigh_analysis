@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.data import Data
-from torch_geometric.utils import to_dense_adj, to_torch_coo_tensor
+from torch_geometric.utils import to_torch_coo_tensor
+
 
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     """ 
@@ -26,7 +27,8 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
     rayleigh_X_prime = torch.trace(
         X_prime.T @ A_tilde @ X_prime) / torch.norm(X_prime, p='fro')
 
-    return F.relu(rayleigh_X - rayleigh_X_prime)
+    error = F.relu(rayleigh_X - rayleigh_X_prime)
+    return error
 
 
 def integrated_rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
