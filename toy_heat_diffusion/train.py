@@ -15,10 +15,17 @@ from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
 def setup_wandb(config):
+    run_name = (
+        f"{config['model']}_"
+        f"{config['act']}_"
+        f"h{config['hidden']}_"
+        f"lr{config['lr']}_"
+    )
     run = wandb.init(
         entity="rayleigh_analysis_gnn",
         project="toy_heat_diffusion_graphs",
         config=config,
+        name=run_name
     )
     return run
 
@@ -128,12 +135,13 @@ def main():
 
     run = setup_wandb(args)
 
-    for _ in range(1, args.epochs + 1):
+    for epoch in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
         test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate(
             model, eval_loader, device)
         run.log({
+            "epoch": epoch,
             "train_mse": avg_train_loss,
             "val_mse": test_mse,
             "val_rayleigh_x": rayleigh_x,
