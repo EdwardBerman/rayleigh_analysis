@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import wandb
-from metrics.rayleigh import rayleigh_error, rayleigh_quotients
+from metrics.rayleigh import rayleigh_quotients
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
@@ -44,6 +44,7 @@ def evaluate(model, loader, device):
     total_mse, total_nodes = 0, 0
     rayleigh_quotients_x = []
     rayleigh_quotients_xprime = []
+    rayleigh_quotients_y = []
 
     for data in loader:
         data = data.to(device)
@@ -52,13 +53,14 @@ def evaluate(model, loader, device):
         total_mse += mse
         total_nodes += data.num_nodes
 
-        x, xprime = rayleigh_quotients(model, data)
+        x, xprime, y = rayleigh_quotients(model, data)
         rayleigh_quotients_x.append(x.item())
         rayleigh_quotients_xprime.append(xprime.item())
+        rayleigh_quotients_y.append(y.item())
 
     avg_mse = total_mse / total_nodes
 
-    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime)
+    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime), np.mean(rayleigh_quotients_y)
 
 
 def main():
@@ -71,7 +73,8 @@ def main():
     parser.add_argument(
         "--model", choices=["gcn", "seperable_unitary", "lie_unitary"], default="gcn")
     parser.add_argument("--layers", type=int, default=8)
-    parser.add_argument("--act", type=str, default="ReLU") # Choices ReLU, GroupSort
+    # Choices ReLU, GroupSort
+    parser.add_argument("--act", type=str, default="ReLU")
     parser.add_argument("--hidden", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -128,13 +131,14 @@ def main():
     for _ in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
-        test_mse, rayleigh_x, rayleigh_xprime = evaluate(
+        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate(
             model, eval_loader, device)
         run.log({
             "train_mse": avg_train_loss,
             "val_mse": test_mse,
             "val_rayleigh_x": rayleigh_x,
-            "val_rayleigh_xprime": rayleigh_xprime
+            "val_rayleigh_xprime": rayleigh_xprime,
+            "val_rayleigh_y": rayleigh_y
         })
 
     torch.save(model.state_dict(), os.path.join(
