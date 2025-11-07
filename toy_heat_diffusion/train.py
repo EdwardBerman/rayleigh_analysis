@@ -78,7 +78,7 @@ def main():
     parser.add_argument("--train_steps", type=int, default=10)
     parser.add_argument("--eval_steps", type=int, default=5)
     parser.add_argument(
-        "--model", choices=["gcn", "seperable_unitary", "lie_unitary"], default="gcn")
+        "--model", choices=["gcn", "separable_unitary", "lie_unitary"], default="gcn")
     parser.add_argument("--layers", type=int, default=8)
     # Choices ReLU, GroupSort
     parser.add_argument("--act", type=str, default="ReLU")
