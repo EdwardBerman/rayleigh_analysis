@@ -133,7 +133,8 @@ def main():
     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total parameters: {params}")
 
-    run = setup_wandb(args)
+    config = vars(args)
+    run = setup_wandb(config)
 
     for epoch in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
