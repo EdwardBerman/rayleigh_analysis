@@ -11,4 +11,4 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=li.tao@northeastern.edu
 
-python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model unitary --layers 12 --hidden 128 --epochs 200
+python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model unitary --layers 12 --hidden 128 --epochs 50
