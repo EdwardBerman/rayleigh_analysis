@@ -155,8 +155,8 @@ def main(cfg):
                     y_pred_norm = norm_sqrt_deg(y_pred)  
                     diff_true = y_norm[src, 0] - y_norm[dst, 0]         
                     diff_pred = y_pred_norm[src, 0] - y_pred_norm[dst, 0]
-                    edge_mse_true = (diff_true ** 2).mean()
-                    edge_mse_pred = (diff_pred ** 2).mean()
+                    edge_mse_true = (diff_true ** 2).sum()
+                    edge_mse_pred = (diff_pred ** 2).sum()
 
                     sum_nodes_sq_gt = y.pow(2).sum()
                     sum_nodes_sq_pred = y_pred.pow(2).sum()
