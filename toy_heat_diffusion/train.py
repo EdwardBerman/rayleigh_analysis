@@ -105,7 +105,6 @@ def main():
     else:
         raise Exception("We do not like anything else here.")
 
-    # build the full model with the regressor head for both
     model = NodeLevelRegressor(
         base_gnn, in_ch, complex_floats=args.model == "unitary")
     model.to(device)

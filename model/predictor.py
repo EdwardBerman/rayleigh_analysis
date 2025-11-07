@@ -89,12 +89,11 @@ class NodeLevelRegressor(nn.Module):
     def __init__(self, base_model: nn.Module, node_dim: int, complex_floats: bool = False):
         super(NodeLevelRegressor, self).__init__()
         self.base_model = base_model
-        if node_dim == 1:
-            # this prevents the bug where if node_dim = 1 out_features is somehow 0.
-            self.Regressor = Regressor(1, 1, 1)
-        else:
-            self.Regressor = Regressor(
-                node_dim, node_dim // 2, 1) if not complex_floats else ComplexRegressor(node_dim, node_dim // 2, 1)
+
+        hidden_dim = 1 if node_dim == 1 else node_dim // 2
+
+        self.Regressor = Regressor(
+            node_dim, hidden_dim, 1) if not complex_floats else ComplexRegressor(node_dim, hidden_dim, 1)
 
     def forward(self, x: Data):
         # Input [n, d] treated by the regressor as a batch of n samples of dimension d
