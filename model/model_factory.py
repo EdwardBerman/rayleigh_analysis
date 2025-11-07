@@ -68,6 +68,8 @@ def build_model(node_dim: int,
     if edge_aggregator and edge_dim is None:
         raise ValueError(
             "edge_dim must be provided if edge_aggregator is True.")
+    if edge_aggregator is not None:
+        print("Using Edge Aggregator")
 
     match model_type:
         case 'GCN':
