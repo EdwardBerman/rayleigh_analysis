@@ -1,9 +1,0 @@
-wandb: W&B API key is configured. Use `wandb login --relogin` to force relogin
-wandb: setting up run ntcge8wr
-wandb: Tracking run with wandb version 0.22.1
-wandb: Run data is saved locally in /projects/gllab/li.tao/rayleigh_analysis/wandb/run-20251106_154730-ntcge8wr
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run still-paper-10
-wandb: ⭐️ View project at https://wandb.ai/rayleigh_analysis_gnn/toy_heat_diffusion_graphs
-wandb: 🚀 View run at https://wandb.ai/rayleigh_analysis_gnn/toy_heat_diffusion_graphs/runs/ntcge8wr
-slurmstepd: error: *** JOB 2628788 ON d4052 CANCELLED AT 2025-11-06T16:18:50 ***

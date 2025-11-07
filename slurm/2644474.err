@@ -1,8 +1,0 @@
-wandb: Currently logged in as: luisali (rayleigh_analysis_gnn) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: Tracking run with wandb version 0.22.1
-wandb: Run data is saved locally in /projects/gllab/li.tao/rayleigh_analysis/wandb/run-20251107_154419-s8u4bx78
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run lemon-capybara-34
-wandb: ⭐️ View project at https://wandb.ai/rayleigh_analysis_gnn/toy_heat_diffusion_graphs
-wandb: 🚀 View run at https://wandb.ai/rayleigh_analysis_gnn/toy_heat_diffusion_graphs/runs/s8u4bx78
-slurmstepd: error: *** JOB 2644474 ON d4052 CANCELLED AT 2025-11-07T15:46:15 ***
