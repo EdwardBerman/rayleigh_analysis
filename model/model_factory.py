@@ -137,9 +137,9 @@ def build_model(node_dim: int,
             input_dim = node_dim 
             output_dim = node_dim 
             if input_dim != output_dim:
-                print(f"Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct output size was set. \nSetting output dim {output_dim} to be input dim {input_dim}\nDid you mean Seperable Unitary Convolution?")
+                print(f"Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct output size was set. \nSetting output dim {output_dim} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
             if input_dim != hidden_size:
-                print(f"Warning: For Lie Unitary GCN, input and hidden dimensions must be the same, but a distinct hidden size was set. \nSetting hidden dim {hidden_size} to be input dim {input_dim}\nDid you mean Seperable Unitary Convolution?")
+                print(f"Warning: For Lie Unitary GCN, input and hidden dimensions must be the same, but a distinct hidden size was set. \nSetting hidden dim {hidden_size} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
             for layer in range(num_layers):
                 module_list.append(UnitaryGCNConvLayer(input_dim,
                                                        input_dim,

@@ -112,13 +112,13 @@ def main():
     elif args.model == 'lie_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="LieUni", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
-    elif args.model == 'seperable_unitary':
+    elif args.model == 'separable_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="Uni", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
     else:
         raise Exception("We do not like anything else here.")
 
-    complex_floats = args.model in ["seperable_unitary", "lie_unitary"]
+    complex_floats = args.model in ["separable_unitary", "lie_unitary"]
     model = NodeLevelRegressor(
         base_gnn, in_ch, 1, complex_floats=complex_floats)
     model.to(device)
