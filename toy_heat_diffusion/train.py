@@ -136,6 +136,10 @@ def main():
     config = vars(args)
     run = setup_wandb(config)
 
+    train_mse_list, val_mse_list = [], [] 
+    train_rayleigh_x_list, train_rayleigh_xprime_list, train_rayleigh_y_list = [], [], [] 
+    val_rayleigh_x_list, val_rayleigh_xprime_list, val_rayleigh_y_list = [], [], []
+
     for epoch in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
@@ -154,9 +158,25 @@ def main():
             "val_rayleigh_xprime": rayleigh_xprime,
             "val_rayleigh_y": rayleigh_y
         })
+        train_mse_list.append(avg_train_loss)
+        val_mse_list.append(test_mse)
+        train_rayleigh_x_list.append(rayleigh_x_train)
+        train_rayleigh_xprime_list.append(rayleigh_xprime_train)
+        train_rayleigh_y_list.append(rayleigh_y_train)
+        val_rayleigh_x_list.append(rayleigh_x)
+        val_rayleigh_xprime_list.append(rayleigh_xprime)
+        val_rayleigh_y_list.append(rayleigh_y)
 
     torch.save(model.state_dict(), os.path.join(
         args.save_dir, "model.pt"))
+    np.save(os.path.join(args.save_dir, "train_mse.npy"), np.array(train_mse_list))
+    np.save(os.path.join(args.save_dir, "val_mse.npy"), np.array(val_mse_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"), np.array(train_rayleigh_x_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"), np.array(train_rayleigh_xprime_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_y.npy"), np.array(train_rayleigh_y_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"), np.array(val_rayleigh_x_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"), np.array(val_rayleigh_xprime_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"), np.array(val_rayleigh_y_list))
 
 
 if __name__ == "__main__":
