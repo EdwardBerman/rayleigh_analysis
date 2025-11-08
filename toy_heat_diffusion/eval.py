@@ -50,7 +50,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir_GCN", type=str, required=True)
     parser.add_argument("--data_dir_UNI", type=str, required=True)
-    parser.add_argument("--save_dir", type=str, default="../assets")
+    parser.add_argument("--save_dir", type=str, default="assets")
     args = parser.parse_args()
 
     val_mse_GCN = np.load(os.path.join(args.data_dir_GCN, "val_mse.npy"))
