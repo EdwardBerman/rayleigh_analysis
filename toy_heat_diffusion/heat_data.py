@@ -4,6 +4,7 @@ import argparse
 import os
 import pickle
 
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import pygsp as pg
@@ -47,33 +48,56 @@ def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: 
     return X, A, G
 
 
+def generate_heat_grid_graph(n_nodes_side: int, n_sources: int, heat_max: float, heat_min: float, times: list[int]):
+    G = pg.graphs.Grid2d(n_nodes_side)
+    G.compute_fourier_basis()
+    sources = np.random.choice(G.N, n_sources, replace=False)
+    x0 = np.zeros(G.N)
+    x0[sources] = np.random.uniform(heat_min, heat_max, size=n_sources)
+    X = np.stack([pg.filters.Heat(G, scale=t).filter(x0)
+                  for t in times], axis=1)
+    A = G.W.toarray()
+    return X, A, G
+
+
 def visualize_heat_diffusion(G, X, times, save_dir=None):
     """
-    Visualizes graph heat diffusion with a fixed colormap scale across time.
+    Visualizes graph heat diffusion with a fixed colormap scale across time,
+    optionally saving a video of the diffusion.
     """
     if save_dir and not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    G.set_coordinates()
+    coords = G.coords
 
     vmin, vmax = X.min(), X.max()
+    frames = []
 
     for i, t in enumerate(times):
         fig, ax = plt.subplots(figsize=(6, 6))
 
-        G.plot(
-            X[:, i],
-            vertex_size=50,
-            edge_width=1.0,
-            ax=ax,
-            limits=(vmin, vmax)
-        )
+        sc = ax.scatter(coords[:, 0], coords[:, 1], c=X[:, i],
+                        cmap="coolwarm", s=200, vmin=vmin, vmax=vmax)
+
         ax.set_title(f"Heat diffusion at t={t}")
+        ax.set_aspect('equal')
+        ax.set_axis_off()
+
+        plt.colorbar(sc, ax=ax, fraction=0.046, pad=0.04, cmap='coolwarm')
 
         if save_dir:
-            plt.savefig(os.path.join(save_dir, f"heat_t{t:.2f}.png"), dpi=200)
+            frame_path = os.path.join(save_dir, f"heat_t{t:.2f}.png")
+            plt.savefig(frame_path, dpi=200)
+            frames.append(frame_path)
 
         plt.close(fig)
+
+    video_path = os.path.join(save_dir, "graph_evolution.mp4")
+    with imageio.get_writer(video_path, mode='I', fps=5) as writer:
+        for frame in frames:
+            image = imageio.imread(frame)
+            writer.append_data(image)
+    print(f"Video saved to {video_path}")
 
 
 def main(save_dir: str):
@@ -81,8 +105,8 @@ def main(save_dir: str):
     parser = argparse.ArgumentParser(
         description="Parameters to generate graph heat diffusion data")
 
-    parser.add_argument("--density", type=float, default=0.10,
-                        help="Edge density of the graph")
+    parser.add_argument("--graph_type", type=str, default="grid",
+                        help="Type of graph, can be either grid or a standard random graph.")
     parser.add_argument("--n_sources", type=int, default=5,
                         help="Number of heat sources")
     parser.add_argument("--minheat", type=float,
@@ -104,7 +128,7 @@ def main(save_dir: str):
 
     print(args)
 
-    density = args.density
+    graph_type = args.graph_type
     n_sources = args.n_sources
     heat_min = args.minheat
     heat_max = args.maxheat
@@ -118,9 +142,13 @@ def main(save_dir: str):
 
     for i, n_nodes in enumerate(num_nodes_list):
 
-        X, A, G = generate_heat_graph(
-            n_nodes, density, n_sources, heat_max, heat_min, times
-        )
+        if args.graph_type == "grid":
+            X, A, G = generate_heat_grid_graph(
+                n_nodes, n_sources, heat_max, heat_min, times
+            )
+        else:
+            X, A, G = generate_heat_graph(
+                n_nodes, 0.3, n_sources, heat_max, heat_min, times)
 
         # for the first graph, visualize it
         if i == 0:
