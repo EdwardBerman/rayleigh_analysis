@@ -80,7 +80,7 @@ def main():
     parser.add_argument(
         "--model", choices=["gcn", "separable_unitary", "lie_unitary"], default="gcn")
     parser.add_argument("--layers", type=int, default=8)
-    # Choices ReLU, GroupSort
+    # Choices ReLU, GroupSort, Identity
     parser.add_argument("--act", type=str, default="ReLU")
     parser.add_argument("--hidden", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=100)
