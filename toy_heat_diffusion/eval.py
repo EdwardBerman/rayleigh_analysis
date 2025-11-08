@@ -74,7 +74,7 @@ def main():
         np.arange(num_epochs),
         val_mse_UNI,
         color="red",
-        label="UNet",
+        label="Uni",
         linewidth=2,
     )
 
@@ -86,7 +86,7 @@ def main():
         np.arange(num_epochs),
         val_rayleigh_x_GCN - val_rayleigh_xprime_GCN,
         color="blue",
-        label=r"$R_{\mathcal{G}}(X) - R_{\mathcal{G}}(f_{GCN}(X))$",
+        label=r"$R_{\mathcal{G}}(X) - R_{\mathcal{G}}(f_{\rm GCN}(X))$",
         linewidth=2,
     )
 
@@ -94,7 +94,7 @@ def main():
         np.arange(num_epochs),
         val_rayleigh_x_UNI - val_rayleigh_xprime_UNI,
         color="red",
-        label=r"$R_{\mathcal{G}}(X) - R_{\mathcal{G}}(f_{Uni GCN}(X))$",
+        label=r"$R_{\mathcal{G}}(X) - R_{\mathcal{G}}(f_{\rm Uni-GCN}(X))$",
         linewidth=2,
     )
 
