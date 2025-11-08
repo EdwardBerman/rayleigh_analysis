@@ -51,9 +51,10 @@ def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: 
 def generate_heat_grid_graph(n_nodes_side: int, n_sources: int, heat_max: float, heat_min: float, times: list[int]):
     G = pg.graphs.Grid2d(n_nodes_side)
     G.compute_fourier_basis()
-    sources = np.random.choice(G.N, n_sources, replace=False)
+    n_pick = min(n_sources, G.N)
+    sources = np.random.choice(G.N, n_pick, replace=False)
     x0 = np.zeros(G.N)
-    x0[sources] = np.random.uniform(heat_min, heat_max, size=n_sources)
+    x0[sources] = np.random.uniform(heat_min, heat_max, size=n_pick)
     X = np.stack([pg.filters.Heat(G, scale=t).filter(x0)
                   for t in times], axis=1)
     A = G.W.toarray()
