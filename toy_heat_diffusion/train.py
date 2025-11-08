@@ -141,10 +141,15 @@ def main():
             model, train_loader, optimizer, device)
         test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate(
             model, eval_loader, device)
+        _, rayleigh_x_train, rayleigh_xprime_train, rayleigh_y_train = evaluate(
+            model, train_loader, device)
         run.log({
             "epoch": epoch,
             "train_mse": avg_train_loss,
             "val_mse": test_mse,
+            "train_rayleigh_x": rayleigh_x_train,
+            "train_rayleigh_xprime": rayleigh_xprime_train,
+            "train_rayleigh_y": rayleigh_y_train,
             "val_rayleigh_x": rayleigh_x,
             "val_rayleigh_xprime": rayleigh_xprime,
             "val_rayleigh_y": rayleigh_y
