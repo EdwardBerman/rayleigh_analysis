@@ -86,7 +86,7 @@ def main():
         np.arange(num_epochs),
         val_rayleigh_x_GCN - val_rayleigh_xprime_GCN,
         color="blue",
-        label=r"$R_{\mathcal{G}}(X) - R_{\mathcal{G}}(f_{\rm GCN}(X))$",
+        label=r"$\overline{R_{\mathcal{G}}(X)} - \overline{R_{\mathcal{G}}(f_{\rm GCN}(X))}$",
         linewidth=2,
     )
 
@@ -94,12 +94,12 @@ def main():
         np.arange(num_epochs),
         val_rayleigh_x_UNI - val_rayleigh_xprime_UNI,
         color="red",
-        label=r"$R_{\mathcal{G}}(X) - R_{\mathcal{G}}(f_{\rm Uni-GCN}(X))$",
+        label=r"$\overline{R_{\mathcal{G}}(X)} - \overline{R_{\mathcal{G}}(f_{\rm Uni-GCN}(X))}$",
         linewidth=2,
     )
 
     ax[1].set_xlabel("Epoch", fontsize=24)
-    ax[1].set_ylabel(r"$\Delta R_{\mathcal{G}}$", fontsize=24)
+    ax[1].set_ylabel(r"$\Delta \overline{R_{\mathcal{G}}}$", fontsize=24)
     ax[1].legend()
 
     plt.tight_layout()
