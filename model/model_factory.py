@@ -144,9 +144,9 @@ def build_model(node_dim: int,
                 module_list.append(UnitaryGCNConvLayer(input_dim,
                                                        input_dim,
                                                        dropout=dropout_rate,
-                                                       residual=skip_connections,
+                                                       residual=False,
                                                        global_bias=False,
-                                                       T=10,
+                                                       T=20,
                                                        use_hermitian=True,
                                                        activation=activation_function()))
             model = UniStack(module_list)
