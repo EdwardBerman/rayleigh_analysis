@@ -14,7 +14,7 @@ if __name__ == "__main__":
     current_dir = os.getcwd()
     os.makedirs(save_dir, exist_ok=True)
 
-    parser = LongRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
+    parser = LongRangeGraphBenchmarkParser(name="PascalVOC-SP", transform=None, verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
 
