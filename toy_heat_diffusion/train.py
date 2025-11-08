@@ -14,7 +14,7 @@ from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
-def setup_wandb(config):
+def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_heat_diffusion_graphs"):
     run_name = (
         f"{config['model']}_"
         f"{config['act']}_"
@@ -87,6 +87,8 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--save_dir", type=str, default="runs")
+    parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
+    parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
 
     args = parser.parse_args()
 
@@ -134,7 +136,7 @@ def main():
     print(f"Total parameters: {params}")
 
     config = vars(args)
-    run = setup_wandb(config)
+    run = setup_wandb(config, entity_name=args.entity_name, project_name=args.project_name)
 
     train_mse_list, val_mse_list = [], [] 
     train_rayleigh_x_list, train_rayleigh_xprime_list, train_rayleigh_y_list = [], [], [] 
