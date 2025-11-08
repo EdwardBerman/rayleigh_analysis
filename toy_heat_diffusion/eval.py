@@ -78,8 +78,8 @@ def main():
         linewidth=2,
     )
 
-    ax[0].set_xlabel("Epoch")
-    ax[0].set_ylabel("Validation MSE")
+    ax[0].set_xlabel("Epoch", fontsize=24)
+    ax[0].set_ylabel("Validation MSE", fontsize=24)
     ax[0].legend()
 
     ax[1].plot(
@@ -98,8 +98,8 @@ def main():
         linewidth=2,
     )
 
-    ax[1].set_xlabel("Epoch")
-    ax[1].set_ylabel(r"$\delta R_{\mathcal{G}}$")
+    ax[1].set_xlabel("Epoch", fontsize=24)
+    ax[1].set_ylabel(r"$\Delta R_{\mathcal{G}}$", fontsize=24)
     ax[1].legend()
 
     plt.tight_layout()
