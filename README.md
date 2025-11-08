@@ -16,6 +16,8 @@ From yours truly
 2. To train a GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 128 --epochs 200 --entity_name [wandb entity name] --project_name [wandb project name]`
 3. To train the equivalent(ish) Separable Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model separable_unitary --layers 12 --hidden 128 --epochs 200 --entity_name [wandb entity name] --project_name [wandb project name]`. 
 4. For Lie Unitary GCN, simply change the `--model` flag to `lie_unitary` and add the flag `--act Identity`. The bias and skip connections will be set to false by default to keep the model unitary.
+5. In addition to wandb, you can reproduce our plots by running `python3 -m toy_heat_diffusion.eval --data_dir_GCN [path to saved GCN npy files after training] --data_dir_UNI [path to uni npy files] --save_dir [optionally specify savedir, ../assets by default]`
+
 
 ### PDEs on Meshes
 
