@@ -143,7 +143,8 @@ def main(save_dir: str):
     num_nodes_list = generate_num_nodes(num_graphs, size_mean, size_std)
     data_by_time = {t: [] for t in times}
 
-    for i, n_nodes in enumerate(num_nodes_list):
+    
+    for i, n_nodes in enumerate(tqdm(num_nodes_list)):
 
         if args.graph_type == "grid":
             X, A, G = generate_heat_grid_graph(
