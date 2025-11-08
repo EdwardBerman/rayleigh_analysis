@@ -145,7 +145,7 @@ def build_model(node_dim: int,
                                                        input_dim,
                                                        dropout=dropout_rate,
                                                        residual=skip_connections,
-                                                       global_bias=True,
+                                                       global_bias=False,
                                                        T=10,
                                                        use_hermitian=True,
                                                        activation=activation_function()))
