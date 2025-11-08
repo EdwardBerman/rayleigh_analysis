@@ -9,3 +9,4 @@ runs/*
 */__pycache__
 EMAN/
 slurm/
+runs/
