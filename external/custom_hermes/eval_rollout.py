@@ -241,7 +241,7 @@ def main(cfg):
                 t,
                 pred_rq.mean(axis=0),
                 label=f"Prediction Rayleigh Quotient, Mesh idx {mesh_idx}",
-                color="orange",
+                color="red",
             )
             true_rq_std = true_rq.std(axis=0)
             pred_rq_std = pred_rq.std(axis=0)
