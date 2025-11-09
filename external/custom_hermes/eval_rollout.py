@@ -263,6 +263,13 @@ def main(cfg):
             plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
+            traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
+            integrated_rayleigh_error = traj_error.mean()
+            integrated_rayleigh_error_std = traj_error.std()
+            print(
+                f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}"
+            )
+
 
             for s in range(1):
                 for t in range(10, 191, 10):
