@@ -5,7 +5,7 @@ from torch_geometric.data import Data
 def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_index: torch.Tensor) -> float:
     src, dst = edge_index[0], edge_index[1]
     N = y_true.size(0)
-    deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
+    deg_in = degree(dst, num_nodes=N, dtype=y_true.dtype).clamp(min=1.0)
     inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
 
     def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
