@@ -29,6 +29,7 @@ from torch_geometric.utils.sparse import set_sparse_value
 
 class GroupSort(nn.Module):
     def forward(self, x):
+        breakpoint()  # BAD HERE :(
         a, b = x.split(x.size(-1) // 2, 1)
         a, b = torch.max(a, b), torch.min(a, b)
         return torch.cat([a, b], dim=-1)
@@ -107,7 +108,7 @@ class UnitaryGCNConvLayer(nn.Module):
             batch.x = x_in + batch.x  # residual connection
 
         return batch
-    
+
     def forward(self, x, edge_index):
         x_in = x
 

@@ -20,6 +20,7 @@ from model.model_factory import UniStack, str_to_activation
 from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
                              NodeLevelClassifier, NodeLevelRegressor)
 from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
+from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 from train.train import (bce_multilabel_loss, determine_data_postprocessing,
                          determine_dataloader, graph_level_accuracy, set_seeds,
                          train)
@@ -105,6 +106,8 @@ if __name__ == "__main__":
                         default='output', required=False)
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")
+    parser.add_argument("--toy", action="store_true",
+                        help="Use a much smaller version of the dataset to test")
 
     args = parser.parse_args()
     print("Arguments:")
@@ -118,8 +121,12 @@ if __name__ == "__main__":
 
     postprocess = determine_data_postprocessing(args.architecture)
 
-    parser = LongRangeGraphBenchmarkParser(
-        name=config['DATASET'], transform=postprocess)
+    if args.toy:
+        parser = ToyLongRangeGraphBenchmarkParser(
+            name=config['DATASET'], transform=postprocess)
+    else:
+        parser = LongRangeGraphBenchmarkParser(
+            name=config['DATASET'], transform=postprocess)
 
     dataset = parser.parse()
     train_dataset, val_dataset, test_dataset = dataset[
