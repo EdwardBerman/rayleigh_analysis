@@ -3,7 +3,7 @@
 python3 -m train.train \
   --dataset COCO-SP \
   --architecture CRAWL \
-  --num_layers 12 \
+  --num_layers 8 \
   --activation_function ReLU \
   --batch_size 64 \
   --batch_norm None \
@@ -13,7 +13,7 @@ python3 -m train.train \
   --edge_aggregator NONE \
   --optimizer Muon \
   --lr 0.001 \
-  --epochs 750 \
+  --epochs 200 \
   --weight_decay 0.0 \
   --window_size 4 \
   --receptive_field 5 \
