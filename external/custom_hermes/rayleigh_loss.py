@@ -14,7 +14,7 @@ def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_inde
     traj_true_rq = []
     traj_pred_rq = []
 
-    y_norm      = norm_sqrt_deg(y)       
+    y_norm      = norm_sqrt_deg(y_true)
     y_pred_norm = norm_sqrt_deg(y_pred)  
     diff_true = y_norm[src, 0] - y_norm[dst, 0]         
     diff_pred = y_pred_norm[src, 0] - y_pred_norm[dst, 0]
