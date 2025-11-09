@@ -321,6 +321,9 @@ if __name__ == "__main__":
         'train_dataset'], dataset['val_dataset'], dataset['test_dataset']
     node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']
 
+    if args.edge_aggregator == "NONE":
+        args.edge_aggregator = None
+
     base_gnn_model = build_model(node_dim=node_dim,
                                  model_type=args.architecture,
                                  num_layers=args.num_layers,
