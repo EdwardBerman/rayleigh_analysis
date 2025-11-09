@@ -1,6 +1,7 @@
 import torch
 from torch_geometric.utils import degree
 from torch_geometric.data import Data
+import torch.nn.functional as F
 
 def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_index: torch.Tensor) -> float:
     src, dst = edge_index[0], edge_index[1]
@@ -10,9 +11,6 @@ def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_inde
 
     def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
         return x * inv_sqrt_deg
-
-    traj_true_rq = []
-    traj_pred_rq = []
 
     y_norm      = norm_sqrt_deg(y_true)
     y_pred_norm = norm_sqrt_deg(y_pred)  
@@ -24,7 +22,7 @@ def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_inde
     sum_nodes_sq_gt = y.pow(2).sum()
     sum_nodes_sq_pred = y_pred.pow(2).sum()
 
-    return (traj_true_rq.append(edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16)) - traj_pred_rq.append(edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16)))**2 + torch.nn.MSELoss(y_true, y_pred)
+    return (edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16) - edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))**2 + F.mse_loss(y_true, y_pred)
 
 def make_rayleigh_loss():
     """
