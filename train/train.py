@@ -85,11 +85,61 @@ def graph_level_accuracy(pred, true):
     correct = (preds == true).float().mean(dim=1)
     return correct.mean()
 
-def graph_level_average_precision(pred, true):
-    true = true.float().view(true.size(0), -1)
-    pred = torch.sigmoid(pred).detach().cpu().numpy()
-    true = true.detach().cpu().numpy()
-    return average_precision_score(true, pred, average="macro")
+def graph_level_average_precision(y_pred, y_true):
+
+    ap_list = []
+
+    for i in range(y_true.shape[1]):
+        if np.sum(y_true[:, i] == 1) > 0 and np.sum(y_true[:, i] == 0) > 0:
+            is_labeled = y_true[:, i] == y_true[:, i]
+            ap = average_precision_score(y_true[is_labeled, i],
+                                         y_pred[is_labeled, i])
+
+            ap_list.append(ap)
+
+    if len(ap_list) == 0:
+        raise RuntimeError(
+            'No positively labeled data available. Cannot compute Average Precision.')
+
+    return sum(ap_list) / len(ap_list)
+
+def eval_F1(seq_ref, seq_pred):
+    # '''
+    #     compute F1 score averaged over samples
+    # '''
+
+    precision_list = []
+    recall_list = []
+    f1_list = []
+
+    for l, p in zip(seq_ref, seq_pred):
+        label = set(l)
+        prediction = set(p)
+        true_positive = len(label.intersection(prediction))
+        false_positive = len(prediction - label)
+        false_negative = len(label - prediction)
+
+        if true_positive + false_positive > 0:
+            precision = true_positive / (true_positive + false_positive)
+        else:
+            precision = 0
+
+        if true_positive + false_negative > 0:
+            recall = true_positive / (true_positive + false_negative)
+        else:
+            recall = 0
+        if precision + recall > 0:
+            f1 = 2 * precision * recall / (precision + recall)
+        else:
+            f1 = 0
+
+        precision_list.append(precision)
+        recall_list.append(recall)
+        f1_list.append(f1)
+
+    return {'precision': np.average(precision_list),
+            'recall': np.average(recall_list),
+            'F1': np.average(f1_list)}
 
 class Mode(Enum):
     TRAIN = "train"
