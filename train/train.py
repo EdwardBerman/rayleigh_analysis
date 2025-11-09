@@ -26,6 +26,9 @@ from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from muon import SingleDeviceMuon
 
+from sklearn.metrics import average_precision_score
+from sklearn.metrics import f1_score
+
 
 def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
@@ -82,7 +85,11 @@ def graph_level_accuracy(pred, true):
     correct = (preds == true).float().mean(dim=1)
     return correct.mean()
 
-
+def graph_level_average_precision(pred, true):
+    true = true.float().view(true.size(0), -1)
+    pred = torch.sigmoid(pred).detach().cpu().numpy()
+    true = true.detach().cpu().numpy()
+    return average_precision_score(true, pred, average="macro")
 
 class Mode(Enum):
     TRAIN = "train"
@@ -349,7 +356,7 @@ if __name__ == "__main__":
         if level == "graph_level":
             loss_fn = bce_multilabel_loss
             model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            acc_scorer = graph_level_accuracy
+            acc_scorer = graph_level_average_precision
         else:
             loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
