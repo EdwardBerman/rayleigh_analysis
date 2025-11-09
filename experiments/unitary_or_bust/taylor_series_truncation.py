@@ -99,6 +99,8 @@ if __name__ == "__main__":
                         help="Uni, LieUni", required=True)
     parser.add_argument("--truncation", type=int,
                         help="Determines how truncated the taylor series is.", required=True)
+    parser.add_argument("--epochs", type=int,
+                        required=False, default=config['EPOCHS'])
     parser.add_argument("--save_dir", type=str,
                         default='output', required=False)
     parser.add_argument("--verbose", action="store_true",
@@ -199,13 +201,13 @@ if __name__ == "__main__":
 
     run = setup_wandb(config=config, run_name=name)
 
-    match args.optimizer:
+    match config['OPTIMIZER']:
         case "Cosine":
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+            optimizer = torch.optim.Adam(model.parameters(), lr=config['LR'])
             scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs)
         case "Adam":
             optimizer = torch.optim.Adam(
-                model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+                model.parameters(), lr=config['LR'], weight_decay=config['WEIGHT_DECAY'])
             scheduler = None
         case "Muon":
             all_params = list(model.parameters())
@@ -213,18 +215,18 @@ if __name__ == "__main__":
             muon_params = [p for p in all_params if p.ndim >= 2]
             other_params = [p for p in all_params if p.ndim < 2]
             optimizer_muon = SingleDeviceMuon(
-                muon_params, lr=args.lr, weight_decay=args.weight_decay)
+                muon_params, lr=config['LR'], weight_decay=config['WEIGHT_DECAY'])
             optimizer_other = torch.optim.Adam(
-                other_params, lr=args.lr, weight_decay=args.weight_decay)
+                other_params, lr=config['LR'], weight_decay=config['WEIGHT_DECAY'])
             optimizer = [optimizer_muon, optimizer_other]
             scheduler = None
         case _:
-            raise ValueError(f"Unsupported optimizer: {args.optimizer}")
+            raise ValueError(f"Unsupported optimizer.")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
 
-    batch_size = args.batch_size
+    batch_size = config['BATCH_SIZE']
 
     dataloader = determine_dataloader(args.architecture)
 
@@ -250,5 +252,5 @@ if __name__ == "__main__":
           epochs=args.epochs,
           output_dir=args.save_dir,
           device=device,
-          log_rq=args.log_rq,
+          log_rq=True,
           acc_scorer=acc_scorer if is_classification else None)
