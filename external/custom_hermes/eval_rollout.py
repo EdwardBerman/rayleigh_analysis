@@ -229,7 +229,7 @@ def main(cfg):
             np.save(save_path / "rayleigh_true.npy", true_rq)
             np.save(save_path / "rayleigh_pred.npy", pred_rq)
 
-            plt.figure()
+            plt.figure(figsize=(6, 4))
             t = np.arange(true_rq.shape[1])
             plt.plot(
                 t,
