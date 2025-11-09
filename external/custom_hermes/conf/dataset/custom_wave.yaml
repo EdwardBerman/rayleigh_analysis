@@ -16,7 +16,7 @@ dataset:
     output_length: 3
 
 loss:
-  _target_: external.custom_hermes.rayleigh_loss.evaluate_rayleigh_loss
+  _target_: external.custom_hermes.rayleigh_loss.make_rayleigh_loss
 
 model:
   _target_: external.hermes.src.run.pde.PDERegressor

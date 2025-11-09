@@ -26,3 +26,11 @@ def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_inde
 
     return (traj_true_rq.append(edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16)) - traj_pred_rq.append(edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16)))**2 + torch.nn.MSELoss(y_true, y_pred)
 
+def make_rayleigh_loss():
+    """
+    Factory that returns a callable loss(y_true, y_pred, edge_index).
+    Hydra can instantiate this (calls make_rayleigh_loss(...)).
+    """
+    def loss(y_true, y_pred, edge_index):
+        return evaluate_rayleigh_loss(y_true, y_pred, edge_index)
+    return loss
