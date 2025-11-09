@@ -246,7 +246,7 @@ def main(cfg):
             true_rq_std = true_rq.std(axis=0)
             pred_rq_std = pred_rq.std(axis=0)
             plt.fill_between(t, true_rq.mean(axis=0) - true_rq_std, true_rq.mean(axis=0) + true_rq_std, color="blue", alpha=0.3)
-            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="orange", alpha=0.3)
+            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
