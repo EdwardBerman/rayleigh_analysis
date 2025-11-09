@@ -3,7 +3,7 @@
 python3 -m train.train \
   --dataset COCO-SP \
   --architecture CRAWL \
-  --num_layers 8 \
+  --num_layers 6 \
   --activation_function ReLU \
   --batch_size 64 \
   --batch_norm None \
