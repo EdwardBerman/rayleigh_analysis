@@ -5,7 +5,7 @@ python3 -m train.train \
   --architecture CRAWL \
   --num_layers 6 \
   --activation_function ReLU \
-  --batch_size 32 \
+  --batch_size 64 \
   --batch_norm None \
   --num_attention_heads 2 \
   --dropout_rate 0.1 \
