@@ -251,10 +251,12 @@ def main(cfg):
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
+            plt.tight_layout()
             plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
+            plt.tight_layout()
             plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
