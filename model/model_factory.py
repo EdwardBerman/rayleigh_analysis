@@ -151,7 +151,7 @@ def build_model(node_dim: int,
                                                        activation=activation_function()))
             model = UniStack(module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
-        case 'Crawl':
+        case 'CRAWL':
             assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
             assert edge_aggregator == "NONE", "Edge aggregator should be None for CRaWl, which already includes an edge aggregator."
             model = CRaWl(node_feat_dim=node_dim,
