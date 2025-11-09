@@ -14,7 +14,7 @@ python3 -m train.train \
   --optimizer Muon \
   --lr 0.001 \
   --epochs 200 \
-  --weight_decay 0.0 \
+  --weight_decay 0.01 \
   --window_size 4 \
   --receptive_field 5 \
   --save_dir output \
