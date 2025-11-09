@@ -19,7 +19,7 @@ def evaluate_rayleigh_loss(y_true: torch.Tensor, y_pred: torch.Tensor, edge_inde
     edge_mse_true = (diff_true ** 2).sum()
     edge_mse_pred = (diff_pred ** 2).sum()
 
-    sum_nodes_sq_gt = y.pow(2).sum()
+    sum_nodes_sq_gt = y_true.pow(2).sum()
     sum_nodes_sq_pred = y_pred.pow(2).sum()
 
     return (edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16) - edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))**2 + F.mse_loss(y_true, y_pred)
