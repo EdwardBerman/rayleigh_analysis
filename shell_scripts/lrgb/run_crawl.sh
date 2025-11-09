@@ -17,4 +17,5 @@ python3 -m train.train \
   --weight_decay 0.0 \
   --window_size 4 \
   --receptive_field 5 \
-  --save_dir output 
+  --save_dir output \
+  --log_rq
