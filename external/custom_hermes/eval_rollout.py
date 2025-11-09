@@ -50,7 +50,7 @@ def set_rc_params(fontsize=None):
     plt.rcParams['text.usetex'] = False
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
 
-set_rc_params(10)
+set_rc_params(15)
 
 objects = {
     "armadillo": examples.download_armadillo(),
