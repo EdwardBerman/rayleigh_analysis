@@ -146,8 +146,11 @@ def main(cfg):
                     y_pred = model(data)
 
                     all_preds.append(y_pred.squeeze().detach().cpu().numpy())
-
-                    loss = loss_fn(y_pred, y)
+                    
+                    try:
+                        loss = loss_fn(y_pred, y)
+                    except:
+                        loss = loss_fn(y_pred, y, data.edge_index)
                     all_losses.append(loss.item())
 
                     # Sketchy over here
