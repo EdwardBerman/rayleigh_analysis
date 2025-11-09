@@ -6,12 +6,12 @@ python3 -m train.train \
   --num_layers 12 \
   --activation_function ReLU \
   --batch_size 64 \
-  --batch_norm BatchNorm \
+  --batch_norm None \
   --num_attention_heads 2 \
   --dropout_rate 0.1 \
   --hidden_size 128 \
   --edge_aggregator NONE \
-  --optimizer Adam \
+  --optimizer Muon \
   --lr 0.001 \
   --epochs 750 \
   --weight_decay 0.0 \
