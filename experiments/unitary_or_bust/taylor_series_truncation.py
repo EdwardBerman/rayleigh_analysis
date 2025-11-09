@@ -105,8 +105,6 @@ if __name__ == "__main__":
                         default='output', required=False)
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")
-    parser.add_argument("--log_rq", action="store_true",
-                        help="Enable logging of Rayleigh Quotient error")
 
     args = parser.parse_args()
     print("Arguments:")
