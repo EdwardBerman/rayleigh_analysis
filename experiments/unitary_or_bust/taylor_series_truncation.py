@@ -29,7 +29,7 @@ from train.train import (bce_multilabel_loss, determine_data_postprocessing,
 def setup_wandb(config, run_name: str):
     run = wandb.init(
         entity="rayleigh_analysis_gnn",
-        project="unitary_or_bust",
+        project="unitary_or_bust_relu",
         config=config,
         name=run_name
     )
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         "NUM_LAYERS": 6,
         "SKIP_CONNECTIONS": False,
         # NOTE: GroupSort doesn't work on odd node features? I wonder how they use it.
-        "ACTIVATION_FUNCTION": "Identity",
+        "ACTIVATION_FUNCTION": "ReLU",
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
         "DROPOUT_RATE": 0.2,
