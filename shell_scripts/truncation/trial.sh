@@ -18,8 +18,7 @@ do
         --architecture Uni \
         --truncation $trunc \
         --epochs 1 \
-        --verbose \ 
-        --toy 
+        --verbose --toy
 done
 
 for trunc in 1 2 
@@ -29,6 +28,5 @@ do
         --architecture LieUni \
         --truncation $trunc \
         --epochs 1 \
-        --verbose \ 
-        --toy 
+        --verbose --toy
 done
