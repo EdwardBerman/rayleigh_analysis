@@ -82,7 +82,8 @@ if __name__ == "__main__":
         "DATASET": "Peptides-struct",
         "NUM_LAYERS": 6,
         "SKIP_CONNECTIONS": False,
-        "ACTIVATION_FUNCTION": "Identity", # NOTE: GroupSort doesn't work on odd node features? I wonder how they use it. 
+        # NOTE: GroupSort doesn't work on odd node features? I wonder how they use it.
+        "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
         "DROPOUT_RATE": 0.2,
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     pprint.pprint(vars(args))
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    name = f"architecture_{args.architecture}_{current_time}"
+    name = f"architecture_{args.architecture}_truncation_{args.truncation}_{current_time}"
     args.save_dir = os.path.join(
         args.save_dir, name)
     os.makedirs(args.save_dir, exist_ok=True)
