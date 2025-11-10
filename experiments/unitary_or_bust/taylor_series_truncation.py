@@ -82,7 +82,7 @@ if __name__ == "__main__":
         "DATASET": "Peptides-struct",
         "NUM_LAYERS": 6,
         "SKIP_CONNECTIONS": False,
-        "ACTIVATION_FUNCTION": "GroupSort",
+        "ACTIVATION_FUNCTION": "Identity", # NOTE: GroupSort doesn't work on odd node features? I wonder how they use it. 
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
         "DROPOUT_RATE": 0.2,

@@ -50,7 +50,6 @@ def rayleigh_quotients(f: nn.Module, batch: Data) -> tuple[torch.Tensor, torch.T
     """ 
     Computes three Rayleigh quotients, for batch.X, f(X) and batch.Y
     """
-
     batchX = compute_rayleigh_quotient(batch.x, batch.edge_index)
     fX = compute_rayleigh_quotient(f(batch), batch.edge_index)
     batchY = compute_rayleigh_quotient(batch.y, batch.edge_index)
