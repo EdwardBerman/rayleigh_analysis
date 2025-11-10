@@ -12,6 +12,7 @@ def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
 
     A^~ = D^(-1/2)AD^(-1/2)
     """
+    f.eval()
     X_prime = f(X)
 
     values = X.x
