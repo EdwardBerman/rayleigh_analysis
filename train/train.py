@@ -2,6 +2,7 @@ import os
 import pprint
 from datetime import datetime
 from enum import Enum
+from typing import Callable
 
 import numpy as np
 import torch
@@ -75,7 +76,7 @@ def step(model: nn.Module,
          mode: str, 
          optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None, 
          scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
-         acc_scorer: nn.Module | None = None):
+         acc_scorer: nn.Module | None | callable = None) -> tuple[float, float | None]:
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -143,7 +144,7 @@ def train(model: nn.Module,
           output_dir: str,
           device: torch.device,
           log_rq: bool = False,
-          acc_scorer: nn.Module | None | Callable = None):
+          acc_scorer: nn.Module | None | callable = None):
 
     train_losses, train_accuracies = [], []
     val_losses, val_accuracies = [], []
@@ -337,6 +338,7 @@ if __name__ == "__main__":
         else:
             loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
+            print("Accuracy metric: F1 Score")
             acc_scorer = eval_F1
     else:
         loss_fn = nn.MSELoss()
