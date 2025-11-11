@@ -35,7 +35,7 @@ def eval_F1(node_logits_batch, true):
 
     pred_np = predicted_classes.detach().cpu().numpy()
     true_np = true.detach().cpu().numpy()
-    f1 = f1_score(true_np, pred_np, average='weighted')
+    f1 = f1_score(true_np, pred_np, average='macro')
     return f1
 
 def graph_level_average_precision(y_pred, y_true):
