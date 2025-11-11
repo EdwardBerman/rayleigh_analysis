@@ -76,7 +76,7 @@ def step(model: nn.Module,
          mode: str, 
          optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None, 
          scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
-         acc_scorer: nn.Module | None | callable = None) -> tuple[float, float | None]:
+         acc_scorer: nn.Module | None | Callable = None) -> tuple[float, float | None]:
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -144,7 +144,7 @@ def train(model: nn.Module,
           output_dir: str,
           device: torch.device,
           log_rq: bool = False,
-          acc_scorer: nn.Module | None | callable = None):
+          acc_scorer: nn.Module | None | Callable = None):
 
     train_losses, train_accuracies = [], []
     val_losses, val_accuracies = [], []
