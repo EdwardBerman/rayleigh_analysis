@@ -378,7 +378,7 @@ if __name__ == "__main__":
         else:
             loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            acc_scorer = eval_F1
+            acc_scorer = node_level_accuracy
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
