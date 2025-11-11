@@ -143,7 +143,7 @@ def train(model: nn.Module,
           output_dir: str,
           device: torch.device,
           log_rq: bool = False,
-          acc_scorer: nn.Module | None = None):
+          acc_scorer: nn.Module | None | Callable = None):
 
     train_losses, train_accuracies = [], []
     val_losses, val_accuracies = [], []
