@@ -28,9 +28,9 @@ def node_level_accuracy(node_logits_batch, labels_batch):
 def eval_F1(pred, true):
 
     if isinstance(true, torch.Tensor):
-        true = true.cpu().numpy()
+        true = true.detach().cpu().numpy()
     if isinstance(pred, torch.Tensor):
-        pred = pred.cpu().numpy()
+        pred = pred.detach().cpu().numpy()
     
     if pred.ndim > 1:
         pred_labels = np.argmax(pred, axis=-1)
