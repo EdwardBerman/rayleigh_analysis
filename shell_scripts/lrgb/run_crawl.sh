@@ -8,7 +8,7 @@ python3 -m train.train \
   --batch_size 64 \
   --batch_norm None \
   --num_attention_heads 2 \
-  --dropout_rate 0.1 \
+  --dropout_rate 0.0 \
   --hidden_size 128 \
   --edge_aggregator NONE \
   --optimizer Muon \

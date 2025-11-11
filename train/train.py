@@ -301,6 +301,11 @@ def train(model: nn.Module,
             np.array(test_accuracies))
 
     plot_learning_curve(train_losses, val_losses, test_losses, output_dir)
+
+    if log_rq:
+        np.save(os.path.join(output_dir, "test_rayleigh_error.npy"),
+                np.array(test_rayleigh_error))
+
     if acc_scorer is not None:
         plot_accuracy_curve(train_accuracies, val_accuracies, test_accuracies, output_dir)
 
