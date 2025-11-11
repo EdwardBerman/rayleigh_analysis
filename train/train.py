@@ -15,7 +15,7 @@ from tqdm import tqdm
 import wandb
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve, plot_accuracy_curve
 from external.weighted_cross_entropy import weighted_cross_entropy
-from metrics.accuracy import node_level_accuracy
+from metrics.accuracy import node_level_accuracy, eval_F1
 from metrics.rayleigh import rayleigh_error
 from model.model_factory import build_model
 from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
@@ -103,43 +103,6 @@ def graph_level_average_precision(y_pred, y_true):
 
     return sum(ap_list) / len(ap_list)
 
-def eval_F1(seq_ref, seq_pred):
-    # '''
-    #     compute F1 score averaged over samples
-    # '''
-
-    precision_list = []
-    recall_list = []
-    f1_list = []
-
-    for l, p in zip(seq_ref, seq_pred):
-        label = set(l)
-        prediction = set(p)
-        true_positive = len(label.intersection(prediction))
-        false_positive = len(prediction - label)
-        false_negative = len(label - prediction)
-
-        if true_positive + false_positive > 0:
-            precision = true_positive / (true_positive + false_positive)
-        else:
-            precision = 0
-
-        if true_positive + false_negative > 0:
-            recall = true_positive / (true_positive + false_negative)
-        else:
-            recall = 0
-        if precision + recall > 0:
-            f1 = 2 * precision * recall / (precision + recall)
-        else:
-            f1 = 0
-
-        precision_list.append(precision)
-        recall_list.append(recall)
-        f1_list.append(f1)
-
-    return {'precision': np.average(precision_list),
-            'recall': np.average(recall_list),
-            'F1': np.average(f1_list)}
 
 class Mode(Enum):
     TRAIN = "train"
@@ -415,7 +378,7 @@ if __name__ == "__main__":
         else:
             loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            acc_scorer = node_level_accuracy
+            acc_scorer = eval_F1
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
