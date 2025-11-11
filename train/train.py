@@ -15,7 +15,7 @@ from tqdm import tqdm
 import wandb
 from evaluation.basic_learning_curve_diagnostics import plot_learning_curve, plot_accuracy_curve
 from external.weighted_cross_entropy import weighted_cross_entropy
-from metrics.accuracy import node_level_accuracy, eval_F1
+from metrics.accuracy import node_level_accuracy, eval_F1, graph_level_average_precision, graph_level_accuracy
 from metrics.rayleigh import rayleigh_error
 from model.model_factory import build_model
 from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
@@ -25,10 +25,6 @@ from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from muon import SingleDeviceMuon
-
-from sklearn.metrics import average_precision_score
-from sklearn.metrics import f1_score
-
 
 def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
@@ -66,43 +62,6 @@ def bce_multilabel_loss(pred, true):
         true = true.view_as(pred)
 
     return F.binary_cross_entropy_with_logits(pred, true)
-
-def graph_level_accuracy(pred, true):
-    """
-    pred: [B, C] raw logits
-    true: [B, C] or [B, 1, C] with 0/1 labels
-    """
-    true = true.float()
-    if true.ndim > 2:
-        true = true.view(true.size(0), -1)
-
-    if true.shape != pred.shape:
-        true = true.view_as(pred)
-
-    probs = torch.sigmoid(pred)
-    preds = (probs > 0.5).float()
-
-    correct = (preds == true).float().mean(dim=1)
-    return correct.mean()
-
-def graph_level_average_precision(y_pred, y_true):
-
-    ap_list = []
-
-    for i in range(y_true.shape[1]):
-        if np.sum(y_true[:, i] == 1) > 0 and np.sum(y_true[:, i] == 0) > 0:
-            is_labeled = y_true[:, i] == y_true[:, i]
-            ap = average_precision_score(y_true[is_labeled, i],
-                                         y_pred[is_labeled, i])
-
-            ap_list.append(ap)
-
-    if len(ap_list) == 0:
-        raise RuntimeError(
-            'No positively labeled data available. Cannot compute Average Precision.')
-
-    return sum(ap_list) / len(ap_list)
-
 
 class Mode(Enum):
     TRAIN = "train"
@@ -378,7 +337,7 @@ if __name__ == "__main__":
         else:
             loss_fn = weighted_cross_entropy
             model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            acc_scorer = node_level_accuracy
+            acc_scorer = eval_F1
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None

@@ -3,6 +3,8 @@ import torch.nn.functional as F
 
 import numpy as np
 
+from sklearn.metrics import f1_score, average_precision_score
+
 def node_level_accuracy(node_logits_batch, labels_batch):
     """
     Compute the accuracy of node classification.
@@ -25,45 +27,49 @@ def node_level_accuracy(node_logits_batch, labels_batch):
 
     return accuracy
 
-def eval_F1(pred, true):
+def eval_F1(node_logits_batch, true):
 
-    if isinstance(true, torch.Tensor):
-        true = true.detach().cpu().numpy()
-    if isinstance(pred, torch.Tensor):
-        pred = pred.detach().cpu().numpy()
-    
-    if pred.ndim > 1:
-        pred_labels = np.argmax(pred, axis=-1)
-    else:
-        pred_labels = (pred > 0).astype(int)
-    
-    seq_ref = [set([t]) for t in true]
-    seq_pred = [set([p]) for p in pred_labels]
-    
-    precision_list = []
-    recall_list = []
-    f1_list = []
-    
-    for label, prediction in zip(seq_ref, seq_pred):
-        true_positive = len(label.intersection(prediction))
-        false_positive = len(prediction - label)
-        false_negative = len(label - prediction)
-        
-        if true_positive + false_positive > 0:
-            precision = true_positive / (true_positive + false_positive)
-        else:
-            precision = 0
-        if true_positive + false_negative > 0:
-            recall = true_positive / (true_positive + false_negative)
-        else:
-            recall = 0
-        if precision + recall > 0:
-            f1 = 2 * precision * recall / (precision + recall)
-        else:
-            f1 = 0
-            
-        precision_list.append(precision)
-        recall_list.append(recall)
-        f1_list.append(f1)
-    
-    return np.average(f1_list)
+    preds = F.log_softmax(node_logits_batch, dim=1)
+
+    _, predicted_classes = torch.max(preds, dim=1)
+
+    pred_np = predicted_classes.detach().cpu().numpy()
+    true_np = true.detach().cpu().numpy()
+    f1 = f1_score(true_np, pred_np, average='weighted')
+    return f1
+
+def graph_level_average_precision(y_pred, y_true):
+
+    ap_list = []
+
+    for i in range(y_true.shape[1]):
+        if np.sum(y_true[:, i] == 1) > 0 and np.sum(y_true[:, i] == 0) > 0:
+            is_labeled = y_true[:, i] == y_true[:, i]
+            ap = average_precision_score(y_true[is_labeled, i],
+                                         y_pred[is_labeled, i])
+
+            ap_list.append(ap)
+
+    if len(ap_list) == 0:
+        raise RuntimeError(
+            'No positively labeled data available. Cannot compute Average Precision.')
+
+    return sum(ap_list) / len(ap_list)
+
+def graph_level_accuracy(pred, true):
+    """
+    pred: [B, C] raw logits
+    true: [B, C] or [B, 1, C] with 0/1 labels
+    """
+    true = true.float()
+    if true.ndim > 2:
+        true = true.view(true.size(0), -1)
+
+    if true.shape != pred.shape:
+        true = true.view_as(pred)
+
+    probs = torch.sigmoid(pred)
+    preds = (probs > 0.5).float()
+
+    correct = (preds == true).float().mean(dim=1)
+    return correct.mean()
