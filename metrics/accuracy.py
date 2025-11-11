@@ -25,40 +25,34 @@ def node_level_accuracy(node_logits_batch, labels_batch):
 
     return accuracy
 
-def eval_F1(pred, true, threshold=0.5):
-    # '''
-    #     compute F1 score averaged over samples
-    # '''
+def eval_F1(pred, true):
 
-    if pred.dtype == torch.float:
-        pred_binary = (torch.sigmoid(pred) > threshold).long()
-    else:
-        pred_binary = pred
-    
     if isinstance(true, torch.Tensor):
         true = true.cpu().numpy()
-    if isinstance(pred_binary, torch.Tensor):
-        pred_binary = pred_binary.cpu().numpy()
+    if isinstance(pred, torch.Tensor):
+        pred = pred.cpu().numpy()
     
-    seq_ref = [set(np.where(row)[0]) for row in true]
-    seq_pred = [set(np.where(row)[0]) for row in pred_binary]
-
+    if pred.ndim > 1:
+        pred_labels = np.argmax(pred, axis=-1)
+    else:
+        pred_labels = (pred > 0).astype(int)
+    
+    seq_ref = [set([t]) for t in true]
+    seq_pred = [set([p]) for p in pred_labels]
+    
     precision_list = []
     recall_list = []
     f1_list = []
-
-    for l, p in zip(seq_ref, seq_pred):
-        label = set(l)
-        prediction = set(p)
+    
+    for label, prediction in zip(seq_ref, seq_pred):
         true_positive = len(label.intersection(prediction))
         false_positive = len(prediction - label)
         false_negative = len(label - prediction)
-
+        
         if true_positive + false_positive > 0:
             precision = true_positive / (true_positive + false_positive)
         else:
             precision = 0
-
         if true_positive + false_negative > 0:
             recall = true_positive / (true_positive + false_negative)
         else:
@@ -67,10 +61,9 @@ def eval_F1(pred, true, threshold=0.5):
             f1 = 2 * precision * recall / (precision + recall)
         else:
             f1 = 0
-
+            
         precision_list.append(precision)
         recall_list.append(recall)
         f1_list.append(f1)
-
+    
     return np.average(f1_list)
-
