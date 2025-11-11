@@ -33,7 +33,7 @@ python3 -m train.train \
   --edge_aggregator GATED \
   --optimizer Muon \
   --lr 0.001 \
-  --epochs 200 \
+  --epochs 500 \
   --weight_decay 0.01 \
   --window_size 4 \
   --receptive_field 5 \
@@ -53,7 +53,7 @@ python3 -m train.train \
   --edge_aggregator GATED \
   --optimizer Muon \
   --lr 0.001 \
-  --epochs 200 \
+  --epochs 500 \
   --weight_decay 0.01 \
   --window_size 4 \
   --receptive_field 5 \
@@ -73,7 +73,7 @@ python3 -m train.train \
   --edge_aggregator GATED \
   --optimizer Muon \
   --lr 0.001 \
-  --epochs 200 \
+  --epochs 500 \
   --weight_decay 0.01 \
   --window_size 4 \
   --receptive_field 5 \
