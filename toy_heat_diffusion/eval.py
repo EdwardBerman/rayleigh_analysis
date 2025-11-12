@@ -27,8 +27,8 @@ def main():
     val_rayleigh_x_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_x.npy"))
     val_rayleigh_xprime_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_xprime.npy"))
 
-    val_rayleigh_x_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_xprime.npy")
-    val_rayleigh_x_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_xprime.npy")
+    val_rayleigh_x_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_xprime.npy"))
+    val_rayleigh_x_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_xprime.npy"))
 
 
     fig, ax = plt.subplots(1, 2, figsize=(8, 4))
