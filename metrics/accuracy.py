@@ -27,6 +27,7 @@ def node_level_accuracy(node_logits_batch, labels_batch):
 
     return accuracy
 
+@torch.no_grad()
 def eval_F1(node_logits_batch, true):
 
     preds = F.log_softmax(node_logits_batch, dim=1)
