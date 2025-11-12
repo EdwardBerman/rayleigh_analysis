@@ -6,43 +6,8 @@ import torch
 import torch.nn.functional as F
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
 
-def set_rc_params(fontsize=None):
-    '''
-    Set figure parameters
-    '''
-
-    if fontsize is None:
-        fontsize = 16
-    else:
-        fontsize = int(fontsize)
-
-    rc('font', **{'family': 'serif'})
-    rc('text', usetex=False)
-
-    plt.rcParams.update({'axes.linewidth': 1.3})
-    plt.rcParams.update({'xtick.labelsize': fontsize})
-    plt.rcParams.update({'ytick.labelsize': fontsize})
-    plt.rcParams.update({'xtick.major.size': 8})
-    plt.rcParams.update({'xtick.major.width': 1.3})
-    plt.rcParams.update({'xtick.minor.visible': True})
-    plt.rcParams.update({'xtick.minor.width': 1.})
-    plt.rcParams.update({'xtick.minor.size': 6})
-    plt.rcParams.update({'xtick.direction': 'out'})
-    plt.rcParams.update({'ytick.major.width': 1.3})
-    plt.rcParams.update({'ytick.major.size': 8})
-    plt.rcParams.update({'ytick.minor.visible': True})
-    plt.rcParams.update({'ytick.minor.width': 1.})
-    plt.rcParams.update({'ytick.minor.size': 6})
-    plt.rcParams.update({'ytick.direction': 'out'})
-    plt.rcParams.update({'axes.labelsize': fontsize})
-    plt.rcParams.update({'axes.titlesize': fontsize})
-    plt.rcParams.update({'legend.fontsize': int(fontsize-2)})
-    plt.rcParams['text.usetex'] = True
-    plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
-
-
+from evaluation.plotting_params import set_rc_params
 
 def main():
     set_rc_params(10)
@@ -61,6 +26,10 @@ def main():
     val_mse_UNI = np.load(os.path.join(args.data_dir_UNI, "val_mse.npy"))
     val_rayleigh_x_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_x.npy"))
     val_rayleigh_xprime_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_xprime.npy"))
+
+    val_rayleigh_x_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_xprime.npy")
+    val_rayleigh_x_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_xprime.npy")
+
 
     fig, ax = plt.subplots(1, 2, figsize=(8, 4))
     ax[0].plot(
@@ -104,6 +73,32 @@ def main():
 
     plt.tight_layout()
     plt.savefig(os.path.join(args.save_dir, "validation_comparison.png"), dpi=300)
+    plt.close()
+
+    # histogram of final epoch rayleigh_quotients_xprime
+    plt.figure(figsize=(6, 4))
+    plt.hist(
+        val_rayleigh_xprime_GCN_final_epoch,
+        bins=30,
+        alpha=0.5,
+        label="GCN",
+        color="blue",
+        density=True,
+    )
+    plt.hist(
+        val_rayleigh_xprime_UNI_final_epoch,
+        bins=30,
+        alpha=0.5,
+        label="Uni",
+        color="red",
+        density=True,
+    )
+    plt.xlabel(r"$R_{\mathcal{G}}(f(X))$", fontsize=24)
+    plt.ylabel("Density", fontsize=24)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.save_dir, "rayleigh_quotients_comparison.png"), dpi=300)
+    plt.close()
 
 
 

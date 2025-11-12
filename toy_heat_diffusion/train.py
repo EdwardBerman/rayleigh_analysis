@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import wandb
-from metrics.rayleigh import rayleigh_quotients
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
+from metrics.heat_flow import evaluate_heat_flow, rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
@@ -43,31 +43,6 @@ def train_one_epoch(model, loader, optimizer, device):
         total_mse += loss.item()
         total_nodes += data.num_nodes
     return total_mse / total_nodes
-
-
-@torch.no_grad()
-def evaluate(model, loader, device):
-    model.eval()
-    total_mse, total_nodes = 0, 0
-    rayleigh_quotients_x = []
-    rayleigh_quotients_xprime = []
-    rayleigh_quotients_y = []
-
-    for data in loader:
-        data = data.to(device)
-        out = model(data)
-        mse = F.mse_loss(out, data.y, reduction="sum").item()
-        total_mse += mse
-        total_nodes += data.num_nodes
-
-        x, xprime, y = rayleigh_quotients(model, data)
-        rayleigh_quotients_x.append(x.item())
-        rayleigh_quotients_xprime.append(xprime.item())
-        rayleigh_quotients_y.append(y.item())
-
-    avg_mse = total_mse / total_nodes
-
-    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime), np.mean(rayleigh_quotients_y)
 
 
 def main():
@@ -145,9 +120,9 @@ def main():
     for epoch in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
-        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate(
+        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate_heat_flow(
             model, eval_loader, device)
-        _, rayleigh_x_train, rayleigh_xprime_train, rayleigh_y_train = evaluate(
+        _, rayleigh_x_train, rayleigh_xprime_train, rayleigh_y_train = evaluate_heat_flow(
             model, train_loader, device)
         run.log({
             "epoch": epoch,
@@ -168,6 +143,8 @@ def main():
         val_rayleigh_x_list.append(rayleigh_x)
         val_rayleigh_xprime_list.append(rayleigh_xprime)
         val_rayleigh_y_list.append(rayleigh_y)
+
+    rayleigh_quotient_distribution(model, val_loader, device, args.save_dir)
 
     torch.save(model.state_dict(), os.path.join(
         args.save_dir, "model.pt"))

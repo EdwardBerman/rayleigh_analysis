@@ -74,3 +74,4 @@ def graph_level_accuracy(pred, true):
 
     correct = (preds == true).float().mean(dim=1)
     return correct.mean()
+
