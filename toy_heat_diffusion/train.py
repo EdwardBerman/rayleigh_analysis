@@ -157,6 +157,10 @@ def main():
     np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"), np.array(val_rayleigh_xprime_list))
     np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"), np.array(val_rayleigh_y_list))
 
+    with open(os.path.join(args.save_dir, "args.txt"), "w") as f:
+        for arg in vars(args):
+            f.write(f"{arg}: {getattr(args, arg)}\n")
+
 
 if __name__ == "__main__":
     main()
