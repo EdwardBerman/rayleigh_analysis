@@ -27,8 +27,12 @@ def main():
     val_rayleigh_x_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_x.npy"))
     val_rayleigh_xprime_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_xprime.npy"))
 
-    val_rayleigh_x_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_xprime.npy"))
-    val_rayleigh_x_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_xprime.npy"))
+    val_rayleigh_xprime_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_xprime.npy"))
+    val_rayleigh_xprime_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_xprime.npy"))
+    val_rayleigh_x_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_x.npy"))
+    val_rayleigh_x_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_x.npy"))
+    val_rayleigh_y_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_y.npy"))
+    val_rayleigh_y_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_y.npy"))
 
 
     fig, ax = plt.subplots(1, 2, figsize=(8, 4))
@@ -80,20 +84,36 @@ def main():
     plt.hist(
         val_rayleigh_xprime_GCN_final_epoch,
         bins=30,
-        alpha=0.5,
-        label="GCN",
+        alpha=0.25,
+        label=r"R_{\mathcal{G}}(f_{\rm GCN}(X)}})",
         color="blue",
         density=True,
     )
     plt.hist(
         val_rayleigh_xprime_UNI_final_epoch,
         bins=30,
-        alpha=0.5,
-        label="Uni",
+        alpha=0.25,
+        label=r"R_{\mathcal{G}}(f_{\rm Uni-GCN}(X)}}",
         color="red",
         density=True,
     )
-    plt.xlabel(r"$R_{\mathcal{G}}(f(X))$", fontsize=24)
+    plt.hist(
+        val_rayleigh_x_GCN_final_epoch,
+        bins=30,
+        alpha=0.25,
+        label=r"R_{\mathcal{G}}(X)}",
+        color="cyan",
+        density=True,
+    )
+    plt.hist(
+        val_rayleigh_x_UNI_final_epoch,
+        bins=30,
+        alpha=0.25,
+        label=r"R_{\mathcal{G}}(X)}",
+        color="magenta",
+        density=True,
+    )
+    plt.xlabel(r"$R_{\mathcal{G}}$", fontsize=24)
     plt.ylabel("Density", fontsize=24)
     plt.legend()
     plt.tight_layout()
