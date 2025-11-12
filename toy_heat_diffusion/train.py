@@ -144,7 +144,7 @@ def main():
         val_rayleigh_xprime_list.append(rayleigh_xprime)
         val_rayleigh_y_list.append(rayleigh_y)
 
-    rayleigh_quotient_distribution(model, val_loader, device, args.save_dir)
+    rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
 
     torch.save(model.state_dict(), os.path.join(
         args.save_dir, "model.pt"))
