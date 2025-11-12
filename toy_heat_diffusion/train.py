@@ -61,7 +61,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--save_dir", type=str, default="runs")
+    parser.add_argument("--save_dir", type=str, default="outputs")
     parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
 
