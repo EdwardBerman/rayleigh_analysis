@@ -10,7 +10,7 @@ from torch_geometric.loader import DataLoader
 import wandb
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
-from metrics.heat_flow import evaluate_heat_flow, rayleigh_quotient_distribution
+from metrics.heat_flow import rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
@@ -43,6 +43,30 @@ def train_one_epoch(model, loader, optimizer, device):
         total_mse += loss.item()
         total_nodes += data.num_nodes
     return total_mse / total_nodes
+
+@torch.no_grad()
+def evaluate_heat_flow(model, loader, device):
+    model.eval()
+    total_mse, total_nodes = 0, 0
+    rayleigh_quotients_x = []
+    rayleigh_quotients_xprime = []
+    rayleigh_quotients_y = []
+
+    for data in loader:
+        data = data.to(device)
+        out = model(data)
+        mse = F.mse_loss(out, data.y, reduction="sum").item()
+        total_mse += mse
+        total_nodes += data.num_nodes
+
+        x, xprime, y = rayleigh_quotients(model, data)
+        rayleigh_quotients_x.append(x.item())
+        rayleigh_quotients_xprime.append(xprime.item())
+        rayleigh_quotients_y.append(y.item())
+
+    avg_mse = total_mse / total_nodes
+
+    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime), np.mean(rayleigh_quotients_y)
 
 
 def main():
