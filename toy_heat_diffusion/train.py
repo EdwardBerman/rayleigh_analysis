@@ -10,6 +10,7 @@ from torch_geometric.loader import DataLoader
 import wandb
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
+from metrics.rayleigh import rayleigh_quotients
 from metrics.heat_flow import rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
