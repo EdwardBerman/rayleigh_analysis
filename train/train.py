@@ -268,7 +268,7 @@ if __name__ == "__main__":
                         default=5, required=False)  # For CRAWL
 
     parser.add_argument("--save_dir", type=str,
-                        default='output', required=False)
+                        default='outputs', required=False)
 
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")

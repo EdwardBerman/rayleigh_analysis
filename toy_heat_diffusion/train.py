@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import wandb
-from metrics.rayleigh import rayleigh_quotients
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
+from metrics.heat_flow import evaluate_heat_flow, rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
@@ -45,31 +45,6 @@ def train_one_epoch(model, loader, optimizer, device):
     return total_mse / total_nodes
 
 
-@torch.no_grad()
-def evaluate(model, loader, device):
-    model.eval()
-    total_mse, total_nodes = 0, 0
-    rayleigh_quotients_x = []
-    rayleigh_quotients_xprime = []
-    rayleigh_quotients_y = []
-
-    for data in loader:
-        data = data.to(device)
-        out = model(data)
-        mse = F.mse_loss(out, data.y, reduction="sum").item()
-        total_mse += mse
-        total_nodes += data.num_nodes
-
-        x, xprime, y = rayleigh_quotients(model, data)
-        rayleigh_quotients_x.append(x.item())
-        rayleigh_quotients_xprime.append(xprime.item())
-        rayleigh_quotients_y.append(y.item())
-
-    avg_mse = total_mse / total_nodes
-
-    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime), np.mean(rayleigh_quotients_y)
-
-
 def main():
 
     parser = argparse.ArgumentParser()
@@ -86,7 +61,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--save_dir", type=str, default="runs")
+    parser.add_argument("--save_dir", type=str, default="outputs")
     parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
 
@@ -145,9 +120,9 @@ def main():
     for epoch in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
-        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate(
+        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate_heat_flow(
             model, eval_loader, device)
-        _, rayleigh_x_train, rayleigh_xprime_train, rayleigh_y_train = evaluate(
+        _, rayleigh_x_train, rayleigh_xprime_train, rayleigh_y_train = evaluate_heat_flow(
             model, train_loader, device)
         run.log({
             "epoch": epoch,
@@ -169,6 +144,8 @@ def main():
         val_rayleigh_xprime_list.append(rayleigh_xprime)
         val_rayleigh_y_list.append(rayleigh_y)
 
+    rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
+
     torch.save(model.state_dict(), os.path.join(
         args.save_dir, "model.pt"))
     np.save(os.path.join(args.save_dir, "train_mse.npy"), np.array(train_mse_list))
@@ -179,6 +156,10 @@ def main():
     np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"), np.array(val_rayleigh_x_list))
     np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"), np.array(val_rayleigh_xprime_list))
     np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"), np.array(val_rayleigh_y_list))
+
+    with open(os.path.join(args.save_dir, "args.txt"), "w") as f:
+        for arg in vars(args):
+            f.write(f"{arg}: {getattr(args, arg)}\n")
 
 
 if __name__ == "__main__":
