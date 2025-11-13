@@ -19,7 +19,7 @@ EPOCHS=500
 WEIGHT_DECAY=0.01
 WINDOW_SIZE=4
 RECEPTIVE_FIELD=5
-SAVE_DIR="peptide_experiment"
+SAVE_DIR="peptide_struct"
 VERBOSE="--verbose"
 # Uncomment the next line if you want skip connections enabled
 # SKIP="--skip_connections"

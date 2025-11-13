@@ -3,7 +3,7 @@
 # Grid search ranges
 layers=(8)
 datasets=("Peptides-struct")
-architectures=("Uni")
+architectures=("Gat")
 
 # Default hyperparameters (based on your provided baseline)
 ACTIVATION="ReLU"
