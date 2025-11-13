@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --time=07:59:59
