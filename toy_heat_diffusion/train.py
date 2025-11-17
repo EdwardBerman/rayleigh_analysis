@@ -86,6 +86,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--save_dir", type=str, default="outputs")
     parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
@@ -110,13 +111,13 @@ def main():
 
     if args.model == "gcn":
         base_gnn = build_model(node_dim=in_ch, model_type="GCN", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     elif args.model == 'lie_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="LieUni", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     elif args.model == 'separable_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="Uni", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     else:
         raise Exception("We do not like anything else here.")
 
