@@ -14,6 +14,14 @@ from metrics.rayleigh import rayleigh_quotients
 from metrics.heat_flow import rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
+def set_seed(seed):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_heat_diffusion_graphs"):
     run_name = (
@@ -90,8 +98,12 @@ def main():
     parser.add_argument("--save_dir", type=str, default="outputs/ten_runs")
     parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
+    parser.add_argument("--set_seed", type=bool, default=False)
 
     args = parser.parse_args()
+
+    if args.set_seed:
+        set_seed(42)
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
     save_str = f"{args.model}_layers{args.layers}_hidden{args.hidden}_act{args.act}_lr{args.lr}_bs{args.batch_size}_dropout{args.dropout}"
