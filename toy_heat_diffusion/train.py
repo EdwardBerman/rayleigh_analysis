@@ -98,7 +98,7 @@ def main():
     parser.add_argument("--save_dir", type=str, default="outputs/ten_runs_select_best")
     parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
-    parser.add_argument("--set_seed", type=bool, default=False)
+    parser.add_argument("--set_seed", action="store_true")
 
     args = parser.parse_args()
 
