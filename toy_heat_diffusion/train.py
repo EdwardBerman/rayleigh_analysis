@@ -103,6 +103,7 @@ def main():
     args = parser.parse_args()
 
     if args.set_seed:
+        print("Setting Seed")
         set_seed(42)
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
