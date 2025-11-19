@@ -42,12 +42,10 @@ if __name__ == "__main__":
         "DATASET": "Peptides-struct",
         "NUM_LAYERS": 6,
         "SKIP_CONNECTIONS": False,
-        "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
         "DROPOUT_RATE": 0.2,
         "HIDDEN_SIZE": 200,
-        "EDGE_AGGREGATOR": None,
         "OPTIMIZER": "Adam",
         "LR": 0.001,
         "EPOCHS": 500,
@@ -58,6 +56,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--architecture", type=str,
                         help="Uni, LieUni", required=True)
+    parser.add_argument("--act", type=str, default="Identity")
+    parser.add_argument("--edge_agg", type=str, default="GINE")
     parser.add_argument("--truncation", type=int,
                         help="Determines how truncated the taylor series is.", required=True)
     parser.add_argument("--epochs", type=int,
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     pprint.pprint(vars(args))
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    name = f"{args.architecture}_tst_{args.truncation}_{current_time}"
+    name = f"{args.architecture}_tst_{args.truncation}_{args.act}_{args.edge_agg}_{current_time}"
     args.save_dir = os.path.join(
         args.save_dir, name)
     os.makedirs(args.save_dir, exist_ok=True)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         'train_dataset'], dataset['val_dataset'], dataset['test_dataset']
     node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']
 
-    activation_function = str_to_activation(config['ACTIVATION_FUNCTION'])
+    activation_function = str_to_activation(args.act)
 
     if args.architecture == "Uni":
         module_list = []
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                                                    activation=activation_function()))
         model = UniStack(module_list)
         base_gnn_model = EdgeModel(edge_dim, node_dim, model,
-                                   config['EDGE_AGGREGATOR']) if config['EDGE_AGGREGATOR'] is not None else NodeModel(model)
+                                   args.edge_agg) if args.edge_agg is not None else NodeModel(model)
     elif args.architecture == 'LieUni':
         module_list = []
         input_dim = node_dim
@@ -133,7 +133,7 @@ if __name__ == "__main__":
                                                    activation=activation_function()))
         model = UniStack(module_list)
         base_gnn_model = EdgeModel(edge_dim, node_dim, model,
-                                   config['EDGE_AGGREGATOR']) if config['EDGE_AGGREGATOR'] is not None else NodeModel(model)
+                                   args.edge_agg) if args.edge_agg is not None else NodeModel(model)
     else:
         raise Exception("Architecture not recognized.")
 

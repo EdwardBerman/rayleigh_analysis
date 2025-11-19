@@ -18,5 +18,5 @@ do
         --architecture Uni \
         --truncation $trunc \
         --epochs 100 \
-        --verbose
+        --verbose --act ReLU --edge_agg GINE
 done
