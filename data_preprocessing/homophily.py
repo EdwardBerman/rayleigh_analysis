@@ -14,7 +14,9 @@ if __name__ == "__main__":
     current_dir = os.getcwd()
     os.makedirs(save_dir, exist_ok=True)
 
-    parser = LongRangeGraphBenchmarkParser(name="PascalVOC-SP", verbose=True)
+    preprocess = lambda x: x
+
+    parser = LongRangeGraphBenchmarkParser(name="PascalVOC-SP", transform=preprocess, verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
 
@@ -44,7 +46,7 @@ if __name__ == "__main__":
         save_dir, 'homophily_distribution_pascalvoc_sp.pdf'))
     plt.close()
 
-    parser = LongRangeGraphBenchmarkParser(name="COCO-SP", verbose=True)
+    parser = LongRangeGraphBenchmarkParser(name="COCO-SP", transform=preprocess, verbose=True)
     train_dataset, val_dataset, test_dataset = parser.return_datasets()
     full_dataset = ConcatDataset([train_dataset, val_dataset, test_dataset])
 

@@ -8,13 +8,22 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import wandb
-from metrics.rayleigh import rayleigh_quotients
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
+from metrics.rayleigh import rayleigh_quotients
+from metrics.heat_flow import rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
+def set_seed(seed):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
-def setup_wandb(config):
+def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_heat_diffusion_graphs"):
     run_name = (
         f"{config['model']}_"
         f"{config['act']}_"
@@ -44,9 +53,8 @@ def train_one_epoch(model, loader, optimizer, device):
         total_nodes += data.num_nodes
     return total_mse / total_nodes
 
-
 @torch.no_grad()
-def evaluate(model, loader, device):
+def evaluate_heat_flow(model, loader, device):
     model.eval()
     total_mse, total_nodes = 0, 0
     rayleigh_quotients_x = []
@@ -80,19 +88,30 @@ def main():
     parser.add_argument(
         "--model", choices=["gcn", "separable_unitary", "lie_unitary"], default="gcn")
     parser.add_argument("--layers", type=int, default=8)
-    # Choices ReLU, GroupSort
+    # Choices ReLU, GroupSort, Identity
     parser.add_argument("--act", type=str, default="ReLU")
     parser.add_argument("--hidden", type=int, default=16)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--save_dir", type=str, default="runs")
+    parser.add_argument("--dropout", type=float, default=0.0)
+    parser.add_argument("--save_dir", type=str, default="outputs/ten_runs_select_best")
+    parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
+    parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
+    parser.add_argument("--set_seed", action="store_true")
 
     args = parser.parse_args()
 
+    if args.set_seed:
+        print("Setting Seed")
+        set_seed(42)
+    else:
+        print("Not Setting Seed")
+
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    save_str = f"{args.model}_layers{args.layers}_hidden{args.hidden}_act{args.act}_lr{args.lr}_bs{args.batch_size}_dropout{args.dropout}"
     args.save_dir = os.path.join(
-        args.save_dir, f"{current_time}")
+        args.save_dir, f"{save_str}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
 
     train_graphs, eval_graphs = load_autoregressive_dataset(
@@ -108,13 +127,13 @@ def main():
 
     if args.model == "gcn":
         base_gnn = build_model(node_dim=in_ch, model_type="GCN", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     elif args.model == 'lie_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="LieUni", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     elif args.model == 'separable_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="Uni", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None")
+                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     else:
         raise Exception("We do not like anything else here.")
 
@@ -134,24 +153,55 @@ def main():
     print(f"Total parameters: {params}")
 
     config = vars(args)
-    run = setup_wandb(config)
+    run = setup_wandb(config, entity_name=args.entity_name, project_name=args.project_name)
+
+    train_mse_list, val_mse_list = [], [] 
+    train_rayleigh_x_list, train_rayleigh_xprime_list, train_rayleigh_y_list = [], [], [] 
+    val_rayleigh_x_list, val_rayleigh_xprime_list, val_rayleigh_y_list = [], [], []
 
     for epoch in range(1, args.epochs + 1):
         avg_train_loss = train_one_epoch(
             model, train_loader, optimizer, device)
-        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate(
+        test_mse, rayleigh_x, rayleigh_xprime, rayleigh_y = evaluate_heat_flow(
             model, eval_loader, device)
+        _, rayleigh_x_train, rayleigh_xprime_train, rayleigh_y_train = evaluate_heat_flow(
+            model, train_loader, device)
         run.log({
             "epoch": epoch,
             "train_mse": avg_train_loss,
             "val_mse": test_mse,
+            "train_rayleigh_x": rayleigh_x_train,
+            "train_rayleigh_xprime": rayleigh_xprime_train,
+            "train_rayleigh_y": rayleigh_y_train,
             "val_rayleigh_x": rayleigh_x,
             "val_rayleigh_xprime": rayleigh_xprime,
             "val_rayleigh_y": rayleigh_y
         })
+        train_mse_list.append(avg_train_loss)
+        val_mse_list.append(test_mse)
+        train_rayleigh_x_list.append(rayleigh_x_train)
+        train_rayleigh_xprime_list.append(rayleigh_xprime_train)
+        train_rayleigh_y_list.append(rayleigh_y_train)
+        val_rayleigh_x_list.append(rayleigh_x)
+        val_rayleigh_xprime_list.append(rayleigh_xprime)
+        val_rayleigh_y_list.append(rayleigh_y)
+
+    rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
 
     torch.save(model.state_dict(), os.path.join(
         args.save_dir, "model.pt"))
+    np.save(os.path.join(args.save_dir, "train_mse.npy"), np.array(train_mse_list))
+    np.save(os.path.join(args.save_dir, "val_mse.npy"), np.array(val_mse_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"), np.array(train_rayleigh_x_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"), np.array(train_rayleigh_xprime_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_y.npy"), np.array(train_rayleigh_y_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"), np.array(val_rayleigh_x_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"), np.array(val_rayleigh_xprime_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"), np.array(val_rayleigh_y_list))
+
+    with open(os.path.join(args.save_dir, "args.txt"), "w") as f:
+        for arg in vars(args):
+            f.write(f"{arg}: {getattr(args, arg)}\n")
 
 
 if __name__ == "__main__":

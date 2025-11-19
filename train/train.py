@@ -2,6 +2,7 @@ import os
 import pprint
 from datetime import datetime
 from enum import Enum
+from typing import Callable
 
 import numpy as np
 import torch
@@ -21,12 +22,16 @@ from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.accuracy import node_level_accuracy
 from metrics.rayleigh import (compute_rayleigh_quotient, rayleigh_error,
                               rayleigh_quotients)
+from metrics.accuracy import node_level_accuracy, eval_F1, graph_level_average_precision, graph_level_accuracy
+from metrics.rayleigh import rayleigh_error
 from model.model_factory import build_model
 from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
                              NodeLevelClassifier, NodeLevelRegressor)
 from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from muon import SingleDeviceMuon
 
 def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
@@ -91,15 +96,14 @@ class Mode(Enum):
     EVAL = "eval"
     TEST = "test"
 
-
-def step(model: nn.Module,
-         data: Data,
-         loss: nn.Module,
-         run: wandb.run,
-         mode: str,
-         optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None,
-         scheduler: torch.optim.lr_scheduler._LRScheduler | None,
-         acc_scorer: nn.Module | None = None):
+def step(model: nn.Module, 
+         data: Data, 
+         loss: nn.Module, 
+         run: wandb.run, 
+         mode: str, 
+         optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None, 
+         scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
+         acc_scorer: nn.Module | None | Callable = None) -> tuple[float, float | None]:
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
     """
@@ -167,7 +171,7 @@ def train(model: nn.Module,
           output_dir: str,
           device: torch.device,
           log_rq: bool = False,
-          acc_scorer: nn.Module | None = None):
+          acc_scorer: nn.Module | None | Callable = None):
 
     train_losses, train_accuracies = [], []
     val_losses, val_accuracies = [], []
@@ -183,6 +187,7 @@ def train(model: nn.Module,
         test_loss, test_acc = 0, 0
         x_rq = []
         xprime_rq = []
+        test_rayleigh_error = []
 
         for batch in val_loader:
             batch = batch.to(device)
@@ -220,6 +225,12 @@ def train(model: nn.Module,
                                   Mode.TEST, optimizer=None, scheduler=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
+            
+            if log_rq:
+                test_rayleigh_error.append(rayleigh_error(model.base_model, batch).item())
+
+        if log_rq:
+            run.log({"test_rayleigh_error": np.mean(test_rayleigh_error)})
 
         test_losses.append(test_loss / len(test_loader))
         test_accuracies.append(test_acc / len(test_loader)
@@ -255,6 +266,11 @@ def train(model: nn.Module,
             np.array(test_accuracies))
 
     plot_learning_curve(train_losses, val_losses, test_losses, output_dir)
+
+    if log_rq:
+        np.save(os.path.join(output_dir, "test_rayleigh_error.npy"),
+                np.array(test_rayleigh_error))
+
     if acc_scorer is not None:
         plot_accuracy_curve(train_accuracies, val_accuracies,
                             test_accuracies, output_dir)
@@ -295,7 +311,7 @@ if __name__ == "__main__":
                         default=5, required=False)  # For CRAWL
 
     parser.add_argument("--save_dir", type=str,
-                        default='output', required=False)
+                        default='outputs', required=False)
 
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")
@@ -333,6 +349,9 @@ if __name__ == "__main__":
         'train_dataset'], dataset['val_dataset'], dataset['test_dataset']
     node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']
 
+    if args.edge_aggregator == "NONE":
+        args.edge_aggregator = None
+
     base_gnn_model = build_model(node_dim=node_dim,
                                  model_type=args.architecture,
                                  num_layers=args.num_layers,
@@ -357,14 +376,13 @@ if __name__ == "__main__":
         acc_scorer = None
         if level == "graph_level":
             loss_fn = bce_multilabel_loss
-            model = GraphLevelClassifier(
-                base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            acc_scorer = graph_level_accuracy
+            model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
+            acc_scorer = graph_level_average_precision
         else:
             loss_fn = weighted_cross_entropy
-            model = NodeLevelClassifier(
-                base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
-            acc_scorer = node_level_accuracy
+            model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
+            print("Accuracy metric: F1 Score")
+            acc_scorer = eval_F1
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None

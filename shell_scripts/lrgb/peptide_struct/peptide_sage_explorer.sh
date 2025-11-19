@@ -1,9 +1,25 @@
 #!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --time=07:59:59
+#SBATCH --job-name=[h200train]
+#SBATCH --mem=32GB
+#SBATCH --ntasks=1
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:h200
+#SBATCH --output=slurm/%j.out
+#SBATCH --error=slurm/%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=berman.ed@northeastern.edu
+
+module load python/3.13.5
+
+eval "$(poetry env activate)"
+
 
 # Grid search ranges
 layers=(8)
 datasets=("Peptides-struct")
-architectures=("GCN")
+architectures=("Sage")
 
 # Default hyperparameters (based on your provided baseline)
 ACTIVATION="ReLU"
@@ -19,7 +35,7 @@ EPOCHS=500
 WEIGHT_DECAY=0.01
 WINDOW_SIZE=4
 RECEPTIVE_FIELD=5
-SAVE_DIR="peptide_experiment"
+SAVE_DIR="peptide_struct"
 VERBOSE="--verbose"
 # Uncomment the next line if you want skip connections enabled
 # SKIP="--skip_connections"

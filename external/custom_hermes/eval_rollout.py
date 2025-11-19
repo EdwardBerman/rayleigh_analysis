@@ -50,7 +50,7 @@ def set_rc_params(fontsize=None):
     plt.rcParams['text.usetex'] = False
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
 
-set_rc_params(10)
+set_rc_params(15)
 
 objects = {
     "armadillo": examples.download_armadillo(),
@@ -146,8 +146,11 @@ def main(cfg):
                     y_pred = model(data)
 
                     all_preds.append(y_pred.squeeze().detach().cpu().numpy())
-
-                    loss = loss_fn(y_pred, y)
+                    
+                    try:
+                        loss = loss_fn(y_pred, y)
+                    except:
+                        loss = loss_fn(y_pred, y, data.edge_index)
                     all_losses.append(loss.item())
 
                     # Sketchy over here
@@ -197,6 +200,8 @@ def main(cfg):
 
         results = eval_step(dataset)
 
+        integrated_errors_all = []
+
         for mesh_idx, v in results["losses"].items():
             losses = np.asarray(v)
             print(
@@ -229,7 +234,7 @@ def main(cfg):
             np.save(save_path / "rayleigh_true.npy", true_rq)
             np.save(save_path / "rayleigh_pred.npy", pred_rq)
 
-            plt.figure()
+            plt.figure(figsize=(6, 4))
             t = np.arange(true_rq.shape[1])
             plt.plot(
                 t,
@@ -241,22 +246,33 @@ def main(cfg):
                 t,
                 pred_rq.mean(axis=0),
                 label=f"Prediction Rayleigh Quotient, Mesh idx {mesh_idx}",
-                color="orange",
+                color="red",
             )
             true_rq_std = true_rq.std(axis=0)
             pred_rq_std = pred_rq.std(axis=0)
             plt.fill_between(t, true_rq.mean(axis=0) - true_rq_std, true_rq.mean(axis=0) + true_rq_std, color="blue", alpha=0.3)
-            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="orange", alpha=0.3)
+            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
+            plt.tight_layout()
             plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
+            plt.tight_layout()
             plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+
+            traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
+            integrated_errors_all.extend(traj_error.tolist())
+
+            integrated_rayleigh_error = traj_error.mean()
+            integrated_rayleigh_error_std = traj_error.std()
+            print(
+                f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}"
+            )
 
 
             for s in range(1):
@@ -301,6 +317,13 @@ def main(cfg):
                             n_frames=240,
                             framerate=30,
                             )
+
+            if len(integrated_errors_all) > 0:
+                overall_mean = np.mean(integrated_errors_all)
+                overall_std = np.std(integrated_errors_all)
+                print(
+                    f"[{split}] Combined Integrated Rayleigh Quotient Error over all meshes and rollouts: {overall_mean:.6e} +/- {overall_std:.6e} (n={len(integrated_errors_all)})"
+                )
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
 

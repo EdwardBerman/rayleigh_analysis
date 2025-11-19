@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygsp as pg
 
+from tqdm import tqdm
+
 
 def generate_num_nodes(num: int, mean: float, variance: float) -> list[int]:
     """Generates the number of nodes of the graphs by drawing from a Gaussian"""
@@ -141,7 +143,8 @@ def main(save_dir: str):
     num_nodes_list = generate_num_nodes(num_graphs, size_mean, size_std)
     data_by_time = {t: [] for t in times}
 
-    for i, n_nodes in enumerate(num_nodes_list):
+    
+    for i, n_nodes in enumerate(tqdm(num_nodes_list)):
 
         if args.graph_type == "grid":
             X, A, G = generate_heat_grid_graph(
@@ -162,7 +165,7 @@ def main(save_dir: str):
             }
             data_by_time[t].append(graph_data)
 
-    for t in times:
+    for t in tqdm(times, desc="Saving data by time step"):
         time_step_file = os.path.join(save_dir, f"graphs_t{t}.pkl")
         with open(time_step_file, 'wb') as f:
             pickle.dump(data_by_time[t], f)

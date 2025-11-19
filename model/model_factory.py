@@ -118,7 +118,13 @@ def build_model(node_dim: int,
                               out_channels=node_dim,
                               dropout=dropout_rate,
                               norm=batch_norm,
-                              act=activation_function())
+                              act=activation_function()) if batch_norm != "None" else GraphSAGE(num_layers=num_layers,
+                                                                                                in_channels=node_dim,
+                                                                                                hidden_channels=hidden_size,
+                                                                                                out_channels=node_dim,
+                                                                                                dropout=dropout_rate,
+                                                                                                act=activation_function())
+
             model = add_skip_connections(model) if skip_connections else model
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'Uni':
@@ -150,16 +156,16 @@ def build_model(node_dim: int,
                 module_list.append(UnitaryGCNConvLayer(input_dim,
                                                        input_dim,
                                                        dropout=dropout_rate,
-                                                       residual=skip_connections,
-                                                       global_bias=True,
-                                                       T=10,
+                                                       residual=False,
+                                                       global_bias=False,
+                                                       T=20,
                                                        use_hermitian=True,
                                                        activation=activation_function()))
             model = UniStack(module_list)
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
-        case 'Crawl':
+        case 'CRAWL':
             assert not skip_connections, "Skip connections should be False for CRaWl, which already includes skip connections."
-            assert edge_aggregator == "NONE", "Edge aggregator should be None for CRaWl, which already includes an edge aggregator."
+            assert edge_aggregator == None, "Edge aggregator should be None for CRaWl, which already includes an edge aggregator."
             model = CRaWl(node_feat_dim=node_dim,
                           edge_feat_dim=edge_dim,
                           layers=num_layers,
