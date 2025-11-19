@@ -19,7 +19,7 @@ do
         --architecture Uni \
         --truncation $trunc \
         --epochs 1 \
-        --verbose --toy --act ReLU --edge_agg GINE
+        --verbose --toy --act ReLU --edge_agg GINE --project luisa-playground
 done
 
 # the lie unitary one with edge aggregator 
@@ -30,7 +30,7 @@ do
         --architecture LieUni \
         --truncation $trunc \
         --epochs 1 \
-        --verbose --toy --edge_agg GINE
+        --verbose --toy --edge_agg GINE --project luisa-playground
 done
 
 # the lie unitary one with no edge aggregator 
@@ -41,5 +41,5 @@ do
         --architecture LieUni \
         --truncation $trunc \
         --epochs 1 \
-        --verbose --toy
+        --verbose --toy --project luisa-playground
 done
