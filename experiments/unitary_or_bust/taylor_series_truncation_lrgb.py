@@ -38,20 +38,6 @@ def setup_wandb(config, run_name: str, project: str):
 
 if __name__ == "__main__":
 
-    config = {
-        "DATASET": "Peptides-struct",
-        "NUM_LAYERS": 6,
-        "SKIP_CONNECTIONS": False,
-        "BATCH_SIZE": 200,
-        "BATCH_NORM": "None",
-        "DROPOUT_RATE": 0.2,
-        "HIDDEN_SIZE": 200,
-        "OPTIMIZER": "Adam",
-        "LR": 0.001,
-        "EPOCHS": 500,
-        "WEIGHT_DECAY": 0.01,
-    }
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--architecture", type=str,
@@ -69,6 +55,31 @@ if __name__ == "__main__":
     parser.add_argument("--toy", action="store_true",
                         help="Use a much smaller version of the dataset to test")
     parser.add_argument("--project", type=str)
+    parser.add_argument("--optimizer", type=str, default="Cosine",
+                        required=False, help="Adam, Cosine, or Muon")
+
+    parser.add_argument("--num_layers", type=int, required=True)
+    parser.add_argument("--batch_size", type=int, required=True)
+    parser.add_argument("--dropout_rate", type=float,
+                        default=0.1, required=False)
+
+    parser.add_argument("--lr", type=float, default=0.001, required=False)
+    parser.add_argument("--weight_decay", type=float,
+                        default=0.01, required=False)
+
+    config = {
+        "DATASET": "Peptides-struct",
+        "NUM_LAYERS": args.num_layers,
+        "SKIP_CONNECTIONS": False,
+        "BATCH_SIZE": args.batch_size,
+        "BATCH_NORM": "None",
+        "DROPOUT_RATE": args.dropout_rate,
+        "HIDDEN_SIZE": 128,
+        "OPTIMIZER": args.optimizer,
+        "LR": args.lr,
+        "EPOCHS": args.epochs,
+        "WEIGHT_DECAY": args.weight_decay,
+    }
 
     args = parser.parse_args()
     print("Arguments:")
