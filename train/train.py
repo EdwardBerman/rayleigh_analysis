@@ -22,6 +22,7 @@ from external.weighted_cross_entropy import weighted_cross_entropy
 from metrics.accuracy import (eval_F1, graph_level_accuracy,
                               graph_level_average_precision,
                               node_level_accuracy)
+from metrics.heat_flow import rayleigh_quotient_distribution
 from metrics.rayleigh import (compute_rayleigh_quotient, rayleigh_error,
                               rayleigh_quotients)
 from model.model_factory import build_model
@@ -251,6 +252,8 @@ def train(model: nn.Module,
             train_acc / len(train_loader) if acc_scorer is not None else 0)
         run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}
                 ) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
+    
+    rayleigh_quotient_distribution(model, test_loader, device, args.save_dir)
 
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
     torch.save(model.base_model.state_dict(),
