@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from muon import SingleDeviceMuon
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch_geometric.loader import DataLoader
 
 import wandb
 from external.unitary_gcn import UnitaryGCNConvLayer
@@ -21,6 +22,7 @@ from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
                              NodeLevelClassifier, NodeLevelRegressor)
 from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
+from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 from train.train import (bce_multilabel_loss, determine_data_postprocessing,
                          determine_dataloader, graph_level_accuracy, set_seeds,
                          train)
@@ -79,17 +81,13 @@ def evaluate(model, loader, device):
 if __name__ == "__main__":
 
     config = {
-        "DATASET": "Peptides-struct",
         "NUM_LAYERS": 6,
         "SKIP_CONNECTIONS": False,
-        # NOTE: GroupSort doesn't work on odd node features? I wonder how they use it.
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
         "DROPOUT_RATE": 0.2,
         "HIDDEN_SIZE": 200,
-        "EDGE_AGGREGATOR": "GINE",
-        "OPTIMIZER": "Muon",
         "LR": 0.001,
         "EPOCHS": 500,
         "WEIGHT_DECAY": 0.01,
@@ -97,6 +95,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--data_dir", type=str, required=True)
+    parser.add_argument("--start_time", type=float, default=0.0)
+    parser.add_argument("--train_steps", type=int, default=10)
+    parser.add_argument("--eval_steps", type=int, default=5)
     parser.add_argument("--architecture", type=str,
                         help="Uni, LieUni", required=True)
     parser.add_argument("--truncation", type=int,
@@ -120,27 +122,21 @@ if __name__ == "__main__":
         args.save_dir, name)
     os.makedirs(args.save_dir, exist_ok=True)
 
-    postprocess = determine_data_postprocessing(args.architecture)
+    train_graphs, eval_graphs = load_autoregressive_dataset(
+        args.data_dir, args.start_time, args.train_steps, args.eval_steps
+    )
 
-    if args.toy:
-        parser = ToyLongRangeGraphBenchmarkParser(
-            name=config['DATASET'], transform=postprocess)
-    else:
-        parser = LongRangeGraphBenchmarkParser(
-            name=config['DATASET'], transform=postprocess)
-
-    dataset = parser.parse()
-    train_dataset, val_dataset, test_dataset = dataset[
-        'train_dataset'], dataset['val_dataset'], dataset['test_dataset']
-    node_dim, edge_dim = dataset['node_dim'], dataset['edge_dim']
+    train_loader = DataLoader(
+        train_graphs, batch_size=args.batch_size, shuffle=True)
+    eval_loader = DataLoader(eval_graphs, batch_size=args.batch_size)
 
     activation_function = str_to_activation(config['ACTIVATION_FUNCTION'])
 
     if args.architecture == "Uni":
         module_list = []
         for layer in range(config['NUM_LAYERS']):
-            input_dim = node_dim if layer == 0 else config['HIDDEN_SIZE']
-            output_dim = node_dim if layer == config['NUM_LAYERS'] - \
+            input_dim = 1 if layer == 0 else config['HIDDEN_SIZE']
+            output_dim = 1 if layer == config['NUM_LAYERS'] - \
                 1 else config['HIDDEN_SIZE']
             module_list.append(UnitaryGCNConvLayer(input_dim,
                                                    output_dim,
@@ -151,12 +147,10 @@ if __name__ == "__main__":
                                                    use_hermitian=False,
                                                    activation=activation_function()))
         model = UniStack(module_list)
-        base_gnn_model = EdgeModel(edge_dim, node_dim, model,
-                                   config['EDGE_AGGREGATOR']) if config['EDGE_AGGREGATOR'] is not None else NodeModel(model)
     elif args.architecture == 'LieUni':
         module_list = []
-        input_dim = node_dim
-        output_dim = node_dim
+        input_dim = 1
+        output_dim = 1
         if input_dim != output_dim:
             print(
                 f"Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct output size was set. \nSetting output dim {output_dim} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
@@ -173,37 +167,14 @@ if __name__ == "__main__":
                                                    use_hermitian=True,
                                                    activation=activation_function()))
         model = UniStack(module_list)
-        base_gnn_model = EdgeModel(edge_dim, node_dim, model,
-                                   config['EDGE_AGGREGATOR']) if config['EDGE_AGGREGATOR'] is not None else NodeModel(model)
     else:
         raise Exception("Architecture not recognized.")
 
-    is_classification = dataset['is_classification']
-    level = dataset['level']
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = NodeLevelRegressor(model, 1, 1, complex_floats=True).to(device)
 
-    if is_classification:
-        num_classes = dataset['num_classes']
-        acc_scorer = None
-        if level == "graph_level":
-            loss_fn = bce_multilabel_loss
-            model = GraphLevelClassifier(
-                base_gnn_model, node_dim, num_classes, complex_floats=True)
-            acc_scorer = graph_level_accuracy
-        else:
-            loss_fn = weighted_cross_entropy
-            model = NodeLevelClassifier(
-                base_gnn_model, node_dim, num_classes, complex_floats=True)
-            acc_scorer = node_level_accuracy
-    else:
-        loss_fn = nn.MSELoss()
-        acc_scorer = None
-        output_dim = dataset['num_classes']
-        if level == "graph_level":
-            model = GraphLevelRegressor(
-                base_gnn_model, node_dim, output_dim, complex_floats=True)
-        else:
-            model = NodeLevelRegressor(
-                base_gnn_model, node_dim, output_dim, complex_floats=True)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=args.lr, weight_decay=1e-4)
 
     run = setup_wandb(config=config, run_name=name)
 

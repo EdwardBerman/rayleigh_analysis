@@ -253,7 +253,7 @@ def train(model: nn.Module,
         run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}
                 ) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
     
-    rayleigh_quotient_distribution(model, test_loader, device, args.save_dir)
+    rayleigh_quotient_distribution(model, test_loader, device, output_dir)
 
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
     torch.save(model.base_model.state_dict(),
