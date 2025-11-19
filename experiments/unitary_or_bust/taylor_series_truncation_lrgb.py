@@ -26,10 +26,10 @@ from train.train import (bce_multilabel_loss, determine_data_postprocessing,
                          train)
 
 
-def setup_wandb(config, run_name: str):
+def setup_wandb(config, run_name: str, project: str):
     run = wandb.init(
         entity="rayleigh_analysis_gnn",
-        project="unitary_or_bust",
+        project=project,
         config=config,
         name=run_name
     )
@@ -68,6 +68,7 @@ if __name__ == "__main__":
                         help="Enable verbose logging")
     parser.add_argument("--toy", action="store_true",
                         help="Use a much smaller version of the dataset to test")
+    parser.add_argument("--project", type=str)
 
     args = parser.parse_args()
     print("Arguments:")
@@ -164,7 +165,7 @@ if __name__ == "__main__":
             model = NodeLevelRegressor(
                 base_gnn_model, node_dim, output_dim, complex_floats=True)
 
-    run = setup_wandb(config=config, run_name=name)
+    run = setup_wandb(config=config, run_name=name, project=args.project)
 
     match config['OPTIMIZER']:
         case "Cosine":

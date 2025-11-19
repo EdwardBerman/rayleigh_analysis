@@ -18,5 +18,6 @@ do
         --architecture LieUni \
         --truncation $trunc \
         --epochs 100 \
-        --verbose --edge_agg GINE
+        --verbose --edge_agg GINE \
+        --project lieuni_gine_identity
 done
