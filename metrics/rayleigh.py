@@ -57,6 +57,15 @@ def rayleigh_quotients(f: nn.Module, batch: Data) -> tuple[torch.Tensor, torch.T
     return batchX, fX, batchY
 
 
+def rayleigh_quotients_graphlevel(f: nn.Module, batch: Data) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """ 
+    Computes three Rayleigh quotients, for batch.X, f(X) and batch.Y
+    """
+    batchX = compute_rayleigh_quotient(batch.x, batch.edge_index)
+    fX = compute_rayleigh_quotient(f.base_model(batch), batch.edge_index)
+    return batchX, fX
+
+
 def compute_rayleigh_quotient(x, edge_index):
     """Computes the Rayleigh quotient for one graph given node features and edge index."""
     edge_index = edge_index.long()
@@ -65,7 +74,6 @@ def compute_rayleigh_quotient(x, edge_index):
 
     dtype = x.real.dtype if torch.is_complex(x) else x.dtype
     deg = degree(dst, num_nodes=N, dtype=dtype)
-
     deg_in = deg.clamp(min=1.0)
     inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
 
