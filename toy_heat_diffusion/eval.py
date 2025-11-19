@@ -95,7 +95,7 @@ def main():
         val_rayleigh_xprime_UNI_final_epoch,
         bins=30,
         alpha=0.25,
-        label=r"R_{\mathcal{G}}(f_{\rm Uni-GCN}(X)}}",
+        label=r"$R_{\mathcal{G}}(f_{\rm Uni-GCN}(X)}}$",
         color="red",
         density=True,
     )
@@ -103,7 +103,7 @@ def main():
         val_rayleigh_x_GCN_final_epoch,
         bins=30,
         alpha=0.25,
-        label=r"R_{\mathcal{G}}(X)}",
+        label=r"$R_{\mathcal{G}}(X)}$",
         color="cyan",
         density=True,
     )
@@ -111,7 +111,7 @@ def main():
         val_rayleigh_x_UNI_final_epoch,
         bins=30,
         alpha=0.25,
-        label=r"R_{\mathcal{G}}(X)}",
+        label=r"$R_{\mathcal{G}}(X)}$",
         color="magenta",
         density=True,
     )
