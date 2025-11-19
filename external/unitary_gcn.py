@@ -368,6 +368,7 @@ class TaylorGCNConv(MessagePassing):
 
     def forward(self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None, **kwargs) -> Tensor:
         if not torch.is_complex(x):
+            x = x.float()
             x = torch.complex(x, torch.zeros_like(x))
 
         c = 1.
