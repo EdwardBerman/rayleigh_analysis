@@ -11,6 +11,10 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=berman.ed@northeastern.edu
 
+module load python/3.13.5
+
+eval "$(poetry env activate)"
+
 for trunc in 1 2 4 8 16 32 64 128
 do
     echo "Running with truncation=$trunc"
