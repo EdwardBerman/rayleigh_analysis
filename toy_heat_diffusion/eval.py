@@ -21,11 +21,13 @@ def main():
     val_mse_GCN = np.load(os.path.join(args.data_dir_GCN, "val_mse.npy"))
     val_rayleigh_x_GCN = np.load(os.path.join(args.data_dir_GCN, "val_rayleigh_x.npy"))
     val_rayleigh_xprime_GCN = np.load(os.path.join(args.data_dir_GCN, "val_rayleigh_xprime.npy"))
-    num_epochs = len(val_mse_GCN)
+    num_epochs_GCN = len(val_mse_GCN)
 
     val_mse_UNI = np.load(os.path.join(args.data_dir_UNI, "val_mse.npy"))
     val_rayleigh_x_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_x.npy"))
     val_rayleigh_xprime_UNI = np.load(os.path.join(args.data_dir_UNI, "val_rayleigh_xprime.npy"))
+
+    num_epochs_UNI = len(val_mse_UNI)
 
     val_rayleigh_xprime_UNI_final_epoch = np.load(os.path.join(args.data_dir_UNI, "rayleigh_quotients_xprime.npy"))
     val_rayleigh_xprime_GCN_final_epoch = np.load(os.path.join(args.data_dir_GCN, "rayleigh_quotients_xprime.npy"))
@@ -37,14 +39,14 @@ def main():
 
     fig, ax = plt.subplots(1, 2, figsize=(8, 4))
     ax[0].plot(
-        np.arange(num_epochs),
+        np.arange(num_epochs_GCN),
         val_mse_GCN,
         color="blue",
         label="GCN",
         linewidth=2,
     )
     ax[0].plot(
-        np.arange(num_epochs),
+        np.arange(num_epochs_UNI),
         val_mse_UNI,
         color="red",
         label="Uni",
@@ -56,7 +58,7 @@ def main():
     ax[0].legend()
 
     ax[1].plot(
-        np.arange(num_epochs),
+        np.arange(num_epochs_GCN),
         val_rayleigh_x_GCN - val_rayleigh_xprime_GCN,
         color="blue",
         label=r"$\overline{R_{\mathcal{G}}(X)} - \overline{R_{\mathcal{G}}(f_{\rm GCN}(X))}$",
@@ -64,7 +66,7 @@ def main():
     )
 
     ax[1].plot(
-        np.arange(num_epochs),
+        np.arange(num_epochs_UNI),
         val_rayleigh_x_UNI - val_rayleigh_xprime_UNI,
         color="red",
         label=r"$\overline{R_{\mathcal{G}}(X)} - \overline{R_{\mathcal{G}}(f_{\rm Uni-GCN}(X))}$",
