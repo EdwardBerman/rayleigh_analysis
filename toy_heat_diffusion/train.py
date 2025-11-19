@@ -8,11 +8,12 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import wandb
+from metrics.heat_flow import rayleigh_quotient_distribution
+from metrics.rayleigh import rayleigh_quotients
 from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
-from metrics.rayleigh import rayleigh_quotients
-from metrics.heat_flow import rayleigh_quotient_distribution
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
+
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -23,6 +24,7 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+
 def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_heat_diffusion_graphs"):
     run_name = (
         f"{config['model']}_"
@@ -31,8 +33,8 @@ def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_h
         f"lr{config['lr']}_"
     )
     run = wandb.init(
-        entity="rayleigh_analysis_gnn",
-        project="toy_heat_diffusion_graphs",
+        entity=entity_name,
+        project=project_name,
         config=config,
         name=run_name
     )
@@ -52,6 +54,7 @@ def train_one_epoch(model, loader, optimizer, device):
         total_mse += loss.item()
         total_nodes += data.num_nodes
     return total_mse / total_nodes
+
 
 @torch.no_grad()
 def evaluate_heat_flow(model, loader, device):
@@ -95,9 +98,12 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--dropout", type=float, default=0.0)
-    parser.add_argument("--save_dir", type=str, default="outputs/ten_runs_select_best")
-    parser.add_argument("--entity_name", type=str, default="rayleigh_analysis_gnn")
-    parser.add_argument("--project_name", type=str, default="toy_heat_diffusion_graphs")
+    parser.add_argument("--save_dir", type=str,
+                        default="outputs/ten_runs_select_best")
+    parser.add_argument("--entity_name", type=str,
+                        default="rayleigh_analysis_gnn")
+    parser.add_argument("--project_name", type=str,
+                        default="toy_heat_diffusion_graphs")
     parser.add_argument("--set_seed", action="store_true")
 
     args = parser.parse_args()
@@ -153,10 +159,11 @@ def main():
     print(f"Total parameters: {params}")
 
     config = vars(args)
-    run = setup_wandb(config, entity_name=args.entity_name, project_name=args.project_name)
+    run = setup_wandb(config, entity_name=args.entity_name,
+                      project_name=args.project_name)
 
-    train_mse_list, val_mse_list = [], [] 
-    train_rayleigh_x_list, train_rayleigh_xprime_list, train_rayleigh_y_list = [], [], [] 
+    train_mse_list, val_mse_list = [], []
+    train_rayleigh_x_list, train_rayleigh_xprime_list, train_rayleigh_y_list = [], [], []
     val_rayleigh_x_list, val_rayleigh_xprime_list, val_rayleigh_y_list = [], [], []
 
     for epoch in range(1, args.epochs + 1):
@@ -190,14 +197,21 @@ def main():
 
     torch.save(model.state_dict(), os.path.join(
         args.save_dir, "model.pt"))
-    np.save(os.path.join(args.save_dir, "train_mse.npy"), np.array(train_mse_list))
+    np.save(os.path.join(args.save_dir, "train_mse.npy"),
+            np.array(train_mse_list))
     np.save(os.path.join(args.save_dir, "val_mse.npy"), np.array(val_mse_list))
-    np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"), np.array(train_rayleigh_x_list))
-    np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"), np.array(train_rayleigh_xprime_list))
-    np.save(os.path.join(args.save_dir, "train_rayleigh_y.npy"), np.array(train_rayleigh_y_list))
-    np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"), np.array(val_rayleigh_x_list))
-    np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"), np.array(val_rayleigh_xprime_list))
-    np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"), np.array(val_rayleigh_y_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"),
+            np.array(train_rayleigh_x_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"),
+            np.array(train_rayleigh_xprime_list))
+    np.save(os.path.join(args.save_dir, "train_rayleigh_y.npy"),
+            np.array(train_rayleigh_y_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"),
+            np.array(val_rayleigh_x_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"),
+            np.array(val_rayleigh_xprime_list))
+    np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"),
+            np.array(val_rayleigh_y_list))
 
     with open(os.path.join(args.save_dir, "args.txt"), "w") as f:
         for arg in vars(args):
