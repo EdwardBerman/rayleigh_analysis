@@ -47,7 +47,9 @@ class ToyLongRangeGraphBenchmarkParser(Parser):
             case 'Peptides-struct':
                 self._is_classification = False
                 self._level = "graph_level"
-                
+                y = self.train_dataset[0].y
+                self.num_tasks = y.shape[-1]
+
         self._node_dim = self.train_dataset.num_node_features
         self._edge_dim = self.train_dataset.num_edge_features
 
@@ -79,7 +81,7 @@ class ToyLongRangeGraphBenchmarkParser(Parser):
             'edge_dim': self.edge_dim,
             'is_classification': self.is_classification,
             'level': self.level,
-            'num_classes': self.num_classes if self.is_classification else None
+            'num_classes': self.num_classes if self.is_classification else self.num_tasks
         }
         if self.verbose:
             print("Dataset Information:")

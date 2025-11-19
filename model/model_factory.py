@@ -20,7 +20,8 @@ def add_skip_connections(model: nn.Module) -> nn.Module:
             x += x_res
             return x
     return ResidualModel(model)
- 
+
+
 class UniStack(nn.Module):
     def __init__(self, layers: list[nn.Module]):
         super().__init__()
@@ -28,8 +29,9 @@ class UniStack(nn.Module):
 
     def forward(self, x, edge_index):
         for layer in self.layers:
-            x = layer(x, edge_index)  
-        return x   
+            x = layer(x, edge_index)
+        return x
+
 
 def str_to_activation(activation_name: str) -> nn.Module:
     match activation_name:
@@ -41,9 +43,11 @@ def str_to_activation(activation_name: str) -> nn.Module:
             return nn.Identity
         case 'GroupSort':
             return GroupSort
+        case "GeLU":
+            return nn.GELU
         case _:
             raise ValueError(
-                f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort'.")
+                f"Unsupported activation function: {activation_name}. Accepts 'ReLU', 'LeakyReLU', 'Identity', 'GroupSort', 'GELU'.")
 
 
 def build_model(node_dim: int,
@@ -140,12 +144,14 @@ def build_model(node_dim: int,
             return EdgeModel(edge_dim, node_dim, model, edge_aggregator) if edge_aggregator is not None else NodeModel(model)
         case 'LieUni':
             module_list = []
-            input_dim = node_dim 
-            output_dim = node_dim 
+            input_dim = node_dim
+            output_dim = node_dim
             if input_dim != output_dim:
-                print(f"Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct output size was set. \nSetting output dim {output_dim} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
+                print(
+                    f"Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct output size was set. \nSetting output dim {output_dim} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
             if input_dim != hidden_size:
-                print(f"Warning: For Lie Unitary GCN, input and hidden dimensions must be the same, but a distinct hidden size was set. \nSetting hidden dim {hidden_size} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
+                print(
+                    f"Warning: For Lie Unitary GCN, input and hidden dimensions must be the same, but a distinct hidden size was set. \nSetting hidden dim {hidden_size} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
             for layer in range(num_layers):
                 module_list.append(UnitaryGCNConvLayer(input_dim,
                                                        input_dim,

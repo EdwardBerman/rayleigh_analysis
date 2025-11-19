@@ -8,24 +8,30 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from muon import SingleDeviceMuon
 from simple_parsing import ArgumentParser
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
 import wandb
-from evaluation.basic_learning_curve_diagnostics import plot_learning_curve, plot_accuracy_curve
+from evaluation.basic_learning_curve_diagnostics import (plot_accuracy_curve,
+                                                         plot_learning_curve)
 from external.weighted_cross_entropy import weighted_cross_entropy
-from metrics.accuracy import node_level_accuracy, eval_F1, graph_level_average_precision, graph_level_accuracy
-from metrics.rayleigh import rayleigh_error
+from metrics.accuracy import (eval_F1, graph_level_accuracy,
+                              graph_level_average_precision,
+                              node_level_accuracy)
+from metrics.heat_flow import (rayleigh_quotient_distribution,
+                               rayleigh_quotient_distribution_graphlevel)
+from metrics.rayleigh import (compute_rayleigh_quotient, rayleigh_error,
+                              rayleigh_quotients)
 from model.model_factory import build_model
 from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
                              NodeLevelClassifier, NodeLevelRegressor)
 from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
 from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
 
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from muon import SingleDeviceMuon
 
 def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
@@ -50,6 +56,7 @@ def determine_dataloader(model: str):
     else:
         return DataLoader
 
+
 def bce_multilabel_loss(pred, true):
     """
     pred: [B, C] raw logits
@@ -64,18 +71,39 @@ def bce_multilabel_loss(pred, true):
 
     return F.binary_cross_entropy_with_logits(pred, true)
 
+
+def graph_level_accuracy(pred, true):
+    """
+    pred: [B, C] raw logits
+    true: [B, C] or [B, 1, C] with 0/1 labels
+    """
+    true = true.float()
+    if true.ndim > 2:
+        true = true.view(true.size(0), -1)
+
+    if true.shape != pred.shape:
+        true = true.view_as(pred)
+
+    probs = torch.sigmoid(pred)
+    preds = (probs > 0.5).float()
+
+    correct = (preds == true).float().mean(dim=1)
+    return correct.mean()
+
+
 class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
     TEST = "test"
 
-def step(model: nn.Module, 
-         data: Data, 
-         loss: nn.Module, 
-         run: wandb.run, 
-         mode: str, 
-         optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None, 
-         scheduler: torch.optim.lr_scheduler._LRScheduler | None, 
+
+def step(model: nn.Module,
+         data: Data,
+         loss: nn.Module,
+         run: wandb.run,
+         mode: str,
+         optimizer: torch.optim.Optimizer | list[torch.optim.Optimizer] | None,
+         scheduler: torch.optim.lr_scheduler._LRScheduler | None,
          acc_scorer: nn.Module | None | Callable = None) -> tuple[float, float | None]:
     """
     Computes one step of training, evaluation, or testing and logs to wandb. If the task is classification it will also log the accuracy.
@@ -110,12 +138,12 @@ def step(model: nn.Module,
     return l.item(), acc
 
 
-def setup_wandb(entity: str, 
-                project: str, 
-                name: str, 
-                lr: float, 
-                architecture: str, 
-                dataset: str, 
+def setup_wandb(entity: str,
+                project: str,
+                name: str,
+                lr: float,
+                architecture: str,
+                dataset: str,
                 epochs: int) -> wandb.run:
 
     run = wandb.init(
@@ -123,10 +151,10 @@ def setup_wandb(entity: str,
         project=project,
         name=name,
         config={
-                "learning_rate": lr,
-                "architecture": architecture,
-                "dataset": dataset,
-                "epochs": epochs,
+            "learning_rate": lr,
+            "architecture": architecture,
+            "dataset": dataset,
+            "epochs": epochs,
         },
     )
     return run
@@ -158,6 +186,9 @@ def train(model: nn.Module,
         train_loss, train_acc = 0, 0
         val_loss, val_acc = 0, 0
         test_loss, test_acc = 0, 0
+        x_rq = []
+        xprime_rq = []
+        y_rq = []
         test_rayleigh_error = []
 
         for batch in val_loader:
@@ -167,6 +198,16 @@ def train(model: nn.Module,
             val_loss += loss
             val_acc += accuracy if accuracy is not None else 0
 
+            if log_rq:
+                x_rq.append(compute_rayleigh_quotient(
+                    batch.x, batch.edge_index).item())
+                xprime_rq.append(compute_rayleigh_quotient(
+                    model.base_model(batch), batch.edge_index).item())
+
+        if log_rq:
+            run.log({"X_rayleigh_quotient": np.mean(x_rq),
+                     "Xprime_rayleigh_quotient": np.mean(xprime_rq)})
+
         val_losses.append(val_loss / len(val_loader))
         val_accuracies.append(val_acc / len(val_loader)
                               if acc_scorer is not None else 0)
@@ -175,8 +216,10 @@ def train(model: nn.Module,
 
         if val_losses[-1] < best_loss:
             best_loss = val_losses[-1]
-            torch.save(model.state_dict(), os.path.join(output_dir, "best_model.pt"))
-            torch.save(model.base_model.state_dict(), os.path.join(output_dir, "best_model_gnn.pt"))
+            torch.save(model.state_dict(), os.path.join(
+                output_dir, "best_model.pt"))
+            torch.save(model.base_model.state_dict(),
+                       os.path.join(output_dir, "best_model_gnn.pt"))
 
         for batch in test_loader:
             batch = batch.to(device)
@@ -184,9 +227,10 @@ def train(model: nn.Module,
                                   Mode.TEST, optimizer=None, scheduler=None, acc_scorer=acc_scorer)
             test_loss += loss
             test_acc += accuracy if accuracy is not None else 0
-            
+
             if log_rq:
-                test_rayleigh_error.append(rayleigh_error(model.base_model, batch).item())
+                test_rayleigh_error.append(
+                    rayleigh_error(model.base_model, batch).item())
 
         if log_rq:
             run.log({"test_rayleigh_error": np.mean(test_rayleigh_error)})
@@ -210,8 +254,12 @@ def train(model: nn.Module,
         run.log({"train_loss": train_losses[-1], "train_acc": train_accuracies[-1]}
                 ) if acc_scorer is not None else run.log({"train_loss": train_losses[-1]})
 
+    rayleigh_quotient_distribution_graphlevel(
+        model, test_loader, device, output_dir)
+
     torch.save(model.state_dict(), os.path.join(output_dir, "final_model.pt"))
-    torch.save(model.base_model.state_dict(), os.path.join(output_dir, "final_model_gnn.pt"))
+    torch.save(model.base_model.state_dict(),
+               os.path.join(output_dir, "final_model_gnn.pt"))
 
     np.save(os.path.join(output_dir, "train_losses.npy"), np.array(train_losses))
     np.save(os.path.join(output_dir, "train_accuracies.npy"),
@@ -230,7 +278,8 @@ def train(model: nn.Module,
                 np.array(test_rayleigh_error))
 
     if acc_scorer is not None:
-        plot_accuracy_curve(train_accuracies, val_accuracies, test_accuracies, output_dir)
+        plot_accuracy_curve(train_accuracies, val_accuracies,
+                            test_accuracies, output_dir)
 
 
 if __name__ == "__main__":
@@ -333,21 +382,26 @@ if __name__ == "__main__":
         acc_scorer = None
         if level == "graph_level":
             loss_fn = bce_multilabel_loss
-            model = GraphLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
+            model = GraphLevelClassifier(
+                base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             acc_scorer = graph_level_average_precision
         else:
             loss_fn = weighted_cross_entropy
-            model = NodeLevelClassifier(base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
+            model = NodeLevelClassifier(
+                base_gnn_model, node_dim, num_classes, complex_floats=complex_floats)
             print("Accuracy metric: F1 Score")
             acc_scorer = eval_F1
     else:
         loss_fn = nn.MSELoss()
         acc_scorer = None
-        output_dim = dataset['num_classes'] # corresponds to output dimension for regression
+        # corresponds to output dimension for regression
+        output_dim = dataset['num_classes']
         if level == "graph_level":
-            model = GraphLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
+            model = GraphLevelRegressor(
+                base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
         else:
-            model = NodeLevelRegressor(base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
+            model = NodeLevelRegressor(
+                base_gnn_model, node_dim, output_dim, complex_floats=complex_floats)
 
     run = setup_wandb(entity=args.entity,
                       project=args.project,
@@ -360,16 +414,20 @@ if __name__ == "__main__":
     match args.optimizer:
         case "Cosine":
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-            scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs) 
+            scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs)
         case "Adam":
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+            optimizer = torch.optim.Adam(
+                model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
             scheduler = None
         case "Muon":
             all_params = list(model.parameters())
-            muon_params = [p for p in all_params if p.ndim >= 2]   # matrices only
+            # matrices only
+            muon_params = [p for p in all_params if p.ndim >= 2]
             other_params = [p for p in all_params if p.ndim < 2]
-            optimizer_muon = SingleDeviceMuon(muon_params, lr=args.lr, weight_decay=args.weight_decay)
-            optimizer_other = torch.optim.Adam(other_params, lr=args.lr, weight_decay=args.weight_decay)
+            optimizer_muon = SingleDeviceMuon(
+                muon_params, lr=args.lr, weight_decay=args.weight_decay)
+            optimizer_other = torch.optim.Adam(
+                other_params, lr=args.lr, weight_decay=args.weight_decay)
             optimizer = [optimizer_muon, optimizer_other]
             scheduler = None
         case _:
