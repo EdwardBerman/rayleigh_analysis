@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--data_dir_GCN", type=str, required=True)
     parser.add_argument("--data_dir_UNI", type=str, required=True)
     parser.add_argument("--save_dir", type=str, default="assets")
+    parser.add_argument("--plot_y_rq", action="store_true")
     args = parser.parse_args()
 
     val_mse_GCN = np.load(os.path.join(args.data_dir_GCN, "val_mse.npy"))
@@ -85,7 +86,7 @@ def main():
     plt.figure(figsize=(6, 4))
     plt.hist(
         val_rayleigh_xprime_GCN_final_epoch,
-        bins=30,
+        bins=100,
         alpha=0.25,
         label=r"$R_{\mathcal{G}}(f_{\rm GCN}(X))$",
         color="blue",
@@ -93,7 +94,7 @@ def main():
     )
     plt.hist(
         val_rayleigh_xprime_UNI_final_epoch,
-        bins=30,
+        bins=100,
         alpha=0.25,
         label=r"$R_{\mathcal{G}}(f_{\rm Uni-GCN}(X))$",
         color="red",
@@ -101,22 +102,34 @@ def main():
     )
     plt.hist(
         val_rayleigh_x_GCN_final_epoch,
-        bins=30,
+        bins=100,
         alpha=0.25,
         label=r"$R_{\mathcal{G}}(X)$",
         color="cyan",
         density=True,
     )
-    plt.hist(
-        val_rayleigh_x_UNI_final_epoch,
-        bins=30,
-        alpha=0.25,
-        label=r"$R_{\mathcal{G}}(X)$",
-        color="magenta",
-        density=True,
-    )
+
+    if args.plot_y_rq:
+        plt.hist(
+            val_rayleigh_y_GCN_final_epoch,
+            bins=100,
+            alpha=0.25,
+            label=r"$R_{\mathcal{G}}(Y)$",
+            color="magenta",
+            density=True,
+        )
+    #plt.hist(
+        #val_rayleigh_x_UNI_final_epoch,
+        #bins=30,
+        #alpha=0.25,
+        #label=r"$R_{\mathcal{G}}(X)$",
+        #color="magenta",
+        #density=True,
+    #)
+
     plt.xlabel(r"$R_{\mathcal{G}}$", fontsize=24)
     plt.ylabel("Density", fontsize=24)
+    plt.yscale("log")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(args.save_dir, "rayleigh_quotients_comparison.png"), dpi=300)
