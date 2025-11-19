@@ -14,7 +14,7 @@
 for trunc in 1 2
 do
     echo "Running with truncation=$trunc"
-    python3 -m experiments.unitary_or_bust.taylor_series_truncation_heat \
+    python3 -m truncation.taylor_series_truncation_heat \
         --data_dir 
         --architecture Uni \
         --truncation $trunc \
