@@ -248,12 +248,12 @@ def run_all_for_architecture():
     all_rq_diffs = {}
     all_rq_matches = {}
 
-    for truncation in tqdm(range(1, 2)):
+    for truncation in tqdm(range(1, 20)):
 
         rq_diffs = []  # difference in rq x and xprime
         rq_matches = []  # how well xprime matches y
 
-        for seed in range(0, 2):
+        for seed in range(0, 10):
 
             args = SimpleNamespace(
                 **config,
