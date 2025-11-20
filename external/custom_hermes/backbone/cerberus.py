@@ -1,5 +1,6 @@
 import torch
 from torch_geometric.utils import remove_isolated_nodes
+from torch_geometric.nn.conv import MessagePassing
 
 from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
