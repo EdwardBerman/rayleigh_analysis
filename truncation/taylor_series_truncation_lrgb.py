@@ -43,13 +43,13 @@ if __name__ == "__main__":
     parser.add_argument("--architecture", type=str,
                         help="Uni, LieUni", required=True)
     parser.add_argument("--act", type=str, default="Identity")
-    parser.add_argument("--edge_agg", type=str, default="GINE")
+    parser.add_argument("--edge_agg", type=str, default=None)
     parser.add_argument("--truncation", type=int,
                         help="Determines how truncated the taylor series is.", required=True)
     parser.add_argument("--epochs", type=int,
                         required=False, default=100)
     parser.add_argument("--save_dir", type=str,
-                        default='output', required=False)
+                        default='outputs', required=False)
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")
     parser.add_argument("--toy", action="store_true",
