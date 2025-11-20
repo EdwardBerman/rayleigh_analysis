@@ -62,11 +62,10 @@ class Cerberus(torch.nn.Module):
 
         self.layers = torch.nn.ModuleList()
         for i in range(len(self.block_dims) - 3):
-            self.layers.append(
-                TaylorGCNConv(
+            if i == 0:
+                self.layers.append(
                     GemResNetBlock(
-                        self.block_dims[i],
-                        self.block_dims[i + 1],
+                        self.block_dims[i],self.block_dims[i + 1],
                         self.block_dims[i + 2],
                         self.block_orders[i],
                         self.block_orders[i + 1],
@@ -75,10 +74,23 @@ class Cerberus(torch.nn.Module):
                         **block_kwargs,
                     )
                 )
-            )
+            else:
+                self.layers.append(
+                    TaylorGCNConv(
+                        GemResNetBlock(
+                            self.block_dims[i],
+                            self.block_dims[i + 1],
+                            self.block_dims[i + 2],
+                            self.block_orders[i],
+                            self.block_orders[i + 1],
+                            self.block_orders[i + 2],
+                            final_activation=True,
+                            **block_kwargs,
+                        )
+                    )
+                )
         # Add final block
         self.layers.append(
-            TaylorGCNConv(
                 GemResNetBlock(
                     self.block_dims[-3],
                     self.block_dims[-2],
@@ -89,7 +101,6 @@ class Cerberus(torch.nn.Module):
                     final_activation=final_activation,
                     **block_kwargs,
                 )
-            )
         )
 
     def forward(self, data):
