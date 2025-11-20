@@ -231,7 +231,13 @@ def plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir):
     plt.close()
 
 
-def run_all_for_architecture(architecture: str, data_dir: str):
+def run_all_for_architecture():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--architecture", type=str,
+                        help="Uni, LieUni, GCN", required=True)
+    parser.add_argument("--data_dir", type=str, required=True)
 
     config = {
         "NUM_LAYERS": 6,
@@ -249,21 +255,21 @@ def run_all_for_architecture(architecture: str, data_dir: str):
     all_rq_diffs = {}
     all_rq_matches = {}
 
-    for truncation in tqdm(range(1, 21)):
+    for truncation in tqdm(range(1, 2)):
 
         rq_diffs = []  # difference in rq x and xprime
         rq_matches = []  # how well xprime matches y
 
-        for seed in range(0, 10):
+        for seed in range(0, 2):
 
             args = SimpleNamespace(
                 **config,
                 seed=seed,
-                data_dir=data_dir,
+                data_dir=parser.data_dir,
                 start_time=start_time,
                 train_steps=train_steps,
                 eval_steps=eval_steps,
-                architecture=architecture,
+                architecture=parser.architecture,
                 truncation=truncation,
                 verbose=True,
             )
@@ -280,8 +286,6 @@ def run_all_for_architecture(architecture: str, data_dir: str):
 
     plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir)
 
-    return all_rq_diffs, all_rq_matches
-
 
 if __name__ == "__main__":
 
@@ -292,5 +296,4 @@ if __name__ == "__main__":
         save_dir, current_time)
     os.makedirs(save_dir, exist_ok=True)
 
-    rq_diffs, rq_matches = run_all_for_architecture(
-        "Uni", "toy_heat_diffusion/data")
+    run_all_for_architecture()
