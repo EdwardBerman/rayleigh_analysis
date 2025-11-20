@@ -9,7 +9,7 @@ save_dir: "${work_dir}/model_checkpoints"
 wandb:
   entity: rayleigh_analysis_gnn
   dir: "."
-  project: eb_ll_rule_the_tri_state_area
+  project: meshes
   name: ${dataset.name}_${backbone.name}
 
 defaults:
