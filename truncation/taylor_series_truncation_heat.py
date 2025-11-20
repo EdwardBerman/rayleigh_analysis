@@ -106,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int,
                         required=False, default=config['EPOCHS'])
     parser.add_argument("--save_dir", type=str,
-                        default='output', required=False)
+                        default='outputs', required=False)
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")
     parser.add_argument("--toy", action="store_true",
