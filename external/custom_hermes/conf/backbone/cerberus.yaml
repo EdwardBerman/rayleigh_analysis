@@ -1,4 +1,4 @@
-name: GemCNN
+name: Cerberus
 
 net:
   _target_: external.custom_hermes.backbone.cerberus.Cerberus
