@@ -125,7 +125,7 @@ class TaylorGCNConv(MessagePassing):
         conv: GemResNetBlock,
         T: int = 16
     ):
-        super().__init__(**kwargs)
+        super().__init__()
         self.conv = conv
         self.T = T
 
