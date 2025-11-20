@@ -17,6 +17,7 @@ from model.edge_aggregator import NodeModel
 from model.model_factory import UniStack, str_to_activation
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
+from toy_heat_diffusion.train import train_one_epoch
 from train.train import set_seeds
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -76,7 +77,7 @@ def run_truncation_experiments(model, loader):
 
     for data in loader:
         data = data.to(device)
-        x, xprime, y = rayleigh_quotients(model, data)
+        x, xprime, y = rayleigh_quotients(model.base_model, data)
         rayleigh_quotients_x.append(x.item())
         rayleigh_quotients_xprime.append(xprime.item())
         rayleigh_quotients_y.append(y.item())
@@ -105,7 +106,7 @@ def build_model(args):
                     input_dim,
                     dropout=0.1,
                     residual=args.SKIP_CONNECTIONS,
-                    global_bias=True,
+                    global_bias=False,
                     T=args.truncation,
                     use_hermitian=True,
                     activation=activation_function()
@@ -121,7 +122,7 @@ def build_model(args):
                     output_dim,
                     dropout=0.1,
                     residual=args.SKIP_CONNECTIONS,
-                    global_bias=True,
+                    global_bias=False,
                     T=args.truncation,
                     use_hermitian=False,
                     activation=activation_function()
@@ -131,18 +132,24 @@ def build_model(args):
         raise Exception("Architecture not recognized.")
 
 
-def run_experiment(args, save_dir, truncation, plot=False):
+def run_experiment(args, save_dir, plot=False):
 
     set_seeds(args.seed)
 
-    _, eval_graphs = load_autoregressive_dataset(
+    train_graphs, eval_graphs = load_autoregressive_dataset(
         args.data_dir, args.start_time, args.train_steps, args.eval_steps
     )
 
+    train_loader = DataLoader(train_graphs, batch_size=args.BATCH_SIZE)
     eval_loader = DataLoader(eval_graphs, batch_size=args.BATCH_SIZE)
 
     model = NodeLevelRegressor(NodeModel(build_model(
         args)), 1, 1, complex_floats=True).to(device)
+
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=args.lr, weight_decay=1e-4)
+    # optionally warm up for 1 epoch
+    # train_one_epoch(model, eval_loader, optimizer, device)
 
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
@@ -150,7 +157,7 @@ def run_experiment(args, save_dir, truncation, plot=False):
     x, xprime, y = run_truncation_experiments(model, eval_loader)
 
     if plot:
-        plot_distributions(save_dir, x, xprime, y, truncation)
+        plot_distributions(save_dir, x, xprime, y, args.truncation)
 
     return x, xprime, y
 
@@ -189,7 +196,7 @@ def main(save_dir):
     all_args = {**config, **vars(args)}
 
     x, xprime, y = run_experiment(
-        all_args, save_dir, all_args.truncation, plot=True)
+        all_args, save_dir, all_args, plot=True)
 
     np.save(os.path.join(save_dir, "rayleigh_quotients_x.npy"), x)
     np.save(os.path.join(save_dir, "rayleigh_quotients_xprime.npy"), xprime)
@@ -233,12 +240,12 @@ def run_all_for_architecture():
     parserargs = parser.parse_args()
 
     config = {
-        "NUM_LAYERS": 6,
+        "NUM_LAYERS": 1,
         "SKIP_CONNECTIONS": False,
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
-        "HIDDEN_SIZE": 200
+        "HIDDEN_SIZE": 64
     }
 
     train_steps = 5
@@ -268,7 +275,7 @@ def run_all_for_architecture():
             )
 
             x, xprime, y = run_experiment(
-                args, save_dir, truncation, True if args.seed == 0 else False)
+                args, save_dir, True if args.seed == 0 else False)
             # p = y, q = xprime
             # p = x, q = xprime
             rq_diffs.append(kl_divergence_samples(y, xprime))
