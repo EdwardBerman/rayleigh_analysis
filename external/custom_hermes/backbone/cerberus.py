@@ -1,6 +1,7 @@
 import torch
 from torch_geometric.utils import remove_isolated_nodes
 from torch_geometric.nn.conv import MessagePassing
+from torch import Tensor
 from torch_geometric.typing import (Adj, NoneType, OptPairTensor, OptTensor,
                                     Size, SparseTensor, torch_sparse)
 
