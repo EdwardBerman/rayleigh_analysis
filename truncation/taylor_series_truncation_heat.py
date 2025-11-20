@@ -287,6 +287,7 @@ if __name__ == "__main__":
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
     save_dir = os.path.join(
         save_dir, current_time)
+    print(save_dir)
     os.makedirs(save_dir, exist_ok=True)
 
     run_all_for_architecture()
