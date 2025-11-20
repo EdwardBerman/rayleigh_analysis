@@ -61,6 +61,7 @@ def rayleigh_quotients_graphlevel(f: nn.Module, batch: Data) -> tuple[torch.Tens
     """ 
     Computes three Rayleigh quotients, for batch.X, f(X) and batch.Y
     """
+    breakpoint()
     batchX = compute_rayleigh_quotient(batch.x, batch.edge_index)
     fX = compute_rayleigh_quotient(f.base_model(batch), batch.edge_index)
     return batchX, fX

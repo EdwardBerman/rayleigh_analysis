@@ -8,7 +8,6 @@ import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import pygsp as pg
-
 from tqdm import tqdm
 
 
@@ -22,14 +21,14 @@ def generate_num_nodes(num: int, mean: float, variance: float) -> list[int]:
 
 def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: float, heat_min: float, times: list[int]):
     """
-    Generates a heat graph, diffused to discrete time steps. 
+    Generates a heat graph, diffused to discrete time steps.
 
     Parameters
     ----------
     n_nodes : int
         Number of nodes in the graph
     density : float
-        Density of the connections in the graph 
+        Density of the connections in the graph
     n_sources : int
         Number of heat sources
     heat_max : float
@@ -37,7 +36,7 @@ def generate_heat_graph(n_nodes: int, density: float, n_sources: int, heat_max: 
     heat_min : float
         Minimum initial heat at sources
     times : list[int]
-        Discrete time steps at which to take snapshots of the graph. 
+        Discrete time steps at which to take snapshots of the graph.
     """
     G = pg.graphs.ErdosRenyi(n_nodes, density, connected=True)
     G.compute_fourier_basis()
@@ -143,7 +142,6 @@ def main(save_dir: str):
     num_nodes_list = generate_num_nodes(num_graphs, size_mean, size_std)
     data_by_time = {t: [] for t in times}
 
-    
     for i, n_nodes in enumerate(tqdm(num_nodes_list)):
 
         if args.graph_type == "grid":
