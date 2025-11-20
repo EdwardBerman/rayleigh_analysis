@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("--truncation", type=int,
                         help="Determines how truncated the taylor series is.", required=True)
     parser.add_argument("--epochs", type=int,
-                        required=False, default=config['EPOCHS'])
+                        required=False, default=100)
     parser.add_argument("--save_dir", type=str,
                         default='output', required=False)
     parser.add_argument("--verbose", action="store_true",
