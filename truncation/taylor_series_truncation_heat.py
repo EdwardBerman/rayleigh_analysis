@@ -167,7 +167,7 @@ def run_experiment(args, save_dir, plot=False):
 def main(save_dir):
 
     config = {
-        "NUM_LAYERS": 6,
+        "NUM_LAYERS": 1,
         "SKIP_CONNECTIONS": False,
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
