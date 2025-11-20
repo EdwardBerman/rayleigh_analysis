@@ -67,6 +67,10 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", type=float,
                         default=0.01, required=False)
 
+    args = parser.parse_args()
+    print("Arguments:")
+    pprint.pprint(vars(args))
+
     config = {
         "DATASET": "Peptides-struct",
         "NUM_LAYERS": args.num_layers,
@@ -81,9 +85,6 @@ if __name__ == "__main__":
         "WEIGHT_DECAY": args.weight_decay,
     }
 
-    args = parser.parse_args()
-    print("Arguments:")
-    pprint.pprint(vars(args))
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
     name = f"{args.architecture}_tst_{args.truncation}_{args.act}_{args.edge_agg}_{current_time}"
