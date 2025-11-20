@@ -9,7 +9,6 @@ import numpy as np
 import torch
 from scipy.stats import entropy, gaussian_kde
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn.models import GCN
 from tqdm import tqdm
 
 from external.unitary_gcn import UnitaryGCNConvLayer
@@ -45,7 +44,7 @@ def kl_divergence_samples(p, q, epsilon=1e-12):
     return kl
 
 
-def plot_distributions(save_dir, x, xprime, y):
+def plot_distributions(save_dir, x, xprime, y, truncation):
 
     plt.figure(figsize=(8, 5))
     h1 = plt.hist(x, bins=30, alpha=0.5, label='x', density=True)
@@ -59,10 +58,11 @@ def plot_distributions(save_dir, x, xprime, y):
 
     plt.xlabel("Value")
     plt.ylabel("Frequency")
-    plt.title("Distribution of Rayleigh quotients")
+    plt.title(f"Distribution of Rayleigh quotients, truncation={truncation}")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, "rayleigh_quotient_distribution.png"))
+    plt.savefig(os.path.join(
+        save_dir, f"rayleigh_quotient_distribution_{truncation}.png"))
     plt.close()
 
 
@@ -127,20 +127,11 @@ def build_model(args):
                     activation=activation_function()
                 ))
         return UniStack(module_list)
-    elif args.architecture == "GCN":
-        return GCN(
-            num_layers=args.NUM_LAYERS,
-            in_channels=1,
-            hidden_channels=args.HIDDEN_SIZE,
-            out_channels=1,
-            dropout=0.1,
-            act=activation_function()
-        )
     else:
         raise Exception("Architecture not recognized.")
 
 
-def run_experiment(args, save_dir, plot=False):
+def run_experiment(args, save_dir, truncation, plot=False):
 
     set_seeds(args.seed)
 
@@ -159,7 +150,7 @@ def run_experiment(args, save_dir, plot=False):
     x, xprime, y = run_truncation_experiments(model, eval_loader)
 
     if plot:
-        plot_distributions(save_dir, x, xprime, y)
+        plot_distributions(save_dir, x, xprime, y, truncation)
 
     return x, xprime, y
 
@@ -183,7 +174,7 @@ def main(save_dir):
     parser.add_argument("--train_steps", type=int, default=10)
     parser.add_argument("--eval_steps", type=int, default=5)
     parser.add_argument("--architecture", type=str,
-                        help="Uni, LieUni, GCN", required=True)
+                        help="Uni, LieUni", required=True)
     parser.add_argument("--truncation", type=int,
                         help="Determines how truncated the taylor series is.", required=True)
     parser.add_argument("--verbose", action="store_true",
@@ -197,7 +188,8 @@ def main(save_dir):
 
     all_args = {**config, **vars(args)}
 
-    x, xprime, y = run_experiment(all_args, save_dir, plot=True)
+    x, xprime, y = run_experiment(
+        all_args, save_dir, all_args.truncation, plot=True)
 
     np.save(os.path.join(save_dir, "rayleigh_quotients_x.npy"), x)
     np.save(os.path.join(save_dir, "rayleigh_quotients_xprime.npy"), xprime)
@@ -236,8 +228,9 @@ def run_all_for_architecture():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--architecture", type=str,
-                        help="Uni, LieUni, GCN", required=True)
+                        help="Uni, LieUni", required=True)
     parser.add_argument("--data_dir", type=str, required=True)
+    parserargs = parser.parse_args()
 
     config = {
         "NUM_LAYERS": 6,
@@ -265,17 +258,17 @@ def run_all_for_architecture():
             args = SimpleNamespace(
                 **config,
                 seed=seed,
-                data_dir=parser.data_dir,
+                data_dir=parserargs.data_dir,
                 start_time=start_time,
                 train_steps=train_steps,
                 eval_steps=eval_steps,
-                architecture=parser.architecture,
+                architecture=parserargs.architecture,
                 truncation=truncation,
                 verbose=True,
             )
 
             x, xprime, y = run_experiment(
-                args, save_dir, True if args.seed == 0 else False)
+                args, save_dir, truncation, True if args.seed == 0 else False)
             # p = y, q = xprime
             # p = x, q = xprime
             rq_diffs.append(kl_divergence_samples(y, xprime))
