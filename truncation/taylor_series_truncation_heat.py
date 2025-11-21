@@ -45,7 +45,7 @@ def kl_divergence_samples(p, q, epsilon=1e-12):
     return kl
 
 
-def plot_distributions(save_dir, x, xprime, y, truncation):
+def plot_distributions(save_dir, x, xprime, y, truncation, architecture):
 
     plt.figure(figsize=(8, 5))
     h1 = plt.hist(x, bins=30, alpha=0.5, label='x', density=True)
@@ -63,7 +63,7 @@ def plot_distributions(save_dir, x, xprime, y, truncation):
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(
-        save_dir, f"rayleigh_quotient_distribution_{truncation}.png"))
+        save_dir, f"rayleigh_quotient_distribution_{truncation}_{architecture}.png"))
     plt.close()
 
 
@@ -151,7 +151,8 @@ def run_experiment(args, save_dir, plot=False):
     x, xprime, y = run_truncation_experiments(model, eval_loader)
 
     if plot:
-        plot_distributions(save_dir, x, xprime, y, args.truncation)
+        plot_distributions(save_dir, x, xprime, y,
+                           args.truncation, args.architecture)
 
     return x, xprime, y
 
