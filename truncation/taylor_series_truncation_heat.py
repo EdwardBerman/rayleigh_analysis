@@ -2,99 +2,174 @@ import argparse
 import os
 import pprint
 from datetime import datetime
+from types import SimpleNamespace
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from muon import SingleDeviceMuon
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from scipy.stats import entropy, gaussian_kde
 from torch_geometric.loader import DataLoader
+from tqdm import tqdm
 
-import wandb
 from external.unitary_gcn import UnitaryGCNConvLayer
-from external.weighted_cross_entropy import weighted_cross_entropy
-from metrics.accuracy import node_level_accuracy
 from metrics.rayleigh import rayleigh_quotients
-from model.edge_aggregator import EdgeModel, NodeModel
+from model.edge_aggregator import NodeModel
 from model.model_factory import UniStack, str_to_activation
-from model.predictor import (GraphLevelClassifier, GraphLevelRegressor,
-                             NodeLevelClassifier, NodeLevelRegressor)
-from parsers.parser_lrgb import LongRangeGraphBenchmarkParser
-from parsers.parser_toy import ToyLongRangeGraphBenchmarkParser
+from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
-from train.train import (bce_multilabel_loss, determine_data_postprocessing,
-                         determine_dataloader, graph_level_accuracy, set_seeds,
-                         train)
+from train.train import set_seeds
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def setup_wandb(config, run_name: str):
-    run = wandb.init(
-        entity="rayleigh_analysis_gnn",
-        project="unitary_or_bust_gelu",
-        config=config,
-        name=run_name
-    )
-    return run
+def kl_divergence_samples(p, q, epsilon=1e-12):
+
+    p = np.asarray(p)
+    q = np.asarray(q)
+
+    kde_x = gaussian_kde(p)
+    kde_xprime = gaussian_kde(q)
+
+    xmin = min(p.min(), q.min())
+    xmax = max(p.max(), q.max())
+    grid = np.linspace(xmin, xmax, len(q))
+
+    p = kde_x(grid) + epsilon
+    q = kde_xprime(grid) + epsilon
+
+    p /= p.sum()
+    q /= q.sum()
+
+    kl = entropy(p, q)
+    return kl
 
 
-def train_one_epoch(model, loader, optimizer, device):
-    model.train()
-    total_mse, total_nodes = 0, 0
-    for data in loader:
-        data = data.to(device)
-        optimizer.zero_grad()
-        out = model(data)
-        loss = F.mse_loss(out, data.y, reduction='sum')
-        loss.backward()
-        optimizer.step()
-        total_mse += loss.item()
-        total_nodes += data.num_nodes
-    return total_mse / total_nodes
+def plot_distributions(save_dir, x, xprime, y, truncation, architecture):
+
+    plt.figure(figsize=(8, 5))
+    h1 = plt.hist(x, bins=30, alpha=0.5, label='x', density=True)
+    h2 = plt.hist(xprime, bins=30, alpha=0.5, label='xprime', density=True)
+    h3 = plt.hist(y, bins=30, alpha=0.5, label='y', density=True)
+
+    median_peak = np.median([h1[0].max(), h2[0].max(), h3[0].max()])
+
+    ymax = 5 * median_peak
+    plt.ylim(top=ymax)
+
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+    plt.title(f"Distribution of Rayleigh quotients, truncation={truncation}")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(
+        save_dir, f"rayleigh_quotient_distribution_{truncation}_{architecture}.png"))
+    plt.close()
 
 
-@torch.no_grad()
-def evaluate(model, loader, device):
+def run_truncation_experiments(model, loader):
+
     model.eval()
-    total_mse, total_nodes = 0, 0
+
     rayleigh_quotients_x = []
     rayleigh_quotients_xprime = []
     rayleigh_quotients_y = []
 
     for data in loader:
         data = data.to(device)
-        out = model(data)
-        mse = F.mse_loss(out, data.y, reduction="sum").item()
-        total_mse += mse
-        total_nodes += data.num_nodes
-
-        x, xprime, y = rayleigh_quotients(model, data)
+        x, xprime, y = rayleigh_quotients(model.base_model, data)
         rayleigh_quotients_x.append(x.item())
         rayleigh_quotients_xprime.append(xprime.item())
         rayleigh_quotients_y.append(y.item())
-
-    avg_mse = total_mse / total_nodes
-
-    return avg_mse, np.mean(rayleigh_quotients_x), np.mean(rayleigh_quotients_xprime), np.mean(rayleigh_quotients_y)
+    return rayleigh_quotients_x, rayleigh_quotients_xprime, rayleigh_quotients_y
 
 
-if __name__ == "__main__":
+def build_model(args):
+
+    activation_function = str_to_activation(args.ACTIVATION_FUNCTION)
+
+    if args.architecture in ("Uni", "LieUni"):
+        module_list = []
+
+        if args.architecture == "LieUni":
+            input_dim = output_dim = 1
+
+            if args.HIDDEN_SIZE != 1:
+                print(
+                    f"Warning: For Lie Unitary GCN, input/hidden dims must match (got hidden {args.HIDDEN_SIZE}). "
+                    "Did you mean Separable Unitary Convolution?"
+                )
+
+            for _ in range(args.NUM_LAYERS):
+                module_list.append(UnitaryGCNConvLayer(
+                    input_dim,
+                    input_dim,
+                    dropout=0.1,
+                    residual=args.SKIP_CONNECTIONS,
+                    global_bias=False,
+                    T=args.truncation,
+                    use_hermitian=True,
+                    activation=activation_function()
+                ))
+        else:
+            for layer in range(args.NUM_LAYERS):
+                input_dim = 1 if layer == 0 else args.HIDDEN_SIZE
+                output_dim = 1 if layer == args.NUM_LAYERS - \
+                    1 else args.HIDDEN_SIZE
+
+                module_list.append(UnitaryGCNConvLayer(
+                    input_dim,
+                    output_dim,
+                    dropout=0.1,
+                    residual=args.SKIP_CONNECTIONS,
+                    global_bias=False,
+                    T=args.truncation,
+                    use_hermitian=False,
+                    activation=activation_function()
+                ))
+        return UniStack(module_list)
+    else:
+        raise Exception("Architecture not recognized.")
+
+
+def run_experiment(args, save_dir, plot=False):
+
+    set_seeds(args.seed)
+
+    _, eval_graphs = load_autoregressive_dataset(
+        args.data_dir, args.start_time, args.train_steps, args.eval_steps
+    )
+
+    eval_loader = DataLoader(eval_graphs, batch_size=args.BATCH_SIZE)
+
+    model = NodeLevelRegressor(NodeModel(build_model(
+        args)), 1, 1, complex_floats=True).to(device)
+
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Number of trainable parameters: {num_params}")
+
+    x, xprime, y = run_truncation_experiments(model, eval_loader)
+
+    if plot:
+        plot_distributions(save_dir, x, xprime, y,
+                           args.truncation, args.architecture)
+
+    return x, xprime, y
+
+
+def main(save_dir):
 
     config = {
-        "NUM_LAYERS": 6,
+        "NUM_LAYERS": 1,
         "SKIP_CONNECTIONS": False,
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
         "BATCH_NORM": "None",
-        "DROPOUT_RATE": 0.2,
-        "HIDDEN_SIZE": 200,
-        "LR": 0.001,
-        "EPOCHS": 500,
-        "WEIGHT_DECAY": 0.01,
+        "HIDDEN_SIZE": 64
     }
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--data_dir", type=str, required=True)
     parser.add_argument("--start_time", type=float, default=0.0)
     parser.add_argument("--train_steps", type=int, default=10)
@@ -103,10 +178,6 @@ if __name__ == "__main__":
                         help="Uni, LieUni", required=True)
     parser.add_argument("--truncation", type=int,
                         help="Determines how truncated the taylor series is.", required=True)
-    parser.add_argument("--epochs", type=int,
-                        required=False, default=config['EPOCHS'])
-    parser.add_argument("--save_dir", type=str,
-                        default='outputs', required=False)
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose logging")
     parser.add_argument("--toy", action="store_true",
@@ -116,118 +187,108 @@ if __name__ == "__main__":
     print("Arguments:")
     pprint.pprint(vars(args))
 
+    all_args = {**config, **vars(args)}
+
+    x, xprime, y = run_experiment(
+        all_args, save_dir, all_args, plot=True)
+
+    np.save(os.path.join(save_dir, "rayleigh_quotients_x.npy"), x)
+    np.save(os.path.join(save_dir, "rayleigh_quotients_xprime.npy"), xprime)
+    np.save(os.path.join(save_dir, "rayleigh_quotients_y.npy"), y)
+
+
+def plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir):
+    os.makedirs(save_dir, exist_ok=True)
+
+    truncations = sorted(all_rq_diffs.keys())
+
+    mean_diffs = [np.mean(all_rq_diffs[t]) for t in truncations]
+    mean_matches = [np.mean(all_rq_matches[t]) for t in truncations]
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(truncations, mean_diffs, color='skyblue')
+    plt.xlabel("Truncation")
+    plt.ylabel("Mean KL divergence of RQ")
+    plt.title("KL divergence between Y and XPrime")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "mean_rq_diffs.png"))
+    plt.close()
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(truncations, mean_matches, color='salmon')
+    plt.xlabel("Truncation")
+    plt.ylabel("Mean KL divergence of RQ")
+    plt.title("KL divergence between the RQ of X and XPrime")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "mean_rq_matches.png"))
+    plt.close()
+
+
+def run_all_for_architecture():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--architecture", type=str,
+                        help="Uni, LieUni", required=True)
+    parser.add_argument("--data_dir", type=str, required=True)
+    parserargs = parser.parse_args()
+
+    config = {
+        "NUM_LAYERS": 1,
+        "SKIP_CONNECTIONS": False,
+        "ACTIVATION_FUNCTION": "Identity",
+        "BATCH_SIZE": 200,
+        "BATCH_NORM": "None",
+        "HIDDEN_SIZE": 64
+    }
+
+    train_steps = 5
+    eval_steps = 2
+    start_time = 0.0
+
+    all_rq_diffs = {}
+    all_rq_matches = {}
+
+    for truncation in tqdm(range(1, 20)):
+
+        rq_diffs = []  # difference in rq x and xprime
+        rq_matches = []  # how well xprime matches y
+
+        for seed in range(0, 10):
+
+            args = SimpleNamespace(
+                **config,
+                seed=seed,
+                data_dir=parserargs.data_dir,
+                start_time=start_time,
+                train_steps=train_steps,
+                eval_steps=eval_steps,
+                architecture=parserargs.architecture,
+                truncation=truncation,
+                verbose=True,
+            )
+
+            x, xprime, y = run_experiment(
+                args, save_dir, True if args.seed == 0 else False)
+            # p = y, q = xprime
+            # p = x, q = xprime
+            rq_diffs.append(kl_divergence_samples(y, xprime))
+            rq_matches.append(kl_divergence_samples(x, xprime))
+
+        all_rq_diffs[truncation] = rq_diffs
+        all_rq_matches[truncation] = rq_matches
+
+    plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir)
+
+
+if __name__ == "__main__":
+
+    save_dir = "output"
+
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    name = f"architecture_{args.architecture}_truncation_{args.truncation}_{current_time}"
-    args.save_dir = os.path.join(
-        args.save_dir, name)
-    os.makedirs(args.save_dir, exist_ok=True)
+    save_dir = os.path.join(
+        save_dir, current_time)
+    print(save_dir)
+    os.makedirs(save_dir, exist_ok=True)
 
-    train_graphs, eval_graphs = load_autoregressive_dataset(
-        args.data_dir, args.start_time, args.train_steps, args.eval_steps
-    )
-
-    train_loader = DataLoader(
-        train_graphs, batch_size=args.batch_size, shuffle=True)
-    eval_loader = DataLoader(eval_graphs, batch_size=args.batch_size)
-
-    activation_function = str_to_activation(config['ACTIVATION_FUNCTION'])
-
-    if args.architecture == "Uni":
-        module_list = []
-        for layer in range(config['NUM_LAYERS']):
-            input_dim = 1 if layer == 0 else config['HIDDEN_SIZE']
-            output_dim = 1 if layer == config['NUM_LAYERS'] - \
-                1 else config['HIDDEN_SIZE']
-            module_list.append(UnitaryGCNConvLayer(input_dim,
-                                                   output_dim,
-                                                   dropout=config['DROPOUT_RATE'],
-                                                   residual=config['SKIP_CONNECTIONS'],
-                                                   global_bias=True,
-                                                   T=args.truncation,
-                                                   use_hermitian=False,
-                                                   activation=activation_function()))
-        model = UniStack(module_list)
-    elif args.architecture == 'LieUni':
-        module_list = []
-        input_dim = 1
-        output_dim = 1
-        if input_dim != output_dim:
-            print(
-                f"Warning: For Lie Unitary GCN, input and output dimensions must be the same, but a distinct output size was set. \nSetting output dim {output_dim} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
-        if input_dim != config['HIDDEN_SIZE']:
-            print(
-                f"Warning: For Lie Unitary GCN, input and hidden dimensions must be the same, but a distinct hidden size was set. \nSetting hidden dim {config['HIDDEN_SIZE']} to be input dim {input_dim}\nDid you mean Separable Unitary Convolution?")
-        for layer in range(config['NUM_LAYERS']):
-            module_list.append(UnitaryGCNConvLayer(input_dim,
-                                                   input_dim,
-                                                   dropout=config['DROPOUT_RATE'],
-                                                   residual=config['SKIP_CONNECTIONS'],
-                                                   global_bias=True,
-                                                   T=args.truncation,
-                                                   use_hermitian=True,
-                                                   activation=activation_function()))
-        model = UniStack(module_list)
-    else:
-        raise Exception("Architecture not recognized.")
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = NodeLevelRegressor(model, 1, 1, complex_floats=True).to(device)
-
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=args.lr, weight_decay=1e-4)
-
-    run = setup_wandb(config=config, run_name=name)
-
-    match config['OPTIMIZER']:
-        case "Cosine":
-            optimizer = torch.optim.Adam(model.parameters(), lr=config['LR'])
-            scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs)
-        case "Adam":
-            optimizer = torch.optim.Adam(
-                model.parameters(), lr=config['LR'], weight_decay=config['WEIGHT_DECAY'])
-            scheduler = None
-        case "Muon":
-            all_params = list(model.parameters())
-            # matrices only
-            muon_params = [p for p in all_params if p.ndim >= 2]
-            other_params = [p for p in all_params if p.ndim < 2]
-            optimizer_muon = SingleDeviceMuon(
-                muon_params, lr=config['LR'], weight_decay=config['WEIGHT_DECAY'])
-            optimizer_other = torch.optim.Adam(
-                other_params, lr=config['LR'], weight_decay=config['WEIGHT_DECAY'])
-            optimizer = [optimizer_muon, optimizer_other]
-            scheduler = None
-        case _:
-            raise ValueError(f"Unsupported optimizer.")
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
-
-    batch_size = config['BATCH_SIZE']
-
-    dataloader = determine_dataloader(args.architecture)
-
-    train_loader = dataloader(
-        train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = dataloader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = dataloader(
-        test_dataset, batch_size=batch_size, shuffle=False)
-
-    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"Number of trainable parameters: {num_params}")
-
-    set_seeds(42)
-
-    train(model=model,
-          train_loader=train_loader,
-          val_loader=val_loader,
-          test_loader=test_loader,
-          loss_fn=loss_fn,
-          optimizer=optimizer,
-          scheduler=scheduler,
-          run=run,
-          epochs=args.epochs,
-          output_dir=args.save_dir,
-          device=device,
-          log_rq=True,
-          acc_scorer=acc_scorer if is_classification else None)
+    run_all_for_architecture()

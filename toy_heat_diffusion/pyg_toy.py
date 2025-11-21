@@ -21,9 +21,9 @@ def graphs_to_autoregressive_pyg(graphs_by_time, start_index, end_index):
 
         t_prev, t_next = times[i], times[i+1]
         graphs_prev, graphs_next = graphs_by_time[t_prev], graphs_by_time[t_next]
-
+        
         for g_prev, g_next in zip(graphs_prev, graphs_next):
-
+            
             x_prev = torch.from_numpy(
                 np.array(g_prev['xt'], dtype=np.float32)).unsqueeze(1)
             x_next = torch.from_numpy(
@@ -32,6 +32,9 @@ def graphs_to_autoregressive_pyg(graphs_by_time, start_index, end_index):
             rows, cols = g_prev['A'].nonzero()
             edge_index = torch.from_numpy(
                 np.stack([rows, cols], axis=0)).long().contiguous()
+            
+            # sanity check
+            assert x_prev.shape == x_next.shape, "The features at previous time step should equal feature at next time step."
 
             graph = Data(x=x_prev, edge_index=edge_index,
                          y=x_next, tstart=times[i], tend=times[i+1])
@@ -52,7 +55,7 @@ def load_autoregressive_dataset(data_dir, start_time, train_steps, eval_steps):
                 graphs_by_time[t] = pickle.load(f)
 
     times = sorted(graphs_by_time.keys())
-
+    
     train_start_idx = times.index(start_time)
     train_end_idx = train_start_idx + train_steps
     test_start_idx = train_end_idx

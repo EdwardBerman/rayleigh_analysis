@@ -15,12 +15,15 @@ for trunc in 1 2
 do
     echo "Running with truncation=$trunc"
     python3 -m truncation.taylor_series_truncation_heat \
-        --data_dir 
+        --seed 0 \
+        --data_dir toy_heat_diffusion/data \
         --architecture Uni \
         --truncation $trunc \
-        --epochs 1 \
-        --verbose --toy \
-        --start_time 0.0 --train_steps 5 --eval_steps 2 
+        --start_time 0.0 \
+        --train_steps 5 \
+        --eval_steps 2 \
+        --verbose \
+        --toy
 done
 
 # for trunc in 1 2 
