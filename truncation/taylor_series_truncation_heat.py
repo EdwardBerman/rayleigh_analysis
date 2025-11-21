@@ -17,7 +17,6 @@ from model.edge_aggregator import NodeModel
 from model.model_factory import UniStack, str_to_activation
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
-from toy_heat_diffusion.train import train_one_epoch
 from train.train import set_seeds
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
