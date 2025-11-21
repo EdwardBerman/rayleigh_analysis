@@ -136,20 +136,14 @@ def run_experiment(args, save_dir, plot=False):
 
     set_seeds(args.seed)
 
-    train_graphs, eval_graphs = load_autoregressive_dataset(
+    _, eval_graphs = load_autoregressive_dataset(
         args.data_dir, args.start_time, args.train_steps, args.eval_steps
     )
 
-    train_loader = DataLoader(train_graphs, batch_size=args.BATCH_SIZE)
     eval_loader = DataLoader(eval_graphs, batch_size=args.BATCH_SIZE)
 
     model = NodeLevelRegressor(NodeModel(build_model(
         args)), 1, 1, complex_floats=True).to(device)
-
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=args.lr, weight_decay=1e-4)
-    # optionally warm up for 1 epoch
-    # train_one_epoch(model, eval_loader, optimizer, device)
 
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
