@@ -107,7 +107,7 @@ def main():
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--truncation_level", type=int, default=10)
     parser.add_argument("--save_dir", type=str,
-                        default="outputs/ten_runs_select_best")
+                        default="outputs/aggregate")
     parser.add_argument("--entity_name", type=str,
                         default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str,
