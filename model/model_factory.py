@@ -63,6 +63,7 @@ def build_model(node_dim: int,
                 dropout_rate: float = 0.1,
                 edge_aggregator: str | None = None,
                 edge_dim: int | None = None,
+                truncation_level: int = 10,
                 **kwargs) -> nn.Module:
 
     # TODO: Check the models being built use all args in build_model (where applicable)
@@ -158,7 +159,7 @@ def build_model(node_dim: int,
                                                        dropout=dropout_rate,
                                                        residual=False,
                                                        global_bias=False,
-                                                       T=20,
+                                                       T=truncation_level,
                                                        use_hermitian=True,
                                                        activation=activation_function()))
             model = UniStack(module_list)
