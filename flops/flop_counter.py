@@ -80,7 +80,6 @@ def build_model(args):
 def evaluate_flops(model, loader, device):
     model.eval()
 
-    flops = []
 
     def func(data):
         return model(data)
@@ -96,11 +95,8 @@ def evaluate_flops(model, loader, device):
         out = model(data)
         out = out.real if torch.is_complex(out) else out # Take the real part if complex, i.e., for unitary models
         out = out.type(torch.float32) if torch.is_complex(out) else out # Same thing
-        _, batch_flops = func_flops(func, data)
-        flops.append(batch_flops)
+        _ = func_flops(func, data)
 
-
-    return flops
 
 
 def run_experiment(args, save_dir):
@@ -118,10 +114,7 @@ def run_experiment(args, save_dir):
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
 
-    flops = evaluate_flops(model, eval_loader, device)
-
-
-    return flops
+    evaluate_flops(model, eval_loader, device)
 
 
 def main(save_dir):
@@ -157,10 +150,7 @@ def main(save_dir):
 
     all_args = {**config, **vars(args)}
 
-    flops = run_experiment(all_args, save_dir)
-
-    truncation_str = f"truncation_{args.truncation}"
-    np.save(os.path.join(save_dir, f"flops_{truncation_str}.npy"), flops)
+    run_experiment(all_args, save_dir)
 
 def run_all_for_architecture():
 
