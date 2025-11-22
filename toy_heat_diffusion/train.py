@@ -31,6 +31,7 @@ def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_h
         f"{config['act']}_"
         f"h{config['hidden']}_"
         f"lr{config['lr']}_"
+        f"trunc{config['truncation_level']}_"
     )
     run = wandb.init(
         entity=entity_name,
