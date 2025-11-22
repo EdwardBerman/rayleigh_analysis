@@ -1,3 +1,6 @@
 [submodule "external/hermes"]
 	path = external/hermes
 	url = https://github.com/jypark0/hermes.git
+[submodule "external/fast_flops"]
+	path = external/fast_flops
+	url = https://github.com/mitkotak/fast_flops.git
