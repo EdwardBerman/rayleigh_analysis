@@ -48,6 +48,10 @@ def train_one_epoch(model, loader, optimizer, device):
         data = data.to(device)
         optimizer.zero_grad()
         out = model(data)
+
+        if torch.is_complex(out):
+            out = out.real  # Take the real part if complex, i.e., for unitary models
+
         loss = F.mse_loss(out, data.y, reduction='sum')
         loss.backward()
         optimizer.step()
