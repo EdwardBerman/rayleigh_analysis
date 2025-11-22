@@ -113,7 +113,7 @@ def run_experiment(args, save_dir):
 
     eval_loader = DataLoader(eval_graphs, batch_size=args.BATCH_SIZE)
 
-    model = build_model(args).to(device)
+    model = NodeModel(build_model(args)).to(device)
 
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
