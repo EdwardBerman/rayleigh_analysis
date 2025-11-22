@@ -118,7 +118,7 @@ def run_experiment(args, save_dir):
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
 
-    flops = run_truncation_experiments(model, eval_loader)
+    flops = evaluate_flops(model, eval_loader)
 
 
     return flops
