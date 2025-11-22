@@ -123,7 +123,7 @@ def main():
         print("Not Setting Seed")
 
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    save_str = f"{args.model}_layers{args.layers}_hidden{args.hidden}_act{args.act}_lr{args.lr}_bs{args.batch_size}_dropout{args.dropout}"
+    save_str = f"{args.model}_{args.truncation_level}"
     args.save_dir = os.path.join(
         args.save_dir, f"{save_str}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
