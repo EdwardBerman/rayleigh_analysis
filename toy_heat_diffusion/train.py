@@ -68,6 +68,7 @@ def evaluate_heat_flow(model, loader, device):
         data = data.to(device)
         out = model(data)
         out = out.real if torch.is_complex(out) else out # Take the real part if complex, i.e., for unitary models
+        out = out.type(torch.float32) if torch.is_complex(out) else out # Same thing
         mse = F.mse_loss(out, data.y, reduction="sum").item()
         total_mse += mse
         total_nodes += data.num_nodes
