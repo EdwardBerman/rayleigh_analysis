@@ -15,5 +15,5 @@ module load python/3.13.5
 
 eval "$(poetry env activate)"
 
-python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 3 --eval_steps 1 --model gcn --layers 12 --hidden 128 --epochs 200 --lr 1e-4
+python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 3 --eval_steps 1 --model lie_uni --layers 12 --hidden 128 --epochs 200 --act Identity --lr 1e-4
 
