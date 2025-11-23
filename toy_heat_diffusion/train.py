@@ -208,6 +208,27 @@ def main():
         val_rayleigh_xprime_list.append(rayleigh_xprime)
         val_rayleigh_y_list.append(rayleigh_y)
 
+        if epoch % 100 == 0:
+            rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
+
+            torch.save(model.state_dict(), os.path.join(
+                args.save_dir, "model.pt"))
+            np.save(os.path.join(args.save_dir, "train_mse.npy"),
+                    np.array(train_mse_list))
+            np.save(os.path.join(args.save_dir, "val_mse.npy"), np.array(val_mse_list))
+            np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"),
+                    np.array(train_rayleigh_x_list))
+            np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"),
+                    np.array(train_rayleigh_xprime_list))
+            np.save(os.path.join(args.save_dir, "train_rayleigh_y.npy"),
+                    np.array(train_rayleigh_y_list))
+            np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"),
+                    np.array(val_rayleigh_x_list))
+            np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"),
+                    np.array(val_rayleigh_xprime_list))
+            np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"),
+                    np.array(val_rayleigh_y_list))
+
     rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
 
     torch.save(model.state_dict(), os.path.join(
