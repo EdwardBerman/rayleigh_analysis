@@ -7,6 +7,7 @@ from torch_geometric.typing import (Adj, NoneType, OptPairTensor, OptTensor,
 
 from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
+from external.custom_hermes.nn.eman_res_net_block import EmanAttResNetBlock
 
 class Cerberus(torch.nn.Module):
     def __init__(
@@ -89,18 +90,18 @@ class Cerberus(torch.nn.Module):
                         )
                     )
                 )
-        # Add final block
+
         self.layers.append(
-                GemResNetBlock(
-                    self.block_dims[-3],
-                    self.block_dims[-2],
-                    self.block_dims[-1],
-                    self.block_orders[-3],
-                    self.block_orders[-2],
-                    self.block_orders[-1],
-                    final_activation=final_activation,
-                    **block_kwargs,
-                )
+            EmanAttResNetBlock(
+                self.block_dims[-3],
+                self.block_dims[-2],
+                self.block_dims[-1],
+                self.block_orders[-3],
+                self.block_orders[-2],
+                self.block_orders[-1],
+                final_activation=final_activation,
+                **block_kwargs,
+            )
         )
 
     def forward(self, data):
