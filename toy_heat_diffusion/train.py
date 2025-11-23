@@ -14,6 +14,7 @@ from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
+import time
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -122,7 +123,10 @@ def main():
     else:
         print("Not Setting Seed")
 
+    # sleep for 5 seconds to avoid same time stamp issues
+    time.sleep(5)
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+
     save_str = f"{args.model}_{args.truncation_level}"
     args.save_dir = os.path.join(
         args.save_dir, f"{save_str}_{current_time}")
