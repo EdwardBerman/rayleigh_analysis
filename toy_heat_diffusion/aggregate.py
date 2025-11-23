@@ -128,7 +128,7 @@ def main():
         
         ax.set_xlabel("Epoch", fontsize=20)
         ax.set_title(title, fontsize=22)
-        ax.legend(fontsize=10)
+        ax.legend(fontsize=8, loc='upper right')
         ax.grid(True, alpha=0.3)
     
     axes[0].set_ylabel(r"$\overline{R_{\mathcal{G}}}$", fontsize=20)
@@ -156,7 +156,7 @@ def main():
         
         ax.set_xlabel("Epoch", fontsize=20)
         ax.set_title(title, fontsize=22)
-        ax.legend(fontsize=10)
+        ax.legend(fontsize=8, loc='upper right')
         ax.set_yscale("log")
         ax.grid(True, alpha=0.3)
     
