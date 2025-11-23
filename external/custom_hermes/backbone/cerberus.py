@@ -110,9 +110,10 @@ class Cerberus(torch.nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-        edge_index, precomp_neigh_edge, connection = (
+        edge_index, precomp_neigh_edge, precomp_self_edge, connection = (
             data.edge_index,
             data.precomp_neigh_edge,
+            data.precomp_self_edge,
             data.connection,
         )
 
@@ -126,7 +127,10 @@ class Cerberus(torch.nn.Module):
             x[~non_isol_mask] = 0.0
 
         for i, layer in enumerate(self.layers):
-            x = layer(x, edge_index, precomp_neigh_edge, connection)
+            if i != len(self.layers) - 1:
+                x = layer(x, edge_index, precomp_neigh_edge, connection)
+            else:
+                x = layer(x, edge_index, precomp_neigh_edge, precomp_self_edge, connection)
 
         return x
 
