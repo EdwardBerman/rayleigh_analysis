@@ -112,6 +112,7 @@ class Cerberus(torch.nn.Module):
             0,  # Intermediate is order 0
             0,  # Output is order 0
             final_activation=final_activation,
+            n_heads=1,
             **block_kwargs,
         )
 
