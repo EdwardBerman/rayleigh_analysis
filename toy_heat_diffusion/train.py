@@ -123,8 +123,9 @@ def main():
     else:
         print("Not Setting Seed")
 
-    # sleep for 5 seconds to avoid same time stamp issues
-    time.sleep(5)
+    # sleep for random seconds to avoid same time stamp issues
+    random_second = np.random.randint(1, 10)
+    time.sleep(random_second)
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
 
     save_str = f"{args.model}_{args.truncation_level}"
