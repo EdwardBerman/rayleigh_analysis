@@ -673,6 +673,75 @@ test = ["certifi (>=2024)", "cryptography-vectors (==46.0.2)", "pretend (>=0.7)"
 test-randomorder = ["pytest-randomly"]
 
 [[package]]
+name = "cuda-bindings"
+version = "13.0.3"
+description = "Python bindings for CUDA"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "cuda_bindings-13.0.3-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d56e46a9e984bb754e56b9d060cf027fe99f08a97651ce6d8aa1c2032476d01e"},
+    {file = "cuda_bindings-13.0.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c5f797ce534a303525259be0ae7ee9cfcf4f7874b22f1f9b8e85555509dccb83"},
+    {file = "cuda_bindings-13.0.3-cp310-cp310-win_amd64.whl", hash = "sha256:74307cea1feee6c32a6e27b42e77beb22cd21cff4b7764fd214fa6ff89f8bd69"},
+    {file = "cuda_bindings-13.0.3-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dfd66c25a133365c4f93e3396c38c64b04400ccafd18c3a889ae251a1bfabaa1"},
+    {file = "cuda_bindings-13.0.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9afede5937474864aa794eb57399dbdf5d2b05427aadcac275209b0857528a61"},
+    {file = "cuda_bindings-13.0.3-cp311-cp311-win_amd64.whl", hash = "sha256:fce6d6b162457475b35e1a259ab643e683d1d20a84459fea898782e2f1e10a3b"},
+    {file = "cuda_bindings-13.0.3-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b899e5a513c11eaa18648f9bf5265d8de2a93f76ef66a6bfca0a2887303965cd"},
+    {file = "cuda_bindings-13.0.3-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:cf41d9e69019939aa15296fa66ea7d3fdb8d2c6383f729f4b1156c8b37808a06"},
+    {file = "cuda_bindings-13.0.3-cp312-cp312-win_amd64.whl", hash = "sha256:6b12ccd98f447aea9589d32caf9efda0c193994080752a60f790b646d519fe8c"},
+    {file = "cuda_bindings-13.0.3-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:fb16a7f769c9c67469add7a1d9f6c14dd44637f6921cb6b9eb82cb5015b35c3d"},
+    {file = "cuda_bindings-13.0.3-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:512d0d803a5e47a8a42d5a34ce0932802bf72fe952fdb11ac798715a35c6e5cb"},
+    {file = "cuda_bindings-13.0.3-cp313-cp313-win_amd64.whl", hash = "sha256:dd83e8d79587e265b82d3e589ba6b061770537443dfb1bb4a74f755c8b13f62b"},
+    {file = "cuda_bindings-13.0.3-cp313-cp313t-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c859e326c776a47e66c50386a10c84fe34291eb6e711610c9fd7cc27d446334f"},
+    {file = "cuda_bindings-13.0.3-cp313-cp313t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e675dbd009fb5e66d63fd13a8ff35f849120f01bcc4dafadbced3004605c3588"},
+    {file = "cuda_bindings-13.0.3-cp313-cp313t-win_amd64.whl", hash = "sha256:193762306b6032c00a141fc38bcef92c6fb4d332fd2d6a550c7f950e7fd8acd8"},
+    {file = "cuda_bindings-13.0.3-cp314-cp314-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7c7e6e89cdfc9b34f16a065cc6ad6c4bab19ce5dcef8da3ace8ad10bda899fa0"},
+    {file = "cuda_bindings-13.0.3-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e93866465e7ff4b7ebdf711cf9cd680499cd875f992058c68be08d4775ac233d"},
+    {file = "cuda_bindings-13.0.3-cp314-cp314-win_amd64.whl", hash = "sha256:bd2364bc49925837ce18dda259c3a36e539977ca0297799a54891cae1d5213f5"},
+    {file = "cuda_bindings-13.0.3-cp314-cp314t-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ed06ef3507bd0aefb0da367e3d15676a8c7443bd68a88f298562d60b41078c20"},
+    {file = "cuda_bindings-13.0.3-cp314-cp314t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3ab845487ca2c14accdcb393a559a3070469ea4b591d05e6ef439471f47f3e24"},
+    {file = "cuda_bindings-13.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:aaa0934e16aa20ec10fbb1ecc53a6961b8d1c06a970fe05cc6ee7d2a805a090f"},
+    {file = "cuda_bindings-13.0.3-cp39-cp39-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:abd8481400f959484e48008281b2ff034ac6973881906afee1d346e11f1e1aae"},
+    {file = "cuda_bindings-13.0.3-cp39-cp39-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:547959c87185ce7d0a547afa1b728bb707c9f0db38994f8b89442f3bdc379d73"},
+    {file = "cuda_bindings-13.0.3-cp39-cp39-win_amd64.whl", hash = "sha256:1769956c8d868fe16535e02201b0b9e8a485f4e83024f9010f3e9b48a4387aa1"},
+]
+
+[package.dependencies]
+cuda-pathfinder = ">=1.1,<2.0"
+
+[package.extras]
+all = ["cuda-toolkit[cufile] (==13.*) ; sys_platform == \"linux\"", "cuda-toolkit[nvjitlink,nvrtc,nvvm] (==13.*)"]
+
+[[package]]
+name = "cuda-pathfinder"
+version = "1.3.2"
+description = "Pathfinder for CUDA components"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "cuda_pathfinder-1.3.2-py3-none-any.whl", hash = "sha256:7bd2774bc6be93aea226d579f415a63803b2b2c062207ed06c1d6dfc9cfacc3c"},
+]
+
+[[package]]
+name = "cuda-python"
+version = "13.0.3"
+description = "CUDA Python: Performance meets Productivity"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "cuda_python-13.0.3-py3-none-any.whl", hash = "sha256:914cd7e2dd075bd06a2d5121c1d9ccdd3d0c94b03ea5a44dbd98d24d8ed93bab"},
+]
+
+[package.dependencies]
+cuda-bindings = ">=13.0.3,<13.1.0"
+cuda-pathfinder = ">=1.1,<2.0"
+
+[package.extras]
+all = ["cuda-bindings[all] (>=13.0.3,<13.1.0)"]
+
+[[package]]
 name = "cycler"
 version = "0.12.1"
 description = "Composable style cycles"
@@ -2237,6 +2306,39 @@ files = [
     {file = "nvidia_nvtx_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:5b17e2001cc0d751a5bc2c6ec6d26ad95913324a4adb86788c944f8ce9ba441f"},
     {file = "nvidia_nvtx_cu12-12.8.90-py3-none-win_amd64.whl", hash = "sha256:619c8304aedc69f02ea82dd244541a83c3d9d40993381b3b590f1adaed3db41e"},
 ]
+
+[[package]]
+name = "nvtx"
+version = "0.2.13"
+description = "Python NVTX - Python code annotation library"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "nvtx-0.2.13-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:462bdcc65a12b53bfa3e7df564ddfb72092a030a923dccd1cf88c4b771ecae3f"},
+    {file = "nvtx-0.2.13-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7874534af889ab7c2c63554c73119d193d2beb7671b551b7f43de5b97ceb5971"},
+    {file = "nvtx-0.2.13-cp310-cp310-win_amd64.whl", hash = "sha256:4f26d04b5ea5b96096941cb9a7115a73454e9e9d5c247bfcd34ec584559cf9dd"},
+    {file = "nvtx-0.2.13-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1ad794a0c046ef268b2fb3b6812a35bb3bce5cd19207d164689943f0031ac45f"},
+    {file = "nvtx-0.2.13-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5640ca4b8be2c19a8fc4ca8403d3c2598165ea27541940b4897138a7b0a717fe"},
+    {file = "nvtx-0.2.13-cp311-cp311-win_amd64.whl", hash = "sha256:be6d53143cb2bd44e04aecdb7f3b34b48ded96f3673ae41362239d9f54bcfe27"},
+    {file = "nvtx-0.2.13-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3435cbbffa132f6aaba3abdb01e71a1b961a20858b4cb791883895a25b9305d6"},
+    {file = "nvtx-0.2.13-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:453d838dd1424a04303281ee57a73e2b8dca0e03039bc609a945861b8fe7d7d9"},
+    {file = "nvtx-0.2.13-cp312-cp312-win_amd64.whl", hash = "sha256:0722d743e0e41e1fb866ebe6446e0cd0d268ca8671313f8da4f8c969956b74d3"},
+    {file = "nvtx-0.2.13-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a1561d2111c698b1b1075899ff9c3fa7ba83603fc27c2e8ef567de6bbbe85ce1"},
+    {file = "nvtx-0.2.13-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:edd7b729ed0211350258a21dd13422f59bc521de2b2fd21feb6c177af492f4e1"},
+    {file = "nvtx-0.2.13-cp313-cp313-win_amd64.whl", hash = "sha256:f0524bb71443d5a1f19a6409a9a81405fc437e53c5edfc4c44b6f4504ccf46e3"},
+    {file = "nvtx-0.2.13-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:88286e7f1bb098704b8fd58a08a1b0c0fd41843275bf23badb5e32f59e0b38b9"},
+    {file = "nvtx-0.2.13-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3ae27d5a2049f72b53bf6c061c3c8badeb8c33758b3eb31a888cca7afbbe3114"},
+    {file = "nvtx-0.2.13-cp38-cp38-win_amd64.whl", hash = "sha256:e759bf6d97ff7a134cf290b251c4d55154a707d80131a00c043942e22caab089"},
+    {file = "nvtx-0.2.13-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:18634cffbcebd535c8e7c2cbac86a3e3313bd23975d7c3e811e063fbc0b6cb88"},
+    {file = "nvtx-0.2.13-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9ffa37591353296c1a81130d8231c6550ba5faf2f8e2fc87b851f69446a836cf"},
+    {file = "nvtx-0.2.13-cp39-cp39-win_amd64.whl", hash = "sha256:65ba8e3d81bf34cb363042787b8e2189cda6af38749374997a36262e2219105e"},
+    {file = "nvtx-0.2.13.tar.gz", hash = "sha256:9db7ba135168e14e1f038866100bf8ed42d3e00b404e9bc7b6280ee3af828b92"},
+]
+
+[package.extras]
+docs = ["nvidia_sphinx_theme", "sphinx"]
+test = ["Cython (==3.0.11)", "pytest", "setuptools"]
 
 [[package]]
 name = "omegaconf"
@@ -4462,4 +4564,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "97b201c2b0ee1a3a6203e2f9198777519bf5fce5b126bcbf88ac666c61f6c6b0"
+content-hash = "632fc73ad8e00c72cd07e563b2bf6ab122b7b36b42a269121c794a84618c42f4"

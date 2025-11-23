@@ -7,6 +7,7 @@ from torch_geometric.typing import (Adj, NoneType, OptPairTensor, OptTensor,
 
 from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
+from external.custom_hermes.nn.eman_res_net_block import EmanAttResNetBlock
 
 class Cerberus(torch.nn.Module):
     def __init__(
@@ -89,18 +90,30 @@ class Cerberus(torch.nn.Module):
                         )
                     )
                 )
-        # Add final block
+
         self.layers.append(
-                GemResNetBlock(
-                    self.block_dims[-3],
-                    self.block_dims[-2],
-                    self.block_dims[-1],
-                    self.block_orders[-3],
-                    self.block_orders[-2],
-                    self.block_orders[-1],
-                    final_activation=final_activation,
-                    **block_kwargs,
-                )
+            GemResNetBlock(
+                self.block_dims[-3],
+                self.block_dims[-2],
+                self.block_dims[-1],
+                self.block_orders[-3],
+                self.block_orders[-2],
+                self.block_orders[-1],
+                final_activation=final_activation,
+                **block_kwargs,
+            )
+        )
+
+        self.final_attn = EmanAttResNetBlock(
+            self.block_dims[-1],
+            self.block_dims[-1],
+            self.block_dims[-1],
+            0,  # Input is order 0
+            0,  # Intermediate is order 0
+            0,  # Output is order 0
+            final_activation=final_activation,
+            n_heads=1,
+            **block_kwargs,
         )
 
     def forward(self, data):
@@ -109,9 +122,10 @@ class Cerberus(torch.nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-        edge_index, precomp_neigh_edge, connection = (
+        edge_index, precomp_neigh_edge, precomp_self_edge, connection = (
             data.edge_index,
             data.precomp_neigh_edge,
+            data.precomp_self_edge,
             data.connection,
         )
 
@@ -126,6 +140,8 @@ class Cerberus(torch.nn.Module):
 
         for i, layer in enumerate(self.layers):
             x = layer(x, edge_index, precomp_neigh_edge, connection)
+        
+        x = self.final_attn(x, edge_index, precomp_neigh_edge, precomp_self_edge, connection)
 
         return x
 
@@ -134,7 +150,7 @@ class TaylorGCNConv(MessagePassing):
     def __init__(
         self,
         conv: GemResNetBlock,
-        T: int = 16
+        T: int = 3
     ):
         super().__init__()
         self.conv = conv
