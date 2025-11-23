@@ -92,7 +92,7 @@ class Cerberus(torch.nn.Module):
                 )
 
         self.layers.append(
-            EmanAttResNetBlock(
+            GemResNetBlock(
                 self.block_dims[-3],
                 self.block_dims[-2],
                 self.block_dims[-1],
@@ -102,6 +102,17 @@ class Cerberus(torch.nn.Module):
                 final_activation=final_activation,
                 **block_kwargs,
             )
+        )
+
+        self.final_attn = EmanAttResNetBlock(
+            self.block_dims[-1],
+            self.block_dims[-1],
+            self.block_dims[-1],
+            0,  # Input is order 0
+            0,  # Intermediate is order 0
+            0,  # Output is order 0
+            final_activation=final_activation,
+            **block_kwargs,
         )
 
     def forward(self, data):
@@ -127,10 +138,9 @@ class Cerberus(torch.nn.Module):
             x[~non_isol_mask] = 0.0
 
         for i, layer in enumerate(self.layers):
-            if i != len(self.layers) - 1:
-                x = layer(x, edge_index, precomp_neigh_edge, connection)
-            else:
-                x = layer(x, edge_index, precomp_neigh_edge, precomp_self_edge, connection)
+            x = layer(x, edge_index, precomp_neigh_edge, connection)
+        
+        x = self.final_attn(x, edge_index, precomp_neigh_edge, precomp_self_edge, connection)
 
         return x
 
