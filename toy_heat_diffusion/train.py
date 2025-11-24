@@ -14,6 +14,7 @@ from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
+import time
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -31,6 +32,7 @@ def setup_wandb(config, entity_name="rayleigh_analysis_gnn", project_name="toy_h
         f"{config['act']}_"
         f"h{config['hidden']}_"
         f"lr{config['lr']}_"
+        f"trunc{config['truncation_level']}_"
     )
     run = wandb.init(
         entity=entity_name,
@@ -48,6 +50,10 @@ def train_one_epoch(model, loader, optimizer, device):
         data = data.to(device)
         optimizer.zero_grad()
         out = model(data)
+
+        if torch.is_complex(out):
+            out = out.real  # Take the real part if complex, i.e., for unitary models
+
         loss = F.mse_loss(out, data.y, reduction='sum')
         loss.backward()
         optimizer.step()
@@ -67,6 +73,8 @@ def evaluate_heat_flow(model, loader, device):
     for data in loader:
         data = data.to(device)
         out = model(data)
+        out = out.real if torch.is_complex(out) else out # Take the real part if complex, i.e., for unitary models
+        out = out.type(torch.float32) if torch.is_complex(out) else out # Same thing
         mse = F.mse_loss(out, data.y, reduction="sum").item()
         total_mse += mse
         total_nodes += data.num_nodes
@@ -98,8 +106,9 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--dropout", type=float, default=0.0)
+    parser.add_argument("--truncation_level", type=int, default=10)
     parser.add_argument("--save_dir", type=str,
-                        default="outputs/ten_runs_select_best")
+                        default="outputs/aggregate")
     parser.add_argument("--entity_name", type=str,
                         default="rayleigh_analysis_gnn")
     parser.add_argument("--project_name", type=str,
@@ -114,8 +123,12 @@ def main():
     else:
         print("Not Setting Seed")
 
+    # sleep for random seconds to avoid same time stamp issues
+    random_second = np.random.randint(1, 10)
+    time.sleep(random_second)
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    save_str = f"{args.model}_layers{args.layers}_hidden{args.hidden}_act{args.act}_lr{args.lr}_bs{args.batch_size}_dropout{args.dropout}"
+
+    save_str = f"{args.model}_{args.truncation_level}"
     args.save_dir = os.path.join(
         args.save_dir, f"{save_str}_{current_time}")
     os.makedirs(args.save_dir, exist_ok=True)
@@ -135,8 +148,16 @@ def main():
         base_gnn = build_model(node_dim=in_ch, model_type="GCN", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     elif args.model == 'lie_unitary':
-        base_gnn = build_model(node_dim=in_ch, model_type="LieUni", num_layers=args.layers,
-                               hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
+        base_gnn = build_model(node_dim=in_ch, 
+                               model_type="LieUni", 
+                               num_layers=args.layers,
+                               hidden_size=args.hidden, 
+                               activation_function=args.act, 
+                               skip_connections=False, 
+                               batch_size=64, 
+                               batch_norm="None", 
+                               dropout_rate=args.dropout, 
+                               truncation_level=args.truncation_level)
     elif args.model == 'separable_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="Uni", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
@@ -144,8 +165,7 @@ def main():
         raise Exception("We do not like anything else here.")
 
     complex_floats = args.model in ["separable_unitary", "lie_unitary"]
-    model = NodeLevelRegressor(
-        base_gnn, in_ch, 1, complex_floats=complex_floats)
+    model = base_gnn
     model.to(device)
 
     optimizer = torch.optim.Adam(
@@ -192,6 +212,27 @@ def main():
         val_rayleigh_x_list.append(rayleigh_x)
         val_rayleigh_xprime_list.append(rayleigh_xprime)
         val_rayleigh_y_list.append(rayleigh_y)
+
+        if epoch % 100 == 0:
+            rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
+
+            torch.save(model.state_dict(), os.path.join(
+                args.save_dir, "model.pt"))
+            np.save(os.path.join(args.save_dir, "train_mse.npy"),
+                    np.array(train_mse_list))
+            np.save(os.path.join(args.save_dir, "val_mse.npy"), np.array(val_mse_list))
+            np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"),
+                    np.array(train_rayleigh_x_list))
+            np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"),
+                    np.array(train_rayleigh_xprime_list))
+            np.save(os.path.join(args.save_dir, "train_rayleigh_y.npy"),
+                    np.array(train_rayleigh_y_list))
+            np.save(os.path.join(args.save_dir, "val_rayleigh_x.npy"),
+                    np.array(val_rayleigh_x_list))
+            np.save(os.path.join(args.save_dir, "val_rayleigh_xprime.npy"),
+                    np.array(val_rayleigh_xprime_list))
+            np.save(os.path.join(args.save_dir, "val_rayleigh_y.npy"),
+                    np.array(val_rayleigh_y_list))
 
     rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
 

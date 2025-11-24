@@ -6,13 +6,14 @@ From yours truly
 
 ### General
 
-1. This repository contains a submodule. To run this repository and access the submodule, run `git clone https://github.com/EdwardBerman/rayleigh_analysis.git` followed by `git submodule update --init --recursive`. The repo will require non Pythonic dependencies, you will need to run `sudo apt install cmake gfortran`.
+1. This repository contains a submodule. To run this repository and access the submodules, run `git clone https://github.com/EdwardBerman/rayleigh_analysis.git` followed by `git submodule update --init --recursive` and `git submodule add https://github.com/mitkotak/fast_flops.git`. The repo will require non Pythonic dependencies, you will need to run `sudo apt install cmake gfortran`.
 2. Install poetry and run `poetry install`
 3. Install wandb via and login via `wandb login [api key]`
 
 ### Simulated Heat diffusion on graphs
 
-1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --n_sources 20 --minheat 1 --maxheat 1  --num_graphs 10000 --size_mean 10 --size_std 2 --time_max 10 --time_step 0.5`. Alternatively, the dataset we generated is available on Zenodo for download [Here](https://zenodo.org/records/17632910)
+1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --n_sources 20 --minheat 1 --maxheat 1  --num_graphs 10000 --size_mean 10 --size_std 2 --time_max 10 --time_step 0.5`. Alternatively, the dataset we generated is available on Zenodo for download at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17632910.svg)](https://doi.org/10.5281/zenodo.17632910)
+
 2. To train a GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 128 --epochs 200 --entity_name [wandb entity name] --project_name [wandb project name]`
 3. To train the equivalent(ish) Separable Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model separable_unitary --layers 12 --hidden 128 --epochs 200 --entity_name [wandb entity name] --project_name [wandb project name]`. 
 4. For Lie Unitary GCN, simply change the `--model` flag to `lie_unitary` and add the flag `--act Identity`. The bias and skip connections will be set to false by default to keep the model unitary.
@@ -29,7 +30,7 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 4. For Hermes, EMAN, and GemCNN, we use the default Checkpoints supplied from the original Hermes paper for evaluation.
 5. Models are evaluated using `shell_scripts/mesh/eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=hermes model_save_path=model_checkpoints/[model pt file]`
 
-### Long Range Graph Benchmark
+### Long Range Graph Benchmark (Bonus)
 
 1. The longe range graph benchmark can be downloaded by running `python3 -m data_preprocessing.long_range_graph_benchmark`
 2. [Optional] Poke around with the datasets. Run `python3 -m data_preprocessing.homophily` to get the homophily distribution of graphs for the node level classification tasks. 
