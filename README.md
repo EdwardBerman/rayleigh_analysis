@@ -12,7 +12,7 @@ From yours truly
 
 ### Simulated Heat diffusion on graphs
 
-1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --n_sources 20 --minheat 1 --maxheat 1  --num_graphs 10000 --size_mean 10 --size_std 2 --time_max 10 --time_step 0.5`. Alternatively, the dataset we generated is available on Zenodo for download [Here](https://zenodo.org/records/17632910) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17632910.svg)](https://doi.org/10.5281/zenodo.17632910)
+1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --n_sources 20 --minheat 1 --maxheat 1  --num_graphs 10000 --size_mean 10 --size_std 2 --time_max 10 --time_step 0.5`. Alternatively, the dataset we generated is available on Zenodo for download at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17632910.svg)](https://doi.org/10.5281/zenodo.17632910)
 
 2. To train a GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model gcn --layers 12 --hidden 128 --epochs 200 --entity_name [wandb entity name] --project_name [wandb project name]`
 3. To train the equivalent(ish) Separable Unitary GCN on the heat diffusion data on graph, do `python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data --start_time 0.0 --train_steps 5 --eval_steps 2 --model separable_unitary --layers 12 --hidden 128 --epochs 200 --entity_name [wandb entity name] --project_name [wandb project name]`. 
