@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pprint
 from datetime import datetime
@@ -45,6 +46,13 @@ def kl_divergence_samples(p, q, epsilon=1e-12):
 
 
 def plot_distributions(save_dir, x, xprime, y, truncation, architecture):
+
+    np.save(os.path.join(
+        save_dir, f"x_trunc{truncation}_{architecture}.npy"), x)
+    np.save(os.path.join(
+        save_dir, f"xprime_trunc{truncation}_{architecture}.npy"), xprime)
+    np.save(os.path.join(
+        save_dir, f"y_trunc{truncation}_{architecture}.npy"), y)
 
     plt.figure(figsize=(8, 5))
     h1 = plt.hist(x, bins=30, alpha=0.5, label='x', density=True)
@@ -190,7 +198,7 @@ def main(save_dir):
     all_args = {**config, **vars(args)}
 
     x, xprime, y = run_experiment(
-        all_args, save_dir, all_args, plot=True)
+        all_args, save_dir, plot=True)
 
     np.save(os.path.join(save_dir, "rayleigh_quotients_x.npy"), x)
     np.save(os.path.join(save_dir, "rayleigh_quotients_xprime.npy"), xprime)
@@ -204,6 +212,14 @@ def plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir):
 
     mean_diffs = [np.mean(all_rq_diffs[t]) for t in truncations]
     mean_matches = [np.mean(all_rq_matches[t]) for t in truncations]
+
+    np.save(os.path.join(save_dir, "all_rq_diffs.npy"), all_rq_diffs)
+    np.save(os.path.join(save_dir, "all_rq_matches.npy"), all_rq_matches)
+
+    with open(os.path.join(save_dir, "all_rq_diffs.json"), "w") as f:
+        json.dump({str(k): v for k, v in all_rq_diffs.items()}, f)
+    with open(os.path.join(save_dir, "all_rq_matches.json"), "w") as f:
+        json.dump({str(k): v for k, v in all_rq_matches.items()}, f)
 
     plt.figure(figsize=(10, 5))
     plt.bar(truncations, mean_diffs, color='skyblue')
@@ -242,14 +258,14 @@ def run_all_for_architecture():
         "HIDDEN_SIZE": 64
     }
 
-    train_steps = 5
-    eval_steps = 2
+    train_steps = 3
+    eval_steps = 1
     start_time = 0.0
 
     all_rq_diffs = {}
     all_rq_matches = {}
 
-    for truncation in tqdm(range(1, 20)):
+    for truncation in tqdm(range(1, 10)):
 
         rq_diffs = []  # difference in rq x and xprime
         rq_matches = []  # how well xprime matches y
