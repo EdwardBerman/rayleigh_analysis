@@ -260,7 +260,12 @@ def run_all_for_architecture():
 
     all_rq_diffs = {}
 
-    for truncation in tqdm(range(1, 10)):
+    if parserargs.architecture == "GCN":
+        truncrange = range(1, 2)  # dummy
+    else:
+        truncrange = range(1, 10)
+
+    for truncation in tqdm(truncrange):
 
         rq_diffs = []  # difference in rq x and xprime
 
