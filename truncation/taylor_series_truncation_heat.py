@@ -243,7 +243,7 @@ def run_all_for_architecture():
     parserargs = parser.parse_args()
 
     config = {
-        "NUM_LAYERS": 2, 
+        "NUM_LAYERS": 2,
         "SKIP_CONNECTIONS": False,
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
