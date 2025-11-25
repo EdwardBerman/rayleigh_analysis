@@ -10,6 +10,8 @@ From yours truly
 2. Install poetry and run `poetry install`
 3. Install wandb via and login via `wandb login [api key]`
 
+For plotting, you might need to download additional tex support locally for the LaTeX strings.
+
 ### Simulated Heat diffusion on graphs
 
 1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --n_sources 20 --minheat 1 --maxheat 1  --num_graphs 10000 --size_mean 10 --size_std 2 --time_max 10 --time_step 0.5`. Alternatively, the dataset we generated is available on Zenodo for download at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17632910.svg)](https://doi.org/10.5281/zenodo.17632910)
