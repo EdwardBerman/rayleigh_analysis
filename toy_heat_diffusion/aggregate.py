@@ -82,7 +82,7 @@ def main():
     fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharey=True)
     
     model_types = ['gcn', 'lie_3', 'lie_10']
-    titles = [r'$f_{GCN}$', r'$f_{Lie-Uni}, T=3$', r'$f_{Lie-Uni}, T=10$']
+    titles = [r'$f_{\rm GCN}(\mathbf{X}, \mathbf{A})$', r'$f_{\rm Relaxed}(\mathbf{X}, \mathbf{A}, 3)$', r'$f_{\rm Lie Uni Conv}(\mathbf{X}, \mathbf{A})$']
     colors = plt.cm.viridis(np.linspace(0.2, 0.8, 5))  # Max 5 runs per type
     
     for ax, model_type, title in zip(axes, model_types, titles):
@@ -128,7 +128,8 @@ def main():
         
         ax.set_xlabel("Epoch", fontsize=20)
         ax.set_title(title, fontsize=22)
-        ax.legend(fontsize=8, loc='upper right')
+        if title == titles[2]:
+            ax.legend(fontsize=8, loc='upper right')
         ax.grid(True, alpha=0.3)
     
     axes[0].set_ylabel(r"$\overline{R_{\mathcal{G}}}$", fontsize=20)
