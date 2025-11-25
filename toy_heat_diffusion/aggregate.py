@@ -82,7 +82,7 @@ def main():
     fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharey=True)
     
     model_types = ['gcn', 'lie_3', 'lie_10']
-    titles = [r'$f_{\rm GCN}(\mathbf{X}, \mathbf{A})$', r'$f_{\rm Relaxed}(\mathbf{X}, \mathbf{A}, 3)$', r'$f_{\rm Lie Uni Conv}(\mathbf{X}, \mathbf{A})$']
+    titles = [r'$f_{\rm GCN}(\mathbf{X}; \mathbf{A})$', r'$f_{\rm Relaxed}(\mathbf{X}; \mathbf{A}, 3)$', r'$f_{\rm Lie Uni Conv}(\mathbf{X}; \mathbf{A})$']
     colors = plt.cm.viridis(np.linspace(0.2, 0.8, 5))  # Max 5 runs per type
     
     for ax, model_type, title in zip(axes, model_types, titles):
