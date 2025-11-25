@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pprint
 from datetime import datetime
@@ -9,10 +10,11 @@ import numpy as np
 import torch
 from scipy.stats import entropy, gaussian_kde
 from torch_geometric.loader import DataLoader
+from torch_geometric.nn.models import GCN
 from tqdm import tqdm
 
 from external.unitary_gcn import UnitaryGCNConvLayer
-from metrics.rayleigh import rayleigh_quotients
+from metrics.rayleigh import rayleigh_quotients_graphlevel
 from model.edge_aggregator import NodeModel
 from model.model_factory import UniStack, str_to_activation
 from model.predictor import NodeLevelRegressor
@@ -44,14 +46,18 @@ def kl_divergence_samples(p, q, epsilon=1e-12):
     return kl
 
 
-def plot_distributions(save_dir, x, xprime, y, truncation, architecture):
+def plot_distributions(save_dir, x, xprime, truncation, architecture):
+
+    np.save(os.path.join(
+        save_dir, f"x_trunc{truncation}_{architecture}.npy"), x)
+    np.save(os.path.join(
+        save_dir, f"xprime_trunc{truncation}_{architecture}.npy"), xprime)
 
     plt.figure(figsize=(8, 5))
     h1 = plt.hist(x, bins=30, alpha=0.5, label='x', density=True)
     h2 = plt.hist(xprime, bins=30, alpha=0.5, label='xprime', density=True)
-    h3 = plt.hist(y, bins=30, alpha=0.5, label='y', density=True)
 
-    median_peak = np.median([h1[0].max(), h2[0].max(), h3[0].max()])
+    median_peak = np.median([h1[0].max(), h2[0].max()])
 
     ymax = 5 * median_peak
     plt.ylim(top=ymax)
@@ -72,15 +78,13 @@ def run_truncation_experiments(model, loader):
 
     rayleigh_quotients_x = []
     rayleigh_quotients_xprime = []
-    rayleigh_quotients_y = []
 
     for data in loader:
         data = data.to(device)
-        x, xprime, y = rayleigh_quotients(model.base_model, data)
+        x, xprime = rayleigh_quotients_graphlevel(model.base_model, data)
         rayleigh_quotients_x.append(x.item())
         rayleigh_quotients_xprime.append(xprime.item())
-        rayleigh_quotients_y.append(y.item())
-    return rayleigh_quotients_x, rayleigh_quotients_xprime, rayleigh_quotients_y
+    return rayleigh_quotients_x, rayleigh_quotients_xprime
 
 
 def build_model(args):
@@ -127,6 +131,16 @@ def build_model(args):
                     activation=activation_function()
                 ))
         return UniStack(module_list)
+    elif args.architecture == "GCN":
+        input_dim = 1
+        output_dim = 1
+        model = GCN(num_layers=args.NUM_LAYERS,
+                    in_channels=input_dim,
+                    hidden_channels=args.HIDDEN_SIZE,
+                    out_channels=output_dim,
+                    dropout=0.1,
+                    act=activation_function())
+        return model
     else:
         raise Exception("Architecture not recognized.")
 
@@ -144,22 +158,23 @@ def run_experiment(args, save_dir, plot=False):
     model = NodeLevelRegressor(NodeModel(build_model(
         args)), 1, 1, complex_floats=True).to(device)
 
-    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    num_params = sum(p.numel()
+                     for p in model.base_model.parameters() if p.requires_grad)
     print(f"Number of trainable parameters: {num_params}")
 
-    x, xprime, y = run_truncation_experiments(model, eval_loader)
+    x, xprime = run_truncation_experiments(model, eval_loader)
 
     if plot:
-        plot_distributions(save_dir, x, xprime, y,
+        plot_distributions(save_dir, x, xprime,
                            args.truncation, args.architecture)
 
-    return x, xprime, y
+    return x, xprime
 
 
 def main(save_dir):
 
     config = {
-        "NUM_LAYERS": 1,
+        "NUM_LAYERS": 2,
         "SKIP_CONNECTIONS": False,
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
@@ -189,30 +204,24 @@ def main(save_dir):
 
     all_args = {**config, **vars(args)}
 
-    x, xprime, y = run_experiment(
-        all_args, save_dir, all_args, plot=True)
+    x, xprime = run_experiment(
+        all_args, save_dir, plot=True)
 
     np.save(os.path.join(save_dir, "rayleigh_quotients_x.npy"), x)
     np.save(os.path.join(save_dir, "rayleigh_quotients_xprime.npy"), xprime)
-    np.save(os.path.join(save_dir, "rayleigh_quotients_y.npy"), y)
 
 
-def plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir):
+def plot_kl_divergence(all_rq_diffs, save_dir):
     os.makedirs(save_dir, exist_ok=True)
 
     truncations = sorted(all_rq_diffs.keys())
 
-    mean_diffs = [np.mean(all_rq_diffs[t]) for t in truncations]
-    mean_matches = [np.mean(all_rq_matches[t]) for t in truncations]
+    mean_matches = [np.mean(all_rq_diffs[t]) for t in truncations]
 
-    plt.figure(figsize=(10, 5))
-    plt.bar(truncations, mean_diffs, color='skyblue')
-    plt.xlabel("Truncation")
-    plt.ylabel("Mean KL divergence of RQ")
-    plt.title("KL divergence between Y and XPrime")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, "mean_rq_diffs.png"))
-    plt.close()
+    np.save(os.path.join(save_dir, "all_rq_diffs.npy"), all_rq_diffs)
+
+    with open(os.path.join(save_dir, "all_rq_diffs.json"), "w") as f:
+        json.dump({str(k): v for k, v in all_rq_diffs.items()}, f)
 
     plt.figure(figsize=(10, 5))
     plt.bar(truncations, mean_matches, color='salmon')
@@ -220,7 +229,7 @@ def plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir):
     plt.ylabel("Mean KL divergence of RQ")
     plt.title("KL divergence between the RQ of X and XPrime")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, "mean_rq_matches.png"))
+    plt.savefig(os.path.join(save_dir, "mean_rq_diffs.png"))
     plt.close()
 
 
@@ -229,12 +238,12 @@ def run_all_for_architecture():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--architecture", type=str,
-                        help="Uni, LieUni", required=True)
+                        help="Uni, LieUni, GCN", required=True)
     parser.add_argument("--data_dir", type=str, required=True)
     parserargs = parser.parse_args()
 
     config = {
-        "NUM_LAYERS": 1,
+        "NUM_LAYERS": 2,
         "SKIP_CONNECTIONS": False,
         "ACTIVATION_FUNCTION": "Identity",
         "BATCH_SIZE": 200,
@@ -242,17 +251,23 @@ def run_all_for_architecture():
         "HIDDEN_SIZE": 64
     }
 
-    train_steps = 5
-    eval_steps = 2
+    if parserargs.architecture == "LieUni":
+        config['NUM_LAYERS'] = 12
+
+    train_steps = 3
+    eval_steps = 1
     start_time = 0.0
 
     all_rq_diffs = {}
-    all_rq_matches = {}
 
-    for truncation in tqdm(range(1, 20)):
+    if parserargs.architecture == "GCN":
+        truncrange = range(1, 2)  # dummy
+    else:
+        truncrange = range(1, 10)
+
+    for truncation in tqdm(truncrange):
 
         rq_diffs = []  # difference in rq x and xprime
-        rq_matches = []  # how well xprime matches y
 
         for seed in range(0, 10):
 
@@ -268,17 +283,14 @@ def run_all_for_architecture():
                 verbose=True,
             )
 
-            x, xprime, y = run_experiment(
+            x, xprime = run_experiment(
                 args, save_dir, True if args.seed == 0 else False)
-            # p = y, q = xprime
             # p = x, q = xprime
-            rq_diffs.append(kl_divergence_samples(y, xprime))
-            rq_matches.append(kl_divergence_samples(x, xprime))
+            rq_diffs.append(kl_divergence_samples(x, xprime))
 
         all_rq_diffs[truncation] = rq_diffs
-        all_rq_matches[truncation] = rq_matches
 
-    plot_kl_divergence(all_rq_diffs, all_rq_matches, save_dir)
+    plot_kl_divergence(all_rq_diffs, save_dir)
 
 
 if __name__ == "__main__":
