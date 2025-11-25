@@ -263,7 +263,7 @@ def run_all_for_architecture():
     if parserargs.architecture == "GCN":
         truncrange = range(1, 2)  # dummy
     else:
-        truncrange = range(1, 10)
+        truncrange = range(1, 11)
 
     for truncation in tqdm(truncrange):
 
