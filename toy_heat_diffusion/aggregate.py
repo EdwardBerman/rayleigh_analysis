@@ -157,7 +157,8 @@ def main():
         
         ax.set_xlabel("Epoch", fontsize=20)
         ax.set_title(title, fontsize=22)
-        ax.legend(fontsize=8, loc='upper right')
+        if title == titles[2]:
+            ax.legend(fontsize=8, loc='upper right')
         ax.set_yscale("log")
         ax.grid(True, alpha=0.3)
     
