@@ -1,6 +1,6 @@
-# A systematic investigation of smoothing in GNNs via the Rayleigh Quotient
+# Insights on Rayleigh over smoothing in GNNs and Implications for Dynamics Modeling
 
-From yours truly
+From [Edward Berman](https://ebrmn.space/) and [Luisa Li](https://www.luisali.com/). This project was done for [Robin Walters](https://www.robinwalters.com/) CS 7180 Special Topics Class on Geometric Structure in Deep Learning.
 
 ## Set Up Instructions
 
