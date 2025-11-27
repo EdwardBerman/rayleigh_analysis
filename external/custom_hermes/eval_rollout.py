@@ -132,11 +132,15 @@ def main(cfg):
             pos = data.pos
             points = pv.wrap(pos.detach().cpu().numpy())
             points = points.delaunay_3d()
-            print(type(points.faces))
+            surf = tet_mesh.extract_surface()
+            edges = surf.extract_all_edges()
+            edge_array = edges.lines.reshape(-1, 3)[:, 1:]
+            print(f"Sanity Check: Edge List Stored as: {edge_array.shape}")
+            print(type(surf.faces))
             # get edge weights from external function
 
             # print num points to make sure its the same 
-            print(f"Number of points in mesh: {points.n_points}, Number of nodes in data: {N}")
+            print(f"Number of points in mesh: {surf.points.shape}, Number of nodes in data: {N}")
             print(f"Number of positions in data: {data.pos.shape[0]}")
 
             all_preds = []
