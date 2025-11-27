@@ -139,6 +139,7 @@ def main(cfg):
             L_np = L.toarray()
             L_torch = torch.from_numpy(L_np).to(values.device)
             print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
+            L_torch = -L_torch # opposite sign convention
 
 
             all_preds = []
