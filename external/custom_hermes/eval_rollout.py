@@ -145,6 +145,9 @@ def main(cfg):
             print(f"Number of points in mesh: {points_mesh.points.shape}")
             print(f"Number of positions in data: {data.pos.shape[0]}")
 
+            new_faces = points_mesh.faces.reshape(-1, 4)[:, 1:]
+            print(f"New faces shape: {new_faces.shape}")
+
             all_preds = []
             all_losses = []
             all_gts = []
