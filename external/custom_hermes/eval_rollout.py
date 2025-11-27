@@ -111,6 +111,8 @@ def main(cfg):
             "ground_truth": defaultdict(list),
             "predicted_rayleigh_quotients": defaultdict(list),
             "true_rayleigh_quotients": defaultdict(list),
+            "nrmse": defaultdict(list),
+            "smape": defaultdict(list),
         }
 
         model.eval()
@@ -166,6 +168,9 @@ def main(cfg):
             traj_true_rq = []
             traj_pred_rq = []
 
+            nrmse = []
+            smape = []
+
             with torch.no_grad():
                 data.x = values[:, 0 : dataset.input_length][..., None]
 
@@ -203,6 +208,24 @@ def main(cfg):
                     traj_true_rq.append(edge_mse_true_weighted.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
                     traj_pred_rq.append(edge_mse_pred_weighted.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))
 
+                    nrmse.append(
+                        torch.sqrt(
+                            torch.mean((y_pred - y) ** 2)
+                            / (torch.mean(y**2) + 1e-8)
+                        )
+                        .detach()
+                        .cpu()
+                        .item()
+                    )
+
+                    smape.append(
+                        (2*torch.abs(y_pred - y) / (torch.abs(y_pred) + torch.abs(y) + 1e-8))
+                        .mean()
+                        .detach()
+                        .cpu()
+                        .item()
+                    )
+
                     # end sketchy
                     #print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
 
@@ -226,6 +249,9 @@ def main(cfg):
             )  # [Num_nodes, T]
             results["losses"][mesh_idx].append(np.array(all_losses))
 
+            results["nrmse"][mesh_idx].append(np.array(nrmse))
+            results["smape"][mesh_idx].append(np.array(smape))
+
 
         return results
 
@@ -237,6 +263,8 @@ def main(cfg):
         results = eval_step(dataset)
 
         integrated_errors_all = []
+        integrated_nrmse_all = []
+        integrated_smape_all = []
 
         for mesh_idx, v in results["losses"].items():
             losses = np.asarray(v)
@@ -313,6 +341,19 @@ def main(cfg):
                 f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}"
             )
 
+            nrmse = np.stack(
+                results["nrmse"][mesh_idx], axis=0
+            )  # [num_traj, T_out]
+            smape = np.stack(
+                results["smape"][mesh_idx], axis=0
+            )  # [num_traj, T_out]
+
+            traj_nrmse = nrmse.sum(axis=1)
+            traj_smape = smape.sum(axis=1)
+
+            integrated_nrmse_all.extend(traj_nrmse.tolist())
+            integrated_smape_all.extend(traj_smape.tolist())
+
 
             for s in range(1):
                 for t in range(10, 191, 10):
@@ -357,16 +398,38 @@ def main(cfg):
                             #framerate=30,
                             #)
 
-            if len(integrated_errors_all) > 0:
-                overall_mean = np.mean(integrated_errors_all)
-                overall_std = np.std(integrated_errors_all)
-                if len(integrated_errors_all) > 5:
-                    print("-----"*40)
-                print(
-                    f"[{split}] Combined Integrated Rayleigh Quotient Error over all meshes and rollouts: {overall_mean:.6e} +/- {overall_std:.6e} (n={len(integrated_errors_all)})"
-                )
-                if len(integrated_errors_all) > 5:
-                    print("-----"*40)
+    if len(integrated_errors_all) > 0:
+        overall_mean = np.mean(integrated_errors_all)
+        overall_std = np.std(integrated_errors_all)
+        if len(integrated_errors_all) > 5:
+            print("-----"*40)
+        print(
+            f"[{split}] Combined Integrated Rayleigh Quotient Error over all meshes and rollouts: {overall_mean:.6e} +/- {overall_std:.6e} (n={len(integrated_errors_all)})"
+        )
+        if len(integrated_errors_all) > 5:
+            print("-----"*40)
+
+    if len(integrated_nrmse_all) > 0:
+        overall_nrmse_mean = np.mean(integrated_nrmse_all)
+        overall_nrmse_std = np.std(integrated_nrmse_all)
+        if len(integrated_nrmse_all) > 5:
+            print("-----"*40)
+        print(
+            f"[{split}] Combined Integrated NRMSE over all meshes and rollouts: {overall_nrmse_mean:.6e} +/- {overall_nrmse_std:.6e} (n={len(integrated_nrmse_all)})"
+        )
+        if len(integrated_nrmse_all) > 5:
+            print("-----"*40)
+
+    if len(integrated_smape_all) > 0:
+        overall_smape_mean = np.mean(integrated_smape_all)
+        overall_smape_std = np.std(integrated_smape_all)
+        if len(integrated_smape_all) > 5:
+            print("-----"*40)
+        print(
+            f"[{split}] Combined Integrated SMAPE over all meshes and rollouts: {overall_smape_mean:.6e} +/- {overall_smape_std:.6e} (n={len(integrated_smape_all)})"
+        )
+        if len(integrated_smape_all) > 5:
+            print("-----"*40
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
 
