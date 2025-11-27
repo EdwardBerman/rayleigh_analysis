@@ -139,7 +139,7 @@ def main(cfg):
             M = M.toarray()
             M = torch.from_numpy(M).to(values.device)
             M_inv_sqrt = M.pow(-0.5)
-            L_torch = M_inv_sqrt @ L_torch @ M_inv_sqrt
+            #L_torch = M_inv_sqrt @ L_torch @ M_inv_sqrt
 
             L_offdiag = L_torch.clone()
             L_offdiag.fill_diagonal_(0)
