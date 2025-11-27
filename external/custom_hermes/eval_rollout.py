@@ -18,6 +18,8 @@ from matplotlib import rc
 
 from tqdm import tqdm
 
+import robust_laplacian
+
 def set_rc_params(fontsize=None):
     '''
     Set figure parameters
@@ -129,6 +131,10 @@ def main(cfg):
 
             def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
                 return x * inv_sqrt_deg
+
+            pos, face = data.pos.cpu(), data.face.cpu()
+            L, M = robust_laplacian.mesh_laplacian(verts, faces)
+            print("Computed robust Laplacian")
 
 
             all_preds = []
