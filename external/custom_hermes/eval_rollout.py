@@ -337,32 +337,36 @@ def main(cfg):
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
 
-                    rotate_mesh_video(
-                            mesh=mesh,
-                            scalars=gt,
-                            dataset_name=cfg.dataset.name,
-                            name=object_name,
-                            save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt_video.mp4",
-                            n_frames=240,
-                            framerate=30,
-                            )
+                    #rotate_mesh_video(
+                            #mesh=mesh,
+                            #scalars=gt,
+                            #dataset_name=cfg.dataset.name,
+                            #name=object_name,
+                            #save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt_video.mp4",
+                            #n_frames=240,
+                            #framerate=30,
+                            #)
 
-                    rotate_mesh_video(
-                            mesh=mesh,
-                            scalars=preds,
-                            dataset_name=cfg.dataset.name,
-                            name=object_name,
-                            save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds_video.mp4",
-                            n_frames=240,
-                            framerate=30,
-                            )
+                    #rotate_mesh_video(
+                            #mesh=mesh,
+                            #scalars=preds,
+                            #dataset_name=cfg.dataset.name,
+                            #name=object_name,
+                            #save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds_video.mp4",
+                            #n_frames=240,
+                            #framerate=30,
+                            #)
 
             if len(integrated_errors_all) > 0:
                 overall_mean = np.mean(integrated_errors_all)
                 overall_std = np.std(integrated_errors_all)
+                if len(integrated_errors_all) > 5:
+                    print("-----"*40)
                 print(
                     f"[{split}] Combined Integrated Rayleigh Quotient Error over all meshes and rollouts: {overall_mean:.6e} +/- {overall_std:.6e} (n={len(integrated_errors_all)})"
                 )
+                if len(integrated_errors_all) > 5:
+                    print("-----"*40)
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
 
