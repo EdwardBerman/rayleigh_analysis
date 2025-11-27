@@ -133,13 +133,9 @@ def main(cfg):
             inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
     
             pos = data.pos
-            face = data.face.T.long()
+            face = data.face.long()
 
-            F = face.T.shape[0]
-            count_col = torch.full((F, 1), 3, dtype=face.dtype, device=face.device)
-            faces_restore = torch.cat((count_col, face), dim=1).reshape(-1)
-            
-            _, edge_weight = get_mesh_laplacian(pos, faces_restore, normalization="sym")
+            _, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
             tg = torch.zeros(pos.shape[0], pos.shape[0])
             tg[tuple(edge_index)] = edge_weight
 
