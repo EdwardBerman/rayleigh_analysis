@@ -86,7 +86,6 @@ def get_mesh(name):
 
     mesh = mesh.decimate(decimate_ratio[name])
     _ = mesh.clean(inplace=True)
-    mesh = mesh.delaunay_3d()
 
     return mesh
 
@@ -130,6 +129,14 @@ def main(cfg):
             def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
                 return x * inv_sqrt_deg
 
+            pos = data.pos
+            points = pv.wrap(pos.detach().cpu().numpy())
+            points = points.delaunay_3d()
+            new_faces = np.hstack(
+                np.c_[np.full(points.n_faces, 3), points.faces.reshape(-1, 3)]
+            )
+            points.faces = new_faces
+            # get edge weights from external function
 
             all_preds = []
             all_losses = []
