@@ -119,9 +119,11 @@ def main(cfg):
             sample_idx = data.sample_idx.item()
             values = copy.copy(data.x)
 
+            # print data attributes
+            print(data)
+
             # Sketchy asf over here
             edge_index = data.edge_index.to(values.device).long()
-            print(f"initial edge_index shape: {edge_index.shape}")
             src, dst = edge_index[0], edge_index[1]
             N = values.shape[0]
             deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
@@ -129,24 +131,6 @@ def main(cfg):
 
             def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
                 return x * inv_sqrt_deg
-
-            pos = data.pos
-            points = pv.wrap(pos.detach().cpu().numpy())
-            points_mesh = points.delaunay_3d()
-            edges = points_mesh.extract_all_edges()
-            edge_array = edges.lines.reshape(-1, 3)[:, 1:]
-            print(f"Sanity Check: Edge List Stored as: {edge_array.shape}")
-            edge_index_delaunay = torch.from_numpy(edge_array.T).long().to(values.device)
-# shape: (2, E)
-            print(f"Sanity Check: Edge Index Delaunay: {edge_index_delaunay.shape}")
-            # get edge weights from external function
-
-            # print num points to make sure its the same 
-            print(f"Number of points in mesh: {points_mesh.points.shape}")
-            print(f"Number of positions in data: {data.pos.shape[0]}")
-
-            new_faces = points_mesh.faces.reshape(-1, 4)[:, 1:]
-            print(f"New faces shape: {new_faces.shape}")
 
             all_preds = []
             all_losses = []
