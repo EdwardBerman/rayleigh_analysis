@@ -134,7 +134,13 @@ def main(cfg):
     
             pos = data.pos
             face = data.face.T.long()
-            _, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
+
+            F = face.T.shape[0]                         # number of faces
+            faces_restore = np.hstack(
+                    [np.full((F, 1), 3, dtype=face.dtype), face]
+                    ).reshape(-1)
+
+            _, edge_weight = get_mesh_laplacian(pos, faces_restore, normalization="sym")
             tg = torch.zeros(pos.shape[0], pos.shape[0])
             tg[tuple(edge_index)] = edge_weight
 
