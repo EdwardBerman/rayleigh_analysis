@@ -138,6 +138,10 @@ def main(cfg):
             points.faces = new_faces
             # get edge weights from external function
 
+            # print num points to make sure its the same 
+            print(f"Number of points in mesh: {points.n_points}, Number of nodes in data: {N}")
+            print(f"Number of positions in data: {data.pos.shape[0]}")
+
             all_preds = []
             all_losses = []
             all_gts = []
