@@ -146,7 +146,7 @@ def main(cfg):
             A_M = -L_offdiag
 
             weighted_edge_index = A_M.nonzero(as_tuple=False).t().long().to(values.device) 
-            edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(values.device)
+            edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(values.device).to(values.dtype)
             deg = torch.zeros(N, device=values.device).index_add_(0, weighted_edge_index[0], edge_weights)
             deg = deg.clamp(min=1.0)
             inv_sqrt_deg = deg.rsqrt().view(N, 1)
