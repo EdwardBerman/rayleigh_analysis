@@ -140,7 +140,7 @@ def main(cfg):
             # get edge weights from external function
 
             # print num points to make sure its the same 
-            print(f"Number of points in mesh: {surf.points.shape}, Number of nodes in data: {N}")
+            print(f"Number of points in mesh: {surf.points.shape}")
             print(f"Number of positions in data: {data.pos.shape[0]}")
 
             all_preds = []
