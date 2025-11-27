@@ -139,6 +139,7 @@ def main(cfg):
             faces_restore = np.hstack(
                     [np.full((F, 1), 3, dtype=face.dtype), face]
                     ).reshape(-1)
+            faces_restore = torch.tensor(faces_restore, dtype=pos.dtype, device=pos.device)
 
             _, edge_weight = get_mesh_laplacian(pos, faces_restore, normalization="sym")
             tg = torch.zeros(pos.shape[0], pos.shape[0])
