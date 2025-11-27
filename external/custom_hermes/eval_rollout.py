@@ -136,7 +136,8 @@ def main(cfg):
             print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
             L_torch = -L_torch # opposite sign convention
 
-            M = M.toarray().from_numpy(M).to(values.device)
+            M = M.toarray()
+            M = torch.from_numpy(M).to(values.device)
             M_inv_sqrt = M.power(-0.5)
             L_torch = M_inv_sqrt @ L_torch @ M_inv_sqrt
 
