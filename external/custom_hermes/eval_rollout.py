@@ -287,6 +287,9 @@ def main(cfg):
             plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
+            print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(
+                true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()
+            ))
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
             plt.tight_layout()
