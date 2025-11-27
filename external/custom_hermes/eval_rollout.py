@@ -136,12 +136,15 @@ def main(cfg):
             face = data.face.T.long()
 
             F = face.T.shape[0]                         # number of faces
-            faces_restore = np.hstack(
-                    [np.full((F, 1), 3, dtype=face.dtype), face]
-                    ).reshape(-1)
-            faces_restore = torch.tensor(faces_restore, dtype=pos.dtype, device=pos.device)
+            new_faces_torch = torch.cat(
+                    [
+                        torch.full((F, 1), 3, dtype=face.dtype, device=face.device),
+                        face,
+                        ],
+                    dim=1,
+                    )
 
-            _, edge_weight = get_mesh_laplacian(pos, faces_restore, normalization="sym")
+            _, edge_weight = get_mesh_laplacian(pos, F, normalization="sym")
             tg = torch.zeros(pos.shape[0], pos.shape[0])
             tg[tuple(edge_index)] = edge_weight
 
