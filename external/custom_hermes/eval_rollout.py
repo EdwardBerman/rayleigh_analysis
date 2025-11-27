@@ -135,6 +135,8 @@ def main(cfg):
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(pos.cpu().numpy(), face.T.cpu().numpy())
             print("Computed robust Laplacian")
+            # verify L symmetric
+            print("L symmetric:", np.allclose(L, L.T))
 
 
             all_preds = []
