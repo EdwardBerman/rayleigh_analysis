@@ -132,7 +132,7 @@ def main(cfg):
             pos = data.pos
             points = pv.wrap(pos.detach().cpu().numpy())
             points = points.delaunay_3d()
-            surf = tet_mesh.extract_surface()
+            surf = points.extract_surface()
             edges = surf.extract_all_edges()
             edge_array = edges.lines.reshape(-1, 3)[:, 1:]
             print(f"Sanity Check: Edge List Stored as: {edge_array.shape}")
