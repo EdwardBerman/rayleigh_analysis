@@ -121,6 +121,7 @@ def main(cfg):
 
             # Sketchy asf over here
             edge_index = data.edge_index.to(values.device).long()
+            print(f"initial edge_index shape: {edge_index.shape}")
             src, dst = edge_index[0], edge_index[1]
             N = values.shape[0]
             deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
