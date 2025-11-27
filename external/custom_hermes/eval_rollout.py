@@ -135,16 +135,11 @@ def main(cfg):
             pos = data.pos
             face = data.face.T.long()
 
-            F = face.T.shape[0]                         # number of faces
-            new_faces_torch = torch.cat(
-                    [
-                        torch.full((F, 1), 3, dtype=face.dtype, device=face.device),
-                        face,
-                        ],
-                    dim=1,
-                    )
-
-            _, edge_weight = get_mesh_laplacian(pos, F, normalization="sym")
+            F = face.T.shape[0]
+            count_col = torch.full((F, 1), 3, dtype=face.dtype, device=face.device)
+            faces_restore = torch.cat((count_col, face), dim=1).reshape(-1)
+            
+            _, edge_weight = get_mesh_laplacian(pos, faces_restore, normalization="sym")
             tg = torch.zeros(pos.shape[0], pos.shape[0])
             tg[tuple(edge_index)] = edge_weight
 
