@@ -429,7 +429,7 @@ def main(cfg):
             f"[{split}] Combined Integrated SMAPE over all meshes and rollouts: {overall_smape_mean:.6e} +/- {overall_smape_std:.6e} (n={len(integrated_smape_all)})"
         )
         if len(integrated_smape_all) > 5:
-            print("-----"*40
+            print("-----"*40)
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
 
