@@ -126,11 +126,6 @@ def main(cfg):
             edge_index = data.edge_index.to(values.device).long()
             src, dst = edge_index[0], edge_index[1]
             N = values.shape[0]
-            deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
-            inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
-
-            def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
-                return x * inv_sqrt_deg
 
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(pos.cpu().numpy(), face.T.cpu().numpy())
@@ -141,6 +136,24 @@ def main(cfg):
             print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
             L_torch = -L_torch # opposite sign convention
 
+            M = M.toarray().from_numpy(M).to(values.device)
+            M_inv_sqrt = M.power(-0.5)
+            L_torch = M_inv_sqrt @ L_torch @ M_inv_sqrt
+
+            L_offdiag = L_torch.clone()
+            L_offdiag.fill_diagonal_(0)
+            A_M = -L_offdiag
+
+            weighted_edge_index = A_M.nonzero(as_tuple=False).t().long().to(values.device) 
+            edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(values.device)
+            deg = torch.zeros(N, device=values.device).index_add_(0, weighted_edge_index[0], edge_weights)
+            deg = deg.clamp(min=1.0)
+            inv_sqrt_deg = deg.rsqrt().view(N, 1)
+
+            src, dst = weighted_edge_index[0], weighted_edge_index[1]
+
+            def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
+                return x * inv_sqrt_deg
 
             all_preds = []
             all_losses = []
@@ -177,14 +190,14 @@ def main(cfg):
                     y_pred_norm = norm_sqrt_deg(y_pred)  
                     diff_true = y_norm[src, 0] - y_norm[dst, 0]         
                     diff_pred = y_pred_norm[src, 0] - y_pred_norm[dst, 0]
-                    edge_mse_true = (diff_true ** 2).sum()
-                    edge_mse_pred = (diff_pred ** 2).sum()
+                    edge_mse_true_weighted = (edge_weights * (diff_true ** 2)).sum()
+                    edge_mse_pred_weighted = (edge_weights * (diff_pred ** 2)).sum()
 
                     sum_nodes_sq_gt = y.pow(2).sum()
                     sum_nodes_sq_pred = y_pred.pow(2).sum()
 
-                    traj_true_rq.append(edge_mse_true.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
-                    traj_pred_rq.append(edge_mse_pred.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))
+                    traj_true_rq.append(edge_mse_true_weighted.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
+                    traj_pred_rq.append(edge_mse_pred_weighted.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))
 
                     # end sketchy
                     #print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
