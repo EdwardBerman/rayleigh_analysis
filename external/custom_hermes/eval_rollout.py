@@ -16,6 +16,8 @@ from external.custom_hermes.utils import create_dataset_loaders, rotate_mesh_vid
 import matplotlib.pyplot as plt
 from matplotlib import rc
 
+from tqdm import tqdm
+
 def set_rc_params(fontsize=None):
     '''
     Set figure parameters
@@ -84,6 +86,7 @@ def get_mesh(name):
 
     mesh = mesh.decimate(decimate_ratio[name])
     _ = mesh.clean(inplace=True)
+    mesh = mesh.delaunay_3d()
 
     return mesh
 
@@ -138,7 +141,12 @@ def main(cfg):
             with torch.no_grad():
                 data.x = values[:, 0 : dataset.input_length][..., None]
 
-                for t in range(dataset.input_length, values.shape[1]):
+                #for t in range(dataset.input_length, values.shape[1]):
+                # tqdm ift
+                for t in tqdm(
+                    range(dataset.input_length, values.shape[1]),
+                    desc=f"Evaluating mesh idx {mesh_idx}, sample idx {sample_idx}",
+                ):
                     y = values[:, t].unsqueeze(-1)
 
                     all_gts.append(y.squeeze().detach().cpu().numpy())
