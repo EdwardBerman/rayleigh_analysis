@@ -133,7 +133,7 @@ def main(cfg):
                 return x * inv_sqrt_deg
 
             pos, face = data.pos.cpu(), data.face.cpu()
-            L, M = robust_laplacian.mesh_laplacian(verts, faces)
+            L, M = robust_laplacian.mesh_laplacian(pos, face)
             print("Computed robust Laplacian")
 
 
