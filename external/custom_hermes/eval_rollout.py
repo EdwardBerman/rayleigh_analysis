@@ -18,6 +18,9 @@ from matplotlib import rc
 
 from tqdm import tqdm
 
+from scipy import sparse
+import pygsp as pg
+
 def set_rc_params(fontsize=None):
     '''
     Set figure parameters
@@ -129,19 +132,27 @@ def main(cfg):
             deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
             inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
     
-    #pos = mesh.points
-    #face = mesh.faces.reshape(-1, 4)[:, 1:]
-
-    #pos = torch.from_numpy(pos)
-    #face = torch.from_numpy(face).T.long()
-
-    #edge_index, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
-    #tg = torch.zeros(pos.shape[0], pos.shape[0])
-    #tg[tuple(edge_index)] = edge_weight
-
             pos = data.pos
             face = data.face.T.long()
-            print(pos.shape, face.shape)
+            _, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
+            tg = torch.zeros(pos.shape[0], pos.shape[0])
+            tg[tuple(edge_index)] = edge_weight
+
+            edge_index_np = edge_index.cpu().numpy()
+            edge_weight_np = edge_weight.cpu().numpy()
+
+            row = edge_index_np[0]
+            col = edge_index_np[1]
+            data = edge_weight_np
+
+            # Build sparse adjacency from your weights
+            W = sparse.csr_matrix((data, (row, col)), shape=(N, N))
+
+            G = pg.graphs.Graph(W, lap_type='normalized')
+
+            G.compute_fourier_basis()
+
+
 
             def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
                 return x * inv_sqrt_deg
@@ -156,13 +167,32 @@ def main(cfg):
             with torch.no_grad():
                 data.x = values[:, 0 : dataset.input_length][..., None]
 
-                #for t in range(dataset.input_length, values.shape[1]):
-                # tqdm ift
                 for t in tqdm(
                     range(dataset.input_length, values.shape[1]),
                     desc=f"Evaluating mesh idx {mesh_idx}, sample idx {sample_idx}",
                 ):
                     y = values[:, t].unsqueeze(-1)
+                    
+                    y_hat = G.gft(y.cpu().numpy())
+                    x_hat = G.gft(data.x.squeeze(-1).cpu().numpy())
+
+                    plt.figure(figsize=(6,4))
+                    plt.plot(y_hat[:,0], label=r'$\mathcal{F}Y$', color='blue')
+                    plt.plot(x_hat[:, -1], label=r'$\mathcal{F}\hat{X}$', color='red')
+                    plt.xlabel('Wave Number')
+                    plt.ylabel('Fourier Coefficient')
+                    plt.title(f'Fourier Coefficients at time {t}')
+                    plt.legend()
+                    save_path = (Path(cfg.save_dir)
+                                / cfg.dataset.name
+                                / "fourier_coefficients"
+                                / dataset.mesh_names[mesh_idx]
+                                / cfg.backbone.name
+                            )
+                    save_path.mkdir(parents=True, exist_ok=True)
+                    plt.tight_layout()
+                    plt.savefig(save_path / f"fourier_coefficients_mesh_{mesh_idx}_sample_{sample_idx}_t{t}_{cfg.backbone.name}.png")
+                    plt.close()
 
                     all_gts.append(y.squeeze().detach().cpu().numpy())
 
