@@ -135,7 +135,7 @@ def main(cfg):
             pos = data.pos
             face = data.face.long()
 
-            _, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
+            edge_index, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
             tg = torch.zeros(pos.shape[0], pos.shape[0])
             tg[tuple(edge_index)] = edge_weight
 
