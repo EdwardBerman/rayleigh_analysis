@@ -128,6 +128,20 @@ def main(cfg):
             N = values.shape[0]
             deg_in = degree(dst, num_nodes=N, dtype=values.dtype).clamp(min=1.0)
             inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
+    
+    #pos = mesh.points
+    #face = mesh.faces.reshape(-1, 4)[:, 1:]
+
+    #pos = torch.from_numpy(pos)
+    #face = torch.from_numpy(face).T.long()
+
+    #edge_index, edge_weight = get_mesh_laplacian(pos, face, normalization="sym")
+    #tg = torch.zeros(pos.shape[0], pos.shape[0])
+    #tg[tuple(edge_index)] = edge_weight
+
+            pos = data.pos
+            face = data.face.T.long()
+            print(pos.shape, face.shape)
 
             def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
                 return x * inv_sqrt_deg
