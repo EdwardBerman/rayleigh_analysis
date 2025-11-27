@@ -132,15 +132,16 @@ def main(cfg):
             pos = data.pos
             points = pv.wrap(pos.detach().cpu().numpy())
             points = points.delaunay_3d()
-            surf = points.extract_surface()
-            edges = surf.extract_all_edges()
+            edges = points.extract_all_edges()
             edge_array = edges.lines.reshape(-1, 3)[:, 1:]
             print(f"Sanity Check: Edge List Stored as: {edge_array.shape}")
-            print(type(surf.faces))
+            edge_index_delaunay = torch.from_numpy(edge_array.T).long().to(values.device)
+# shape: (2, E)
+            print(f"Sanity Check: Edge Index Delaunay: {edge_index_delaunay.shape}")
             # get edge weights from external function
 
             # print num points to make sure its the same 
-            print(f"Number of points in mesh: {surf.points.shape}")
+            print(f"Number of points in mesh: {points.shape}")
             print(f"Number of positions in data: {data.pos.shape[0]}")
 
             all_preds = []
