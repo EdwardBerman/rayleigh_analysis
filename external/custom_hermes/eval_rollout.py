@@ -139,7 +139,7 @@ def main(cfg):
             edge_index = edge_index.to(values.device).long()
             edge_weight = edge_weight.to(values.device)
 
-            tg = torch.zeros(pos.shape[0], pos.shape[0])
+            tg = torch.zeros(pos.shape[0], pos.shape[0], device=values.device)
             tg[tuple(edge_index)] = edge_weight
 
             edge_index_np = edge_index.cpu().numpy()
