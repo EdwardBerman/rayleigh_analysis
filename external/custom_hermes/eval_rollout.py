@@ -143,7 +143,7 @@ def main(cfg):
 
             L_offdiag = L_torch.clone()
             L_offdiag.fill_diagonal_(0)
-            A_M = -L_offdiag
+            A_M = L_offdiag
 
             weighted_edge_index = A_M.nonzero(as_tuple=False).t().long().to(values.device) 
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(values.device).to(values.dtype)
