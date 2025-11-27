@@ -136,6 +136,7 @@ def main(cfg):
             L, M = robust_laplacian.mesh_laplacian(pos.cpu().numpy(), face.T.cpu().numpy())
             print("Computed robust Laplacian")
             # verify L symmetric
+            L_np = L.toarray()
             L_torch = torch.from_numpy(L)
             print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
 
