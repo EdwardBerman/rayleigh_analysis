@@ -132,10 +132,7 @@ def main(cfg):
             pos = data.pos
             points = pv.wrap(pos.detach().cpu().numpy())
             points = points.delaunay_3d()
-            new_faces = np.hstack(
-                np.c_[np.full(points.n_faces, 3), points.faces.reshape(-1, 3)]
-            )
-            points.faces = new_faces
+            print(type(points.faces))
             # get edge weights from external function
 
             # print num points to make sure its the same 
