@@ -39,7 +39,8 @@ dependencies = [
     "nvtx (>=0.2.13,<0.3.0)",
     "cuda-python (>=13.0.3,<14.0.0)",
     "polyscope (>=2.5.0,<3.0.0)",
-    "robust-laplacian (>=1.0.0,<2.0.0)"
+    "robust-laplacian (>=1.0.0,<2.0.0)",
+    "pydec @ git+https://github.com/hirani/pydec.git"
 ]
 
 [tool.poetry]
