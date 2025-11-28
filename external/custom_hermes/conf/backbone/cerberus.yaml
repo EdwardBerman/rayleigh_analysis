@@ -9,6 +9,8 @@ net:
   num_samples: 101
   checkpoint: false
   equiv_bias: true
-  regular_non_lin: true
-  batch_norm: false
-  dropout: false
+  message_norm: false
+  update_norm: false
+  message_dropout: false
+  update_dropout: false
+  residual: true
