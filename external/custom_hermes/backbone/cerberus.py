@@ -8,6 +8,7 @@ from torch_geometric.typing import (Adj, NoneType, OptPairTensor, OptTensor,
 from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
 from external.custom_hermes.nn.eman_res_net_block import EmanAttResNetBlock
+from external.custom_hermes.nn.hermes_conv import HermesLayer
 
 class Cerberus(torch.nn.Module):
     def __init__(
