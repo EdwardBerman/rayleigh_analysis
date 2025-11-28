@@ -90,7 +90,6 @@ class Cerberus(torch.nn.Module):
 
         self.blocks = torch.nn.ModuleList()
         for i in range(len(message_dims) - 1):
-            #if block isnt first or last 
             if i != 0 and i != len(message_dims) - 2:
                 self.blocks.append(
                     TaylorGCNConv(
@@ -102,6 +101,17 @@ class Cerberus(torch.nn.Module):
                             final_activation=True,
                             **block_kwargs,
                         )
+                    )
+                )
+            else:
+                self.blocks.append(
+                    HermesLayer(
+                        self.message_dims[i],
+                        self.message_orders[i],
+                        self.update_dims[i],
+                        self.update_orders[i],
+                        final_activation=True,
+                        **block_kwargs,
                     )
                 )
         # Add final block
