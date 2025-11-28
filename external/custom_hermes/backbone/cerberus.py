@@ -159,19 +159,32 @@ class Cerberus(torch.nn.Module):
 class TaylorGCNConv(MessagePassing):
     def __init__(
         self,
-        conv: GemResNetBlock,
+        hermes: MessagePassing,
         T: int = 3
     ):
         super().__init__()
-        self.conv = conv
+        self.hermes = hermes
         self.T = T
 
-    def forward(self, x: Tensor, edge_index: Adj, precomp_neigh_edge: Tensor, connection: Tensor) -> Tensor:
-        x = self.conv(x, edge_index, precomp_neigh_edge, connection)
+    def forward(self, 
+                x: Tensor, 
+                edge_index: Adj,
+                connection: Tensor,
+                precomp_neigh_edge: Tensor,
+                precomp_self_node: Tensor,
+                edge_attr: OptTensor = None) -> Tensor:
+        x = self.h
         x_k = x.clone()  # Create a copy of the input tensor
 
         for k in range(self.T):
-            x_k = self.conv(x_k, edge_index, precomp_neigh_edge, connection) / (k+1)
+            x_k = self.hermes(
+                x_k,
+                edge_index,
+                connection,
+                precomp_neigh_edge,
+                precomp_self_node,
+                edge_attr,
+            )
             x += x_k
 
         return x
