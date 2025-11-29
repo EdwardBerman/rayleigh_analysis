@@ -161,7 +161,7 @@ class Cerberus(torch.nn.Module):
             )
         )
 
-        for param in self.layes[-1].parameters():
+        for param in self.layers[-1].parameters():
             param.requires_grad = False
 
 
