@@ -32,6 +32,8 @@ class Cerberus(torch.nn.Module):
         update_dropout,
         residual,
         final_activation,
+        block_dims,
+        block_orders,
         **kwargs,
     ):
         super().__init__()
@@ -66,6 +68,9 @@ class Cerberus(torch.nn.Module):
         self.edge_dims = edge_dims
 
         self.out_dim = self.update_dims[-1][-1]
+
+        self.block_dims = block_dims
+        self.block_orders = block_orders
 
         self.reltan_features = reltan_features
         self.null_isolated = null_isolated
