@@ -37,7 +37,6 @@ backbone:
         - 0
     edge_dims: ${dataset.edge_dim}
     final_activation: false
-    node_batch_size: null
     block_dims:
       - ${dataset.in_dim}
       - 14
