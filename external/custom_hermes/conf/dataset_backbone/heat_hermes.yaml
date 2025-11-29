@@ -19,8 +19,14 @@ backbone:
         - 12
         - 12
         - 12
+        - 12
+        - 12 
+        - 12
     message_orders:
       - - 0
+        - 2
+        - 2
+        - 2
         - 2
         - 2
         - 2
@@ -29,9 +35,15 @@ backbone:
       - - 12
         - 12
         - 12
+        - 12 
+        - 12 
+        - 12
         - ${dataset.out_dim}
     update_orders:
       - - 2
+        - 2
+        - 2
+        - 2
         - 2
         - 2
         - 0
