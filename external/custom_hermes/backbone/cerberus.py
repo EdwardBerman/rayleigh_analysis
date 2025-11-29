@@ -117,6 +117,18 @@ class Cerberus(torch.nn.Module):
                 **block_kwargs,
             )
         )
+        
+        block_kwargs = dict(
+            n_rings=n_rings,
+            band_limit=band_limit,
+            num_samples=num_samples,
+            checkpoint=checkpoint,
+            node_batch_size=node_batch_size,
+            equiv_bias=equiv_bias,
+            regular_non_lin=regular_non_lin,
+            batch_norm=batch_norm,
+            dropout=dropout,
+        )
 
         self.layers = torch.nn.ModuleList()
         for i in range(len(self.block_dims) - 3):
