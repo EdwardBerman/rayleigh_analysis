@@ -72,7 +72,7 @@ class Cerberus(torch.nn.Module):
 
         self.out_dim = self.update_dims[-1][-1]
 
-        self.block_dims = block_dims
+        self.block_dims = [self.out_dim] + block_dims[1:]
         self.block_orders = block_orders
 
         self.reltan_features = reltan_features
