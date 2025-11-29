@@ -13,6 +13,9 @@ optimizer:
 # params: 40,695
 backbone:
   net:
+    regular_non_lin: true
+    batch_norm: true
+    dropout: 0.0   
     message_dims:
       - - ${dataset.in_dim}
         - 12

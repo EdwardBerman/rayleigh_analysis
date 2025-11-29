@@ -35,6 +35,8 @@ class Cerberus(torch.nn.Module):
         block_dims,
         block_orders,
         regular_non_lin: bool = True,
+        batch_norm: bool = True,
+        dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__()
