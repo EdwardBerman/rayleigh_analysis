@@ -26,6 +26,7 @@ class Cerberus(torch.nn.Module):
         checkpoint,
         node_batch_size,
         equiv_bias,
+        regular_non_lin,
         message_norm,
         update_norm,
         message_dropout,
