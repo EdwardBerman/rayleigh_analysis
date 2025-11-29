@@ -26,7 +26,6 @@ class Cerberus(torch.nn.Module):
         checkpoint,
         node_batch_size,
         equiv_bias,
-        regular_non_lin,
         message_norm,
         update_norm,
         message_dropout,
@@ -35,6 +34,7 @@ class Cerberus(torch.nn.Module):
         final_activation,
         block_dims,
         block_orders,
+        regular_non_lin: bool = True,
         **kwargs,
     ):
         super().__init__()
