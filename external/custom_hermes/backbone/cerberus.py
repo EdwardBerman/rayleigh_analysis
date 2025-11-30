@@ -134,32 +134,64 @@ class Cerberus(torch.nn.Module):
         )
 
         self.layers = torch.nn.ModuleList()
-        for i in range(len(self.block_dims) - 3):
+        n = len(self.block_dims)
+        if n >= 3:
+            for i in range(len(self.block_dims) - 3):
+                self.layers.append(
+                    GemResNetBlock(
+                        self.block_dims[i],
+                        self.block_dims[i + 1],
+                        self.block_dims[i + 2],
+                        self.block_orders[i],
+                        self.block_orders[i + 1],
+                        self.block_orders[i + 2],
+                        final_activation=True,
+                        **block_kwargs,
+                    )
+                )
+            # Add final block
             self.layers.append(
                 GemResNetBlock(
-                    self.block_dims[i],
-                    self.block_dims[i + 1],
-                    self.block_dims[i + 2],
-                    self.block_orders[i],
-                    self.block_orders[i + 1],
-                    self.block_orders[i + 2],
-                    final_activation=True,
+                    self.block_dims[-3],
+                    self.block_dims[-2],
+                    self.block_dims[-1],
+                    self.block_orders[-3],
+                    self.block_orders[-2],
+                    self.block_orders[-1],
+                    final_activation=final_activation,
                     **block_kwargs,
                 )
             )
-        # Add final block
-        self.layers.append(
-            GemResNetBlock(
-                self.block_dims[-3],
-                self.block_dims[-2],
-                self.block_dims[-1],
-                self.block_orders[-3],
-                self.block_orders[-2],
-                self.block_orders[-1],
-                final_activation=final_activation,
-                **block_kwargs,
+        
+        elif n == 2:
+            # Two dims: make a single block by reusing dims/orders
+            d0, d1 = self.block_dims
+            o0 = self.block_orders[0] if len(self.block_orders) > 0 else 0
+            o1 = self.block_orders[1] if len(self.block_orders) > 1 else o0
+
+            # (in, mid, out) = (d0, d0, d1)  — with your config this is all out_dim anyway
+            self.layers.append(
+                GemResNetBlock(
+                    d0, d0, d1,
+                    o0, o0, o1,
+                    final_activation=final_activation,
+                    **block_kwargs,
+                )
             )
-        )
+
+        elif n == 1:
+            # One dim: everything is that dim/order
+            d0 = self.block_dims[0]
+            o0 = self.block_orders[0] if len(self.block_orders) > 0 else 0
+
+            self.layers.append(
+                GemResNetBlock(
+                    d0, d0, d0,
+                    o0, o0, o0,
+                    final_activation=final_activation,
+                    **block_kwargs,
+                )
+            )
 
     def forward(self, data):
         # transform adds precomp feature (cosines and sines with radial weights) to the data
