@@ -161,10 +161,6 @@ class Cerberus(torch.nn.Module):
             )
         )
 
-        for param in self.layers[-1].parameters():
-            param.requires_grad = False
-
-
     def forward(self, data):
         # transform adds precomp feature (cosines and sines with radial weights) to the data
         # rel_transform adds rel_tang_feat (check Sec. 4 in the draft) feature to data
