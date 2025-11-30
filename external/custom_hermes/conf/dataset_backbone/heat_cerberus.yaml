@@ -42,7 +42,6 @@ backbone:
     final_activation: false
     block_dims:
       - ${dataset.in_dim}
-      - 14
       - ${dataset.out_dim}
-    block_orders: [0, 2, 0]
+    block_orders: [0, 0]
     node_batch_size: null
