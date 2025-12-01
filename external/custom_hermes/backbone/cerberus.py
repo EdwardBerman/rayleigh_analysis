@@ -8,12 +8,16 @@ from torch_geometric.typing import (Adj, NoneType, OptPairTensor, OptTensor,
 from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
 from external.custom_hermes.nn.eman_res_net_block import EmanAttResNetBlock
+from external.custom_hermes.nn.hermes_conv import HermesLayer
 
 class Cerberus(torch.nn.Module):
     def __init__(
         self,
-        block_dims,
-        block_orders,
+        message_dims,
+        message_orders,
+        update_dims,
+        update_orders,
+        edge_dims,
         reltan_features,
         null_isolated,
         n_rings,
@@ -22,10 +26,17 @@ class Cerberus(torch.nn.Module):
         checkpoint,
         node_batch_size,
         equiv_bias,
-        regular_non_lin,
-        batch_norm,
-        dropout,
+        message_norm,
+        update_norm,
+        message_dropout,
+        update_dropout,
+        residual,
         final_activation,
+        block_dims,
+        block_orders,
+        regular_non_lin: bool = True,
+        batch_norm: bool = True,
+        dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__()
@@ -33,20 +44,83 @@ class Cerberus(torch.nn.Module):
         if not reltan_features:
             assert kwargs == {}, "kwargs not empty but reltan_features=False"
 
-        assert len(block_dims) >= 3, "minimum length of block_dims must be >= 3"
-        assert len(block_orders) >= 3, "minimum length of block_orders must be >= 3"
-        assert len(block_dims) == len(
-            block_orders
-        ), "length of block_dims and block_orders must be equal"
-        self.block_dims = block_dims
+        assert len(message_dims) == len(
+            message_orders
+        ), "message_dims and message_orders should have same number of blocks"
+        for i in range(len(message_dims)):
+            assert len(message_orders[i]) == len(
+                message_orders[i]
+            ), "message_dims and message_orders should have same number of layers"
+
+        assert len(update_dims) == len(
+            update_orders
+        ), "update_dims and update_orders should have same number of blocks"
+        for i in range(len(update_dims)):
+            assert len(update_orders[i]) == len(
+                update_orders[i]
+            ), "update_dims and update_orders should have same number of layers"
+
+        assert len(message_dims) == len(
+            update_dims
+        ), "message_dims and update_dims should have same number of blocks"
+
+        self.message_dims = message_dims
+        self.message_orders = message_orders
+        self.update_dims = update_dims
+        self.update_orders = update_orders
+        self.edge_dims = edge_dims
+
+        self.out_dim = self.update_dims[-1][-1]
+
+        self.block_dims = [self.out_dim] + block_dims[1:]
         self.block_orders = block_orders
-        self.out_dim = self.block_dims[-1]
 
         self.reltan_features = reltan_features
         self.null_isolated = null_isolated
 
-        self.dropout = dropout
+        # TODO checkpoint not implemented yet
+        block_kwargs = dict(
+            edge_dims=edge_dims,
+            n_rings=n_rings,
+            band_limit=band_limit,
+            num_samples=num_samples,
+            checkpoint=checkpoint,
+            node_batch_size=node_batch_size,
+            equiv_bias=equiv_bias,
+            message_norm=message_norm,
+            update_norm=update_norm,
+            message_dropout=message_dropout,
+            update_dropout=update_dropout,
+            residual=residual,
+        )
 
+        self.transforms = [GemPrecomp(n_rings, band_limit)]
+
+        self.blocks = torch.nn.ModuleList()
+        for i in range(len(message_dims) - 1):
+            self.blocks.append(
+                HermesLayer(
+                    self.message_dims[i],
+                    self.message_orders[i],
+                    self.update_dims[i],
+                    self.update_orders[i],
+                    final_activation=True,
+                    **block_kwargs,
+                )
+            )
+
+        # Add final block
+        self.blocks.append(
+            HermesLayer(
+                self.message_dims[-1],
+                self.message_orders[-1],
+                self.update_dims[-1],
+                self.update_orders[-1],
+                final_activation=final_activation,
+                **block_kwargs,
+            )
+        )
+        
         block_kwargs = dict(
             n_rings=n_rings,
             band_limit=band_limit,
@@ -59,14 +133,14 @@ class Cerberus(torch.nn.Module):
             dropout=dropout,
         )
 
-        self.transforms = [GemPrecomp(n_rings, band_limit)]
-
         self.layers = torch.nn.ModuleList()
-        for i in range(len(self.block_dims) - 3):
-            if i == 0:
+        n = len(self.block_dims)
+        if n >= 3:
+            for i in range(len(self.block_dims) - 3):
                 self.layers.append(
                     GemResNetBlock(
-                        self.block_dims[i],self.block_dims[i + 1],
+                        self.block_dims[i],
+                        self.block_dims[i + 1],
                         self.block_dims[i + 2],
                         self.block_orders[i],
                         self.block_orders[i + 1],
@@ -75,46 +149,49 @@ class Cerberus(torch.nn.Module):
                         **block_kwargs,
                     )
                 )
-            else:
-                self.layers.append(
-                    TaylorGCNConv(
-                        GemResNetBlock(
-                            self.block_dims[i],
-                            self.block_dims[i + 1],
-                            self.block_dims[i + 2],
-                            self.block_orders[i],
-                            self.block_orders[i + 1],
-                            self.block_orders[i + 2],
-                            final_activation=True,
-                            **block_kwargs,
-                        )
-                    )
+            # Add final block
+            self.layers.append(
+                GemResNetBlock(
+                    self.block_dims[-3],
+                    self.block_dims[-2],
+                    self.block_dims[-1],
+                    self.block_orders[-3],
+                    self.block_orders[-2],
+                    self.block_orders[-1],
+                    final_activation=final_activation,
+                    **block_kwargs,
                 )
-
-        self.layers.append(
-            GemResNetBlock(
-                self.block_dims[-3],
-                self.block_dims[-2],
-                self.block_dims[-1],
-                self.block_orders[-3],
-                self.block_orders[-2],
-                self.block_orders[-1],
-                final_activation=final_activation,
-                **block_kwargs,
             )
-        )
+        
+        elif n == 2:
+            # Two dims: make a single block by reusing dims/orders
+            d0, d1 = self.block_dims
+            o0 = self.block_orders[0] if len(self.block_orders) > 0 else 0
+            o1 = self.block_orders[1] if len(self.block_orders) > 1 else o0
 
-        self.final_attn = EmanAttResNetBlock(
-            self.block_dims[-1],
-            self.block_dims[-1],
-            self.block_dims[-1],
-            0,  # Input is order 0
-            0,  # Intermediate is order 0
-            0,  # Output is order 0
-            final_activation=final_activation,
-            n_heads=1,
-            **block_kwargs,
-        )
+            # (in, mid, out) = (d0, d0, d1)  — with your config this is all out_dim anyway
+            self.layers.append(
+                GemResNetBlock(
+                    d0, d0, d1,
+                    o0, o0, o1,
+                    final_activation=final_activation,
+                    **block_kwargs,
+                )
+            )
+
+        elif n == 1:
+            # One dim: everything is that dim/order
+            d0 = self.block_dims[0]
+            o0 = self.block_orders[0] if len(self.block_orders) > 0 else 0
+
+            self.layers.append(
+                GemResNetBlock(
+                    d0, d0, d0,
+                    o0, o0, o0,
+                    final_activation=final_activation,
+                    **block_kwargs,
+                )
+            )
 
     def forward(self, data):
         # transform adds precomp feature (cosines and sines with radial weights) to the data
@@ -122,46 +199,72 @@ class Cerberus(torch.nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-        edge_index, precomp_neigh_edge, precomp_self_edge, connection = (
+        edge_index, connection, precomp_neigh_edge, precomp_self_node = (
             data.edge_index,
-            data.precomp_neigh_edge,
-            data.precomp_self_edge,
             data.connection,
+            data.precomp_neigh_edge,
+            data.precomp_self_node,
         )
 
         # Input node features
         assert data.x.dim() == 3
         x = data.x
 
+        # Edge features
+        if data.edge_attr is not None:
+            edge_attr = data.edge_attr[..., None]
+        else:
+            edge_attr = None
+
         # Setting the features of isolated nodes to 0
         if self.null_isolated:
-            non_isol_mask = remove_isolated_nodes(edge_index)[-1]
+            non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
             x[~non_isol_mask] = 0.0
 
+        for block in self.blocks:
+            x = block(
+                x,
+                edge_index,
+                connection,
+                precomp_neigh_edge,
+                precomp_self_node,
+                edge_attr,
+            )
+        
         for i, layer in enumerate(self.layers):
             x = layer(x, edge_index, precomp_neigh_edge, connection)
-        
-        x = self.final_attn(x, edge_index, precomp_neigh_edge, precomp_self_edge, connection)
 
         return x
-
 
 class TaylorGCNConv(MessagePassing):
     def __init__(
         self,
-        conv: GemResNetBlock,
+        hermes: MessagePassing,
         T: int = 3
     ):
         super().__init__()
-        self.conv = conv
+        self.hermes = hermes
         self.T = T
 
-    def forward(self, x: Tensor, edge_index: Adj, precomp_neigh_edge: Tensor, connection: Tensor) -> Tensor:
-        x = self.conv(x, edge_index, precomp_neigh_edge, connection)
+    def forward(self, 
+                x: Tensor, 
+                edge_index: Adj,
+                connection: Tensor,
+                precomp_neigh_edge: Tensor,
+                precomp_self_node: Tensor,
+                edge_attr: OptTensor = None) -> Tensor:
+        x = self.h
         x_k = x.clone()  # Create a copy of the input tensor
 
         for k in range(self.T):
-            x_k = self.conv(x_k, edge_index, precomp_neigh_edge, connection) / (k+1)
+            x_k = self.hermes(
+                x_k,
+                edge_index,
+                connection,
+                precomp_neigh_edge,
+                precomp_self_node,
+                edge_attr,
+            )
             x += x_k
 
         return x
