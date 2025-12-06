@@ -91,7 +91,7 @@ def create_dataset_loaders(cfg, return_datasets=False):
 
         else:
             out_dict[split] = DataLoader(
-                dataset,
+                dataset[:10],
                 batch_size=cfg.train.batch_size,
                 shuffle=train,
                 pin_memory=True,
