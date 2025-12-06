@@ -14,9 +14,6 @@ def main(cfg):
     loaders_dict = create_dataset_loaders(cfg)
 
     # Create backbone and model
-        
-    # TODO: Remove this
-    cfg.device = 'cpu'
     
     backbone = instantiate(cfg.backbone.net).to(cfg.device)
     model = instantiate(cfg.model, backbone=backbone).to(cfg.device)
