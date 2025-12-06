@@ -183,8 +183,6 @@ class HeatWavePDEonMesh(InMemoryDataset):
 
         data.x = x
 
-        self._data_list[idx] = copy.copy(data)
-
         N = data.pos.size(0)
         edge_dim = 1
 
@@ -207,6 +205,8 @@ class HeatWavePDEonMesh(InMemoryDataset):
         data.adj_mat = torch.zeros(num_nodes, num_nodes,
                                    device=data.edge_index.device, dtype=torch.bool)
         data.adj_mat[data.edge_index[0], data.edge_index[1]] = 1
+
+        self._data_list[idx] = copy.copy(data)
 
         return data
 
