@@ -106,6 +106,6 @@ class EGNN(nn.Module):
             feats=data.x.permute(2, 0, 1),
             coors=data.pos.unsqueeze(0),
             adj_mat=data.adj_mat,
-            edges=data.edge_attr,
+            edges=data.edges_dense,
         )
-        return node_out
+        return node_out.permute(1, 0, 2)

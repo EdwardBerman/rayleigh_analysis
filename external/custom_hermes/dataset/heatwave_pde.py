@@ -196,7 +196,7 @@ class HeatWavePDEonMesh(InMemoryDataset):
         dist2 = (rel_pos ** 2).sum(dim=-1, keepdim=True)
         edges_dense[0, src, dst] = dist2
 
-        data.edge_attr = edges_dense
+        data.edges_dense = edges_dense
 
         num_nodes = data.pos.shape[0]
         data.adj_mat = torch.zeros(num_nodes, num_nodes,
