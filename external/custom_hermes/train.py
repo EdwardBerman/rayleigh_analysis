@@ -11,8 +11,6 @@ from external.custom_hermes.utils import create_dataset_loaders, numel, prepare_
 def main(cfg):
     set_seed(cfg.seed)
 
-    cfg.device = 'cpu'
-
     loaders_dict = create_dataset_loaders(cfg)
 
     # Create backbone and model
