@@ -194,6 +194,11 @@ class HeatWavePDEonMesh(InMemoryDataset):
 
         rel_pos = data.pos[dst] - data.pos[src]
         dist2 = (rel_pos ** 2).sum(dim=-1, keepdim=True)
+
+        dist2_mean = dist2.mean()
+        dist2_std = dist2.std() + 1e-8
+        dist2 = (dist2 - dist2_mean) / dist2_std
+
         edges_dense[0, src, dst] = dist2
 
         data.edges_dense = edges_dense
