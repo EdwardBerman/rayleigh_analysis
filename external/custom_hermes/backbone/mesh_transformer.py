@@ -61,7 +61,13 @@ class GraphViT(nn.Module):
         self.noise_std = 0.0
         self.positional_encoder = Positional_Encoder(pos_start, pos_length)
 
-    def forward(self, mesh_pos, edges, state, node_type, clusters, clusters_mask):
+    def forward(self, data):
+        mesh_pos = data.mesh_pos
+        edges = data.edge_index
+        clusters = 40
+        state = data.x
+        node_type = 'inpt'
+
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
         if state.dim() == 3:
             state = state.unsqueeze(1)          # [B, 1, N, D]
