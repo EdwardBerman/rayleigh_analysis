@@ -70,7 +70,8 @@ class GraphViT(nn.Module):
         edges = data.edge_index
         clusters = 40
         state = data.x
-        node_type = 'inpt'
+        node_type = torch.zeros_like(state)
+        node_type[:, :, :] = "input"
 
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
         if state.dim() == 3:
