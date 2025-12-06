@@ -70,15 +70,21 @@ class GraphViT(nn.Module):
         edges = data.edge_index
         clusters = 40
         state = data.x
-        node_type = torch.zeros_like(state)
-        node_type[:, :, :] = "input"
+
+        if hasattr(data, 'node_type'):
+            node_type = data.node_type.float()                    # assume user provided one-hot or integer class
+            if node_type.dim() == 3: node_type = node_type.unsqueeze(1)   # → [B,1,N,C]
+        else:
+            # default to “all INPUT nodes” = 1-hot with 1 channel
+            node_type = torch.ones(state.shape[0], 1, state.shape[-2], 1,
+                                   device=state.device, dtype=state.dtype)
 
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
         if state.dim() == 3:
             state = state.unsqueeze(1)          # [B, 1, N, D]
             mesh_pos = mesh_pos.unsqueeze(1)    # [B, 1, N, pos_dim]
             edges = edges.unsqueeze(1)          # [B, 1, E, 2]
-            node_type = node_type.unsqueeze(1)  # [B, 1, N, node_type_dim]
+            node_type = node_type.unsqueeze(1) if node_type.dim()==3 else node_type
             clusters = clusters.unsqueeze(1)    # [B, 1, num_clusters, ...] (whatever your shape is)
             clusters_mask = clusters_mask.unsqueeze(1)  # [B, 1, num_clusters, ...]
 
