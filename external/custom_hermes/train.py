@@ -121,7 +121,8 @@ def main(cfg):
         f"[{model.__class__.__name__}, Backbone={backbone.__class__.__name__}] No. trainable parameters = {num_params}"
     )
 
-    print(f"Transforms: {backbone.transforms}")
+    if hasattr(backbone, "transforms"):
+        print(f"Transforms: {backbone.transforms}")
     print(f"Model: {model}")
 
     engine.trainer.run(loaders_dict["train"], max_epochs=cfg.train.epochs)
