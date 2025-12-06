@@ -48,7 +48,7 @@ class GNN(nn.Module):
 
 
 class GraphViT(nn.Module):
-    def __init__(self, state_size, w_size=512, n_attention=4, nb_gn=4, n_heads=4):
+    def __init__(self, state_size=1, w_size=512, n_attention=4, nb_gn=4, n_heads=4):
         super(GraphViT, self).__init__()
         pos_start = -3
         pos_length = 8
@@ -63,6 +63,19 @@ class GraphViT(nn.Module):
 
     def forward(self, mesh_pos, edges, state, node_type, clusters, clusters_mask):
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
+         if state.dim() == 3:
+            state = state.unsqueeze(1)          # [B, 1, N, D]
+            mesh_pos = mesh_pos.unsqueeze(1)    # [B, 1, N, pos_dim]
+            edges = edges.unsqueeze(1)          # [B, 1, E, 2]
+            node_type = node_type.unsqueeze(1)  # [B, 1, N, node_type_dim]
+            clusters = clusters.unsqueeze(1)    # [B, 1, num_clusters, ...] (whatever your shape is)
+            clusters_mask = clusters_mask.unsqueeze(1)  # [B, 1, num_clusters, ...]
+
+        # (Optional) if you ever want to support completely unbatched [N, D],
+        # you could also detect state.dim() == 2 here and add a batch dim.
+
+        B, T, N, D = state.shape
+
         
         #if apply_noise:
             # Following MGN, this add noise to the input. Better results are obtained with longer windows and no noise
@@ -79,11 +92,15 @@ class GraphViT(nn.Module):
             V, E = self.encoder(mesh_pos[:, t - 1], edges[:, t - 1], state_hat[-1], node_type[:, t - 1], mesh_posenc)
             W = self.graph_pooling(V, clusters[:, t - 1], mesh_posenc, clusters_mask[:, t - 1])
 
+            # We use batch size 1 so no need to adjust attention mask for multiple simulations
+
             # This attention_mask deals with the ghost nodes needed to batch multiple simulations
-            attention_mask = clusters_mask[:, t - 1].sum(-1, keepdim=True) == 0
-            attention_mask = attention_mask.unsqueeze(1).repeat(1, len(self.attention), 1, W.shape[1]).view(-1, W.shape[1], W.shape[1])
-            attention_mask[:, torch.eye(W.shape[1], dtype=torch.bool)] = False
-            attention_mask = attention_mask.transpose(-1, -2)
+            #attention_mask = clusters_mask[:, t - 1].sum(-1, keepdim=True) == 0
+            #attention_mask = attention_mask.unsqueeze(1).repeat(1, len(self.attention), 1, W.shape[1]).view(-1, W.shape[1], W.shape[1])
+            #attention_mask[:, torch.eye(W.shape[1], dtype=torch.bool)] = False
+            #attention_mask = attention_mask.transpose(-1, -2)
+
+            attention_mask = None
 
             for i, a in enumerate(self.attention):
                 W = a(W, attention_mask, cluster_posenc)
@@ -101,6 +118,7 @@ class GraphViT(nn.Module):
             output_hat.append(next_output)
 
         output_hat = torch.stack(output_hat, dim=1)
+        output_hat = output_hat.permute(2, 0, 1, 3)
 
         return output_hat
 
