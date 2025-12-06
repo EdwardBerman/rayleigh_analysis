@@ -63,7 +63,7 @@ class GraphViT(nn.Module):
 
     def forward(self, mesh_pos, edges, state, node_type, clusters, clusters_mask):
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
-         if state.dim() == 3:
+        if state.dim() == 3:
             state = state.unsqueeze(1)          # [B, 1, N, D]
             mesh_pos = mesh_pos.unsqueeze(1)    # [B, 1, N, pos_dim]
             edges = edges.unsqueeze(1)          # [B, 1, E, 2]
@@ -73,7 +73,6 @@ class GraphViT(nn.Module):
 
         # (Optional) if you ever want to support completely unbatched [N, D],
         # you could also detect state.dim() == 2 here and add a batch dim.
-
         B, T, N, D = state.shape
 
         
