@@ -62,7 +62,11 @@ class GraphViT(nn.Module):
         self.positional_encoder = Positional_Encoder(pos_start, pos_length)
 
     def forward(self, data):
-        mesh_pos = data.mesh_pos
+        # if first forward call print data keys
+        if not hasattr(self, 'printed_keys'):
+            print("Data keys:", data.keys)
+            self.printed_keys = True
+        mesh_pos = data.pos
         edges = data.edge_index
         clusters = 40
         state = data.x
