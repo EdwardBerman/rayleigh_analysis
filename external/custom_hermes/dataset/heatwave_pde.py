@@ -185,6 +185,24 @@ class HeatWavePDEonMesh(InMemoryDataset):
 
         self._data_list[idx] = copy.copy(data)
 
+        N = data.pos.size(0)
+        edge_dim = 1
+
+        edges_dense = torch.zeros(1, N, N, edge_dim, device=data.pos.device)
+
+        src, dst = data.edge_index[0], data.edge_index[1]
+
+        rel_pos = data.pos[dst] - data.pos[src]
+        dist2 = (rel_pos ** 2).sum(dim=-1, keepdim=True)
+        edges_dense[0, src, dst] = dist2
+
+        data.edge_attr = edges_dense
+
+        num_nodes = data.pos.shape[0]
+        data.adj_mat = torch.zeros(num_nodes, num_nodes,
+                                   device=data.edge_index.device, dtype=torch.bool)
+        data.adj_mat[data.edge_index[0], data.edge_index[1]] = 1
+
         return data
 
     def num_trajectories(self):
