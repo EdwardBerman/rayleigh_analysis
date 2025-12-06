@@ -70,8 +70,7 @@ class GraphViT(nn.Module):
             #noise = torch.randn_like(state[:, 0]).to(state[:, 0].device) * self.noise_std
             #state[:, 0][mask] = state[:, 0][mask] + noise[mask]
 
-        state_hat, output_hat = [state[:, 0]], []
-        target = []
+        output_hat = []
 
         for t in range(1, state.shape[1]):
             mesh_posenc, cluster_posenc = self.positional_encoder(mesh_pos[:, t - 1], clusters[:, t - 1],
@@ -91,9 +90,6 @@ class GraphViT(nn.Module):
             W = self.ln(W)
 
             next_output = self.graph_retrieve(W, V, clusters[:, t - 1], mesh_posenc, edges[:, t - 1], E)
-            next_state = state_hat[-1] + next_output
-
-            target.append(state[:, t] - state_hat[-1])
 
             # NO BOUNDARY CONDITIONS IN OUR SETUP. Commenting out prior mask
             
@@ -102,14 +98,11 @@ class GraphViT(nn.Module):
             #mask = torch.logical_or(mask, node_type[:, t, :, NODE_DISABLE] == 1)
             #next_state[mask, :] = state[:, t][mask, :]
 
-            state_hat.append(next_state)
             output_hat.append(next_output)
 
-        velocity_hat = torch.stack(state_hat, dim=1)
         output_hat = torch.stack(output_hat, dim=1)
 
-        target = torch.stack(target, dim=1)
-        return velocity_hat, output_hat, target
+        return output_hat
 
 
 class AttentionBlock_PreLN(nn.Module):
