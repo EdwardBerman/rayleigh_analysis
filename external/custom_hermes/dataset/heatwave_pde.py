@@ -8,6 +8,8 @@ from plyfile import PlyData
 from torch_geometric.data import Data, InMemoryDataset
 from torch_geometric.data.separate import separate
 
+from external.custom_hermes.dataset import clusterize
+
 
 class HeatWavePDEonMesh(InMemoryDataset):
     def __init__(
@@ -18,6 +20,7 @@ class HeatWavePDEonMesh(InMemoryDataset):
         num_samples=10,
         input_length=5,
         output_length=3,
+        max_cluster_size: int = 20,
         transform: Optional[Callable] = None,
         pre_transform: Optional[Callable] = None,
         pre_transform_str="",
@@ -37,6 +40,8 @@ class HeatWavePDEonMesh(InMemoryDataset):
         self.output_length = output_length
         self.pre_transform_str = pre_transform_str
         self.processed_dir_str = processed_dir_str
+
+        self.max_cluster_size = max_cluster_size
 
         super().__init__(root, transform, pre_transform, pre_filter=None)
         path = self.processed_paths[splits.index(split)]
@@ -88,6 +93,15 @@ class HeatWavePDEonMesh(InMemoryDataset):
 
         for f in self.raw_file_names:
             data = self._read_data(osp.join(self.raw_dir, f))
+
+            pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+                labels_np, centers_np = clusterize(
+                    pos_np,
+                    max_cluster_size=self.max_cluster_size,
+                )
+
+            data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
+            data.cluster_centers = torch.from_numpy(centers_np).float()
 
             # Label for which mesh and sample
             mesh_name = f.split("/")[0]
