@@ -103,7 +103,7 @@ class GraphViT(nn.Module):
         device = data.pos.device
 
         mesh_pos        = data.pos.unsqueeze(0)      # [1,2501,3]
-        state           = data.u.unsqueeze(0)        # [1,2501,151]
+        state           = data.x                     # [2501,5, 1]
         cluster_labels  = data.cluster_labels        # [2501]
         cluster_centers = data.cluster_centers       # [127,3]
         edges = data.edge_index
