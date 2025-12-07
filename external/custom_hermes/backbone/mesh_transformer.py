@@ -71,12 +71,12 @@ class GraphViT(nn.Module):
         clusters = 120
         state = data.x
         cluster_labels = data.cluster_labels
-        clusters_centers = data.clusters_centers
+        clusters_center = data.clusters_centers
 
         # no cluster mask 
-        clusters_mask = torch.ones(clusters.shape[0], 
-                                   clusters.shape[1], 
-                                   clusters.shape[2], 
+        clusters_mask = torch.ones(cluster_labels.shape[0], 
+                                   cluster_labels.shape[1], 
+                                   cluster_labels.shape[2],
                                    device=state.device, 
                                    dtype=state.dtype)
 
