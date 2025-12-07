@@ -6,15 +6,6 @@ from tqdm import tqdm
 import os
 import numba
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--max_cluster_size', type=int, default=20)
-parser.add_argument('--geom', type=str, default="Cre")
-parser.add_argument('--traj', type=int, default=1)
-args = parser.parse_args()
-
-PATH = ""
-
-
 class FluentDataset:
     def __init__(self):
         super(FluentDataset, self).__init__()
