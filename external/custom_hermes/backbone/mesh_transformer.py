@@ -168,7 +168,7 @@ class GraphViT(nn.Module):
         output_hat = torch.stack(output_hat, dim=1)
         print("Output hat shape:", output_hat.shape)
         breakpoint()
-        output_hat = output_hat.permute(0, 2, 1, 3)  
+        output_hat = output_hat.squeeze(0)
         print("Output hat permuted shape:", output_hat.shape)
         breakpoint()
         return output_hat.permute(0,2,1,3).squeeze(0)  # [N, T-1, F]
