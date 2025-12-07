@@ -94,12 +94,6 @@ class HeatWavePDEonMesh(InMemoryDataset):
         for f in self.raw_file_names:
             data = self._read_data(osp.join(self.raw_dir, f))
 
-            pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
-            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
-
-            data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
-            data.cluster_centers = torch.from_numpy(centers_np).float()
-
             # Label for which mesh and sample
             mesh_name = f.split("/")[0]
             mesh_idx = self.mesh_names.index(mesh_name)
@@ -109,6 +103,12 @@ class HeatWavePDEonMesh(InMemoryDataset):
 
             if self.pre_transform is not None:
                 data = self.pre_transform(data)
+
+            pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+
+            data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
+            data.cluster_centers = torch.from_numpy(centers_np).float()
 
             if mesh_name in test_meshes:
                 # Test mesh
