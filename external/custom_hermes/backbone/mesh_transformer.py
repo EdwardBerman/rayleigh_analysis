@@ -115,12 +115,11 @@ class GraphViT(nn.Module):
 
         if hasattr(data, 'node_type'):
             node_type = data.node_type.float()                    # assume user provided one-hot or integer class
+            if node_type.dim() == 3: node_type = node_type.unsqueeze(1)   # → [B,1,N,C]
         else:
             # default to “all NORMAL nodes” = 1-hot with 1 channel
-            node_type = torch.zeros(state.shape[0], 
-                                    state.shape[2], 
-                                    device=state.device, 
-                                    dtype=state.dtype).long()
+            node_type = torch.zeros(state.shape[2], state.shape[1], state.shape[0], 1,
+                                    device=state.device, dtype=state.dtype).long()
             data.node_type = node_type
 
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
