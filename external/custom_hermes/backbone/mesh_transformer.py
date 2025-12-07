@@ -128,38 +128,44 @@ class GraphViT(nn.Module):
             #mask = torch.logical_or(node_type[:, 0, :, NODE_NORMAL] == 1, node_type[:, 0, :, NODE_OUTPUT] == 1)
             #noise = torch.randn_like(state[:, 0]).to(state[:, 0].device) * self.noise_std
             #state[:, 0][mask] = state[:, 0][mask] + noise[mask]
-
         mesh_posenc, cluster_posenc = self.positional_encoder(mesh_pos, clusters, cluster_mask)
 
-
-        V, E = self.encoder(mesh_pos, edges, state, node_type, mesh_posenc)
-        W = self.graph_pooling(V, clusters, mesh_posenc, clusters_mask)
-
-        # We use batch size 1 so no need to adjust attention mask for multiple simulations
-
-        # This attention_mask deals with the ghost nodes needed to batch multiple simulations
-        #attention_mask = clusters_mask[:, t - 1].sum(-1, keepdim=True) == 0
-        #attention_mask = attention_mask.unsqueeze(1).repeat(1, len(self.attention), 1, W.shape[1]).view(-1, W.shape[1], W.shape[1])
-        #attention_mask[:, torch.eye(W.shape[1], dtype=torch.bool)] = False
-        #attention_mask = attention_mask.transpose(-1, -2)
-
-        attention_mask = None
-
-        for i, a in enumerate(self.attention):
-            W = a(W, attention_mask, cluster_posenc)
-        W = self.ln(W)
-
-        next_output = self.graph_retrieve(W, V, clusters[:, t - 1], mesh_posenc, edges[:, t - 1], E)
-
-        # NO BOUNDARY CONDITIONS IN OUR SETUP. Commenting out prior mask
+        output_hat = []
         
-        # Following MGN, we force the boundary conditions at each steps
-        #mask = torch.logical_or(node_type[:, t, :, NODE_INPUT] == 1, node_type[:, t, :, NODE_WALL] == 1)
-        #mask = torch.logical_or(mask, node_type[:, t, :, NODE_DISABLE] == 1)
-        #next_state[mask, :] = state[:, t][mask, :]
+        for t in range(1, state.shape[1]):
 
-        next_output = next_output.permute(0, 2, 1)  # B, N, D
-        return next_output
+
+            V, E = self.encoder(mesh_pos, edges, state[:, t - 1], node_type, mesh_posenc)
+            W = self.graph_pooling(V, clusters, mesh_posenc, clusters_mask)
+
+            # We use batch size 1 so no need to adjust attention mask for multiple simulations
+
+            # This attention_mask deals with the ghost nodes needed to batch multiple simulations
+            #attention_mask = clusters_mask[:, t - 1].sum(-1, keepdim=True) == 0
+            #attention_mask = attention_mask.unsqueeze(1).repeat(1, len(self.attention), 1, W.shape[1]).view(-1, W.shape[1], W.shape[1])
+            #attention_mask[:, torch.eye(W.shape[1], dtype=torch.bool)] = False
+            #attention_mask = attention_mask.transpose(-1, -2)
+
+            attention_mask = None
+
+            for i, a in enumerate(self.attention):
+                W = a(W, attention_mask, cluster_posenc)
+            W = self.ln(W)
+
+            next_output = self.graph_retrieve(W, V, clusters[:, t - 1], mesh_posenc, edges[:, t - 1], E)
+
+            # NO BOUNDARY CONDITIONS IN OUR SETUP. Commenting out prior mask
+            
+            # Following MGN, we force the boundary conditions at each steps
+            #mask = torch.logical_or(node_type[:, t, :, NODE_INPUT] == 1, node_type[:, t, :, NODE_WALL] == 1)
+            #mask = torch.logical_or(mask, node_type[:, t, :, NODE_DISABLE] == 1)
+            #next_state[mask, :] = state[:, t][mask, :]
+            output_hat.append(next_output)
+
+        output_hat = torch.stack(output_hat, dim=1)
+        print("Output hat shape:", output_hat.shape)
+        breakpoint()
+        return output_hat.permute(0,2,1,3).squeeze(0)  # [N, T-1, F]
 
 
 class AttentionBlock_PreLN(nn.Module):
