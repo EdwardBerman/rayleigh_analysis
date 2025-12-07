@@ -137,7 +137,7 @@ class GraphViT(nn.Module):
 
 
             V, E = self.encoder(mesh_pos, edges, states_t, node_type_t, mesh_posenc)
-            W = self.graph_pooling(V, clusters, mesh_posenc, clusters_mask)
+            W = self.graph_pooling(V, clusters, mesh_posenc, cluster_mask)
 
             # We use batch size 1 so no need to adjust attention mask for multiple simulations
 
@@ -197,7 +197,7 @@ class AttentionBlock_PreLN(nn.Module):
 class GraphPooling(nn.Module):
     def __init__(self, w_size, pos_length):
         super(GraphPooling, self).__init__()
-        input_size = 128 + pos_length * 8
+        input_size = 128 + pos_length * 12
 
         self.rnn_pooling = nn.GRU(input_size=input_size, hidden_size=w_size, batch_first=True)
         self.linear_rnn = MLP(input_size=w_size, output_size=w_size, n_hidden=1, layer_norm=False)
@@ -227,7 +227,7 @@ class GraphPooling(nn.Module):
 
 class GraphRetrieveSimple(nn.Module):
     def __init__(self, w_size, pos_length, state_size):
-        pos_size = pos_length * 8
+        pos_size = pos_length * 12
         super(GraphRetrieveSimple, self).__init__()
         node_size = w_size + 128 + pos_size
         self.gnn = GNN(node_size=node_size, output_size=128)
@@ -259,7 +259,7 @@ class Encoder(nn.Module):
         self.encoder_node = MLP(input_size=node_in_dim, output_size=128, n_hidden=1, layer_norm=False)
         self.encoder_edge = MLP(input_size=3, output_size=128, n_hidden=1, layer_norm=False)
 
-        node_size = 128 + pos_length * 8
+        node_size = 128 + pos_length * 12
         self.encoder_gn = nn.ModuleList(
             [GNN(node_size=node_size, edge_size=128, output_size=128, layer_norm=True) for _ in
              range(nb_gn)])
@@ -294,10 +294,10 @@ class Positional_Encoder(nn.Module):
         self.pos_start = pos_start
 
     def forward(self, mesh_pos, clusters, cluster_mask):
-        B, N, _ = mesh_pos.shape
+        B, N, D = mesh_pos.shape
         _, K, C = clusters.shape
 
-        meshpos_by_cluster = torch.gather(mesh_pos, -2, clusters.reshape(B, -1, 1).repeat(1, 1, 2))
+        meshpos_by_cluster = torch.gather(mesh_pos, -2, clusters.reshape(B, -1, 1).repeat(1, 1, D))
         meshpos_by_cluster = meshpos_by_cluster.reshape(*clusters.shape, -1)
 
         clusters_centers = meshpos_by_cluster.sum(dim=-2)
