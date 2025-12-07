@@ -136,7 +136,7 @@ class GraphViT(nn.Module):
         for t in range(1, state.shape[1]):
 
 
-            V, E = self.encoder(mesh_pos, edges, state[:, t - 1], node_type, mesh_posenc)
+            V, E = self.encoder(mesh_pos, edges, state[:, t - 1], node_type[:, t - 1], mesh_posenc)
             W = self.graph_pooling(V, clusters, mesh_posenc, clusters_mask)
 
             # We use batch size 1 so no need to adjust attention mask for multiple simulations
