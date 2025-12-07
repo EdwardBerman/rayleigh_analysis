@@ -8,7 +8,7 @@ from plyfile import PlyData
 from torch_geometric.data import Data, InMemoryDataset
 from torch_geometric.data.separate import separate
 
-from external.custom_hermes.dataset import clusterize
+from external.custom_hermes.dataset.clusterize import clusterize
 
 
 class HeatWavePDEonMesh(InMemoryDataset):
