@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch
 
+from external.torch_scatter import scatter_sum
+
 class MLP(nn.Module):
     def __init__(self, input_size, output_size=128, layer_norm=True, n_hidden=2, hidden_size=128):
         super(MLP, self).__init__()
