@@ -153,7 +153,7 @@ class GraphViT(nn.Module):
                 W = a(W, attention_mask, cluster_posenc)
             W = self.ln(W)
 
-            next_output = self.graph_retrieve(W, V, clusters[:, t - 1], mesh_posenc, edges[:, t - 1], E)
+            next_output = self.graph_retrieve(W, V, clusters, mesh_posenc, edges, E)
 
             # NO BOUNDARY CONDITIONS IN OUR SETUP. Commenting out prior mask
             
