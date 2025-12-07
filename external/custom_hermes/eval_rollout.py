@@ -3,22 +3,23 @@ from collections import defaultdict
 from pathlib import Path
 
 import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 import pyvista as pv
+import robust_laplacian
 import torch
-from torch_geometric.utils import degree
 from hydra.utils import instantiate
-from pyvista import examples
-
-from external.hermes.src.data.pde.utils import screenshot_mesh
-from external.custom_hermes.utils import create_dataset_loaders, rotate_mesh_video
-
-import matplotlib.pyplot as plt
 from matplotlib import rc
-
+from pyvista import examples
+from torch_geometric.utils import degree
 from tqdm import tqdm
 
-import robust_laplacian
+from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
+                                                         compute_edges_dense)
+from external.custom_hermes.utils import (create_dataset_loaders,
+                                          rotate_mesh_video)
+from external.hermes.src.data.pde.utils import screenshot_mesh
+
 
 def set_rc_params(fontsize=None):
     '''
@@ -54,6 +55,7 @@ def set_rc_params(fontsize=None):
     plt.rcParams['text.usetex'] = False
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
 
+
 set_rc_params(15)
 
 objects = {
@@ -83,6 +85,7 @@ decimate_ratio = {
 
 pv.set_plot_theme("paraview")
 
+
 def get_mesh(name):
     mesh = objects[name]
 
@@ -91,14 +94,19 @@ def get_mesh(name):
 
     return mesh
 
+
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
+
+    cfg.device = 'cpu'
+
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
     backbone = instantiate(cfg.backbone.net).to(cfg.device)
     model = instantiate(cfg.model, backbone=backbone).to(cfg.device)
 
-    model.load_state_dict(torch.load(cfg.model_save_path, map_location=cfg.device))
+    model.load_state_dict(torch.load(
+        cfg.model_save_path, map_location=cfg.device))
     model.eval()
 
     loss_fn = instantiate(cfg.loss)
@@ -129,29 +137,35 @@ def main(cfg):
             N = values.shape[0]
 
             pos, face = data.pos.cpu(), data.face.cpu()
-            L, M = robust_laplacian.mesh_laplacian(pos.cpu().numpy(), face.T.cpu().numpy())
+            L, M = robust_laplacian.mesh_laplacian(
+                pos.cpu().numpy(), face.T.cpu().numpy())
             print("Computed robust Laplacian")
             # verify L symmetric
             L_np = L.toarray()
             L_torch = torch.from_numpy(L_np).to(values.device)
-            print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
-            L_torch = -L_torch # opposite sign convention
+            print("L symmetric:", torch.allclose(
+                L_torch, L_torch.T, atol=1e-6))
+            L_torch = -L_torch  # opposite sign convention
 
             M = M.toarray()
             M = torch.from_numpy(M).to(values.device)
             M_inv_sqrt = M.pow(-0.5)
-            #L_torch = M_inv_sqrt @ L_torch @ M_inv_sqrt
+            # L_torch = M_inv_sqrt @ L_torch @ M_inv_sqrt
 
             L_offdiag = L_torch.clone()
             L_offdiag.fill_diagonal_(0)
             A_M = L_offdiag
 
-            weighted_edge_index = A_M.nonzero(as_tuple=False).t().long().to(values.device) 
-            edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(values.device).to(values.dtype)
+            weighted_edge_index = A_M.nonzero(
+                as_tuple=False).t().long().to(values.device)
+            edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
+                values.device).to(values.dtype)
             print("Computed weighted edge index and weights")
             print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
-            print(f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
-            deg = torch.zeros(N, device=values.device).index_add_(0, weighted_edge_index[0], edge_weights)
+            print(
+                f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
+            deg = torch.zeros(N, device=values.device).index_add_(
+                0, weighted_edge_index[0], edge_weights)
             deg = deg.clamp(min=1.0)
             inv_sqrt_deg = deg.rsqrt().view(N, 1)
 
@@ -171,9 +185,10 @@ def main(cfg):
             smape = []
 
             with torch.no_grad():
-                data.x = values[:, 0 : dataset.input_length][..., None]
+                data.x = values[:, 0: dataset.input_length][..., None]
+                data = compute_adj_mat(compute_edges_dense(data))
 
-                #for t in range(dataset.input_length, values.shape[1]):
+                # for t in range(dataset.input_length, values.shape[1]):
                 # tqdm ift
                 for t in tqdm(
                     range(dataset.input_length, values.shape[1]),
@@ -186,7 +201,7 @@ def main(cfg):
                     y_pred = model(data)
 
                     all_preds.append(y_pred.squeeze().detach().cpu().numpy())
-                    
+
                     try:
                         loss = loss_fn(y_pred, y)
                     except:
@@ -194,18 +209,22 @@ def main(cfg):
                     all_losses.append(loss.item())
 
                     # Sketchy over here
-                    y_norm      = norm_sqrt_deg(y)       
-                    y_pred_norm = norm_sqrt_deg(y_pred)  
-                    diff_true = y_norm[src, 0] - y_norm[dst, 0]         
+                    y_norm = norm_sqrt_deg(y)
+                    y_pred_norm = norm_sqrt_deg(y_pred)
+                    diff_true = y_norm[src, 0] - y_norm[dst, 0]
                     diff_pred = y_pred_norm[src, 0] - y_pred_norm[dst, 0]
-                    edge_mse_true_weighted = (edge_weights * (diff_true ** 2)).sum()
-                    edge_mse_pred_weighted = (edge_weights * (diff_pred ** 2)).sum()
+                    edge_mse_true_weighted = (
+                        edge_weights * (diff_true ** 2)).sum()
+                    edge_mse_pred_weighted = (
+                        edge_weights * (diff_pred ** 2)).sum()
 
                     sum_nodes_sq_gt = y.pow(2).sum()
                     sum_nodes_sq_pred = y_pred.pow(2).sum()
 
-                    traj_true_rq.append(edge_mse_true_weighted.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
-                    traj_pred_rq.append(edge_mse_pred_weighted.item()*0.5/(sum_nodes_sq_pred.item()+1e-16))
+                    traj_true_rq.append(
+                        edge_mse_true_weighted.item()*0.5/(sum_nodes_sq_gt.item()+1e-16))
+                    traj_pred_rq.append(edge_mse_pred_weighted.item(
+                    )*0.5/(sum_nodes_sq_pred.item()+1e-16))
 
                     nrmse.append(
                         torch.sqrt(
@@ -218,7 +237,8 @@ def main(cfg):
                     )
 
                     smape.append(
-                        (2*torch.abs(y_pred - y) / (torch.abs(y_pred) + torch.abs(y) + 1e-8))
+                        (2*torch.abs(y_pred - y) /
+                         (torch.abs(y_pred) + torch.abs(y) + 1e-8))
                         .mean()
                         .detach()
                         .cpu()
@@ -226,9 +246,9 @@ def main(cfg):
                     )
 
                     # end sketchy
-                    #print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
+                    # print(f"Rayleigh Quotient at time {t}: GT {edge_mse_true.item():.6e}, Pred {edge_mse_pred.item():.6e}")
 
-                    data.x = torch.cat([data.x[:, y_pred.shape[1] :, 0], y_pred], 1)[
+                    data.x = torch.cat([data.x[:, y_pred.shape[1]:, 0], y_pred], 1)[
                         :, :, None
                     ]
 
@@ -250,7 +270,6 @@ def main(cfg):
 
             results["nrmse"][mesh_idx].append(np.array(nrmse))
             results["smape"][mesh_idx].append(np.array(smape))
-
 
         return results
 
@@ -284,8 +303,10 @@ def main(cfg):
             save_path.mkdir(parents=True, exist_ok=True)
 
             np.save(save_path / "losses.npy", results["losses"][mesh_idx])
-            np.save(save_path / "predictions.npy", results["predictions"][mesh_idx])
-            np.save(save_path / "ground_truth.npy", results["ground_truth"][mesh_idx])
+            np.save(save_path / "predictions.npy",
+                    results["predictions"][mesh_idx])
+            np.save(save_path / "ground_truth.npy",
+                    results["ground_truth"][mesh_idx])
 
             true_rq = np.stack(
                 results["true_rayleigh_quotients"][mesh_idx], axis=0
@@ -313,8 +334,10 @@ def main(cfg):
             )
             true_rq_std = true_rq.std(axis=0)
             pred_rq_std = pred_rq.std(axis=0)
-            plt.fill_between(t, true_rq.mean(axis=0) - true_rq_std, true_rq.mean(axis=0) + true_rq_std, color="blue", alpha=0.3)
-            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std, pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
+            plt.fill_between(t, true_rq.mean(axis=0) - true_rq_std,
+                             true_rq.mean(axis=0) + true_rq_std, color="blue", alpha=0.3)
+            plt.fill_between(t, pred_rq.mean(axis=0) - pred_rq_std,
+                             pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
             print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(
@@ -323,13 +346,17 @@ def main(cfg):
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
             plt.tight_layout()
-            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
-            plt.savefig(save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+            plt.savefig(
+                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+            plt.savefig(
+                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
             plt.tight_layout()
-            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
-            plt.savefig(save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+            plt.savefig(
+                save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+            plt.savefig(
+                save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
             integrated_errors_all.extend(traj_error.tolist())
@@ -352,7 +379,6 @@ def main(cfg):
 
             integrated_nrmse_all.extend(traj_nrmse.tolist())
             integrated_smape_all.extend(traj_smape.tolist())
-
 
             for s in range(1):
                 for t in range(10, 191, 10):
@@ -377,25 +403,25 @@ def main(cfg):
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
 
-                    #rotate_mesh_video(
-                            #mesh=mesh,
-                            #scalars=gt,
-                            #dataset_name=cfg.dataset.name,
-                            #name=object_name,
-                            #save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt_video.mp4",
-                            #n_frames=240,
-                            #framerate=30,
-                            #)
+                    # rotate_mesh_video(
+                    # mesh=mesh,
+                    # scalars=gt,
+                    # dataset_name=cfg.dataset.name,
+                    # name=object_name,
+                    # save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt_video.mp4",
+                    # n_frames=240,
+                    # framerate=30,
+                    # )
 
-                    #rotate_mesh_video(
-                            #mesh=mesh,
-                            #scalars=preds,
-                            #dataset_name=cfg.dataset.name,
-                            #name=object_name,
-                            #save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds_video.mp4",
-                            #n_frames=240,
-                            #framerate=30,
-                            #)
+                    # rotate_mesh_video(
+                    # mesh=mesh,
+                    # scalars=preds,
+                    # dataset_name=cfg.dataset.name,
+                    # name=object_name,
+                    # save_path=save_path / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds_video.mp4",
+                    # n_frames=240,
+                    # framerate=30,
+                    # )
 
     if len(integrated_errors_all) > 0:
         overall_mean = np.mean(integrated_errors_all)
@@ -430,8 +456,7 @@ def main(cfg):
         if len(integrated_smape_all) > 5:
             print("-----"*40)
 
-        # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh 
-
+        # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 
 
 if __name__ == "__main__":
