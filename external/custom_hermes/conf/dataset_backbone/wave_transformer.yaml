@@ -3,7 +3,7 @@
 train:
   epochs: 100
   batch_size: 1
-  lr: 5e-3
+  lr: 1e-4
 
 optimizer:
   _target_: torch.optim.Adam
@@ -15,5 +15,6 @@ backbone:
   net:
     state_size: 1
     w_size: 512
-    n_attention: 4, 
-    nb_gn: 4
+    n_attention: 8
+    nb_gn: 8
+    n_heads: 4
