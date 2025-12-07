@@ -111,8 +111,6 @@ class GraphViT(nn.Module):
         edges = data.edge_index # [2, num_edges]
         edges = data.edge_index.t().unsqueeze(0)  # [1, num_edges, 2]
 
-        clusters = 120
-
         B, T, N, F = state.shape
 
         clusters, cluster_mask, N_max = self.build_cluster_index_and_mask(
@@ -257,7 +255,8 @@ class GraphRetrieveSimple(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, nb_gn=4, state_size=3, pos_length=7):
         super(Encoder, self).__init__()
-        self.encoder_node = MLP(input_size=9 + state_size, output_size=128, n_hidden=1, layer_norm=False)
+        node_in_dim = state_size + 1
+        self.encoder_node = MLP(input_size=node_in_dim, output_size=128, n_hidden=1, layer_norm=False)
         self.encoder_edge = MLP(input_size=3, output_size=128, n_hidden=1, layer_norm=False)
 
         node_size = 128 + pos_length * 8
