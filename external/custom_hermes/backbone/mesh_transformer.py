@@ -61,24 +61,57 @@ class GraphViT(nn.Module):
         self.noise_std = 0.0
         self.positional_encoder = Positional_Encoder(pos_start, pos_length)
 
+    def build_cluster_index_and_mask(self, cluster_labels, cluster_centers, device):
+        """
+        cluster_labels  [N]     -> label per node  (0 .. C-1)
+        cluster_centers [C,3]  -> only needed to know how many clusters exist
+        Returns:
+            clusters      [1,C,N_max] Node indices for each cluster
+            cluster_mask  [1,C,N_max] 1 where real, 0 where padded
+        """
+        B = 1
+        N = cluster_labels.size(0)
+        C = cluster_centers.size(0)
+
+        # collect node indices belonging to each cluster
+        idx_per_cluster = [
+            (cluster_labels == c).nonzero(as_tuple=False).view(-1).to(device)
+            for c in range(C)
+        ]
+
+        # max cluster size for padding shape
+        N_max = max(len(t) for t in idx_per_cluster)
+
+        clusters = torch.zeros(B, C, N_max, dtype=torch.long, device=device)
+        cluster_mask = torch.zeros(B, C, N_max, dtype=torch.bool, device=device)
+
+        for c, idx in enumerate(idx_per_cluster):
+            count = len(idx)
+            if count > 0:
+                clusters[0,c,:count] = idx
+                cluster_mask[0,c,:count] = True   # valid entries
+
+        return clusters, cluster_mask, N_max
+
     def forward(self, data):
+        
         # if first forward call print data keys
         if not hasattr(self, 'printed_keys'):
             print("Data keys:", data.keys)
             self.printed_keys = True
-        mesh_pos = data.pos
+
+        device = data.pos.device
+
+        mesh_pos        = data.pos.unsqueeze(0)      # [1,2501,3]
+        state           = data.u.unsqueeze(0)        # [1,2501,151]
+        cluster_labels  = data.cluster_labels        # [2501]
+        cluster_centers = data.cluster_centers       # [127,3]
         edges = data.edge_index
         clusters = 120
-        state = data.u
-        cluster_labels = data.cluster_labels
-        cluster_center = data.cluster_centers
 
-        # no cluster mask (verify what this is supposed to do)
-        clusters_mask = torch.ones(cluster_labels.shape[0], 
-                                   cluster_labels.shape[1], 
-                                   cluster_labels.shape[2],
-                                   device=state.device, 
-                                   dtype=state.dtype)
+        clusters, cluster_mask, N_max = self.build_cluster_index_and_mask(
+            cluster_labels, cluster_centers, device
+        )
 
         if hasattr(data, 'node_type'):
             node_type = data.node_type.float()                    # assume user provided one-hot or integer class
@@ -96,11 +129,11 @@ class GraphViT(nn.Module):
             #noise = torch.randn_like(state[:, 0]).to(state[:, 0].device) * self.noise_std
             #state[:, 0][mask] = state[:, 0][mask] + noise[mask]
 
-        mesh_posenc, cluster_posenc = self.positional_encoder(mesh_pos[:, t - 1], clusters[:, t - 1],
-                                                              clusters_mask[:, t - 1])
+        mesh_posenc, cluster_posenc = self.positional_encoder(mesh_pos, clusters, cluster_mask)
 
-        V, E = self.encoder(mesh_pos[:, t - 1], edges[:, t - 1], state_hat[-1], node_type[:, t - 1], mesh_posenc)
-        W = self.graph_pooling(V, clusters[:, t - 1], mesh_posenc, clusters_mask[:, t - 1])
+
+        V, E = self.encoder(mesh_pos, edges, state, node_type, mesh_posenc)
+        W = self.graph_pooling(V, clusters, mesh_posenc, clusters_mask)
 
         # We use batch size 1 so no need to adjust attention mask for multiple simulations
 
