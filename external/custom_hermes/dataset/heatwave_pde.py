@@ -95,10 +95,7 @@ class HeatWavePDEonMesh(InMemoryDataset):
             data = self._read_data(osp.join(self.raw_dir, f))
 
             pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
-                labels_np, centers_np = clusterize(
-                    pos_np,
-                    max_cluster_size=self.max_cluster_size,
-                )
+            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
 
             data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
             data.cluster_centers = torch.from_numpy(centers_np).float()
