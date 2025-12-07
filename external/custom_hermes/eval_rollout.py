@@ -88,7 +88,6 @@ def get_mesh(name):
 
     mesh = mesh.decimate(decimate_ratio[name])
     _ = mesh.clean(inplace=True)
-    mesh = mesh.delaunay_3d()
 
     return mesh
 
