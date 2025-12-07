@@ -176,7 +176,7 @@ class AttentionBlock_PreLN(nn.Module):
         super(AttentionBlock_PreLN, self).__init__()
         self.ln1 = nn.LayerNorm(w_size)
 
-        embed_dim = w_size + 4 * pos_length
+        embed_dim = w_size + 6 * pos_length
 
         self.attention = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=n_heads, batch_first=True)
         self.linear = nn.Linear(embed_dim, w_size)
