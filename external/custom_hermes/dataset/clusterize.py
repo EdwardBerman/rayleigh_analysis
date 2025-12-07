@@ -278,5 +278,3 @@ def clusterize(pointcloud: np.ndarray, max_cluster_size: int, init_cluster_cente
     )
     return labels.astype(np.int64), centers.astype(np.float32)
 
-if __name__ == '__main__':
-    main()
