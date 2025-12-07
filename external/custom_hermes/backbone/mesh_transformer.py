@@ -68,16 +68,25 @@ class GraphViT(nn.Module):
             self.printed_keys = True
         mesh_pos = data.pos
         edges = data.edge_index
-        clusters = 40
+        clusters = 120
         state = data.x
+        cluster_labels = data.cluster_labels
+        clusters_centers = data.clusters_centers
+
+        # no cluster mask 
+        clusters_mask = torch.ones(clusters.shape[0], 
+                                   clusters.shape[1], 
+                                   clusters.shape[2], 
+                                   device=state.device, 
+                                   dtype=state.dtype)
 
         if hasattr(data, 'node_type'):
             node_type = data.node_type.float()                    # assume user provided one-hot or integer class
             if node_type.dim() == 3: node_type = node_type.unsqueeze(1)   # → [B,1,N,C]
         else:
-            # default to “all INPUT nodes” = 1-hot with 1 channel
-            node_type = torch.ones(state.shape[0], 1, state.shape[-2], 1,
-                                   device=state.device, dtype=state.dtype)
+            # default to “all NORMAL nodes” = 1-hot with 1 channel
+            node_type = torch.zeros(state.shape[0], 1, state.shape[-2], 1,
+                                    device=state.device, dtype=state.dtype).long()
 
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
         if state.dim() == 3:
@@ -85,8 +94,9 @@ class GraphViT(nn.Module):
             mesh_pos = mesh_pos.unsqueeze(1)    # [B, 1, N, pos_dim]
             edges = edges.unsqueeze(1)          # [B, 1, E, 2]
             node_type = node_type.unsqueeze(1) if node_type.dim()==3 else node_type
-            clusters = clusters.unsqueeze(1)    # [B, 1, num_clusters, ...] (whatever your shape is)
-            clusters_mask = clusters_mask.unsqueeze(1)  # [B, 1, num_clusters, ...]
+            cluster_labels = cluster_labels.unsqueeze(1)  # [B, 1, N]
+            clusters_centers = clusters_centers.unsqueeze(1)  # [B, 1, num_clusters, pos_dim]
+            clusters_mask = clusters_mask.unsqueeze(1)  # [B, 1, num_clusters, S]
 
         # (Optional) if you ever want to support completely unbatched [N, D],
         # you could also detect state.dim() == 2 here and add a batch dim.
@@ -134,7 +144,7 @@ class GraphViT(nn.Module):
             output_hat.append(next_output)
 
         output_hat = torch.stack(output_hat, dim=1)
-        output_hat = output_hat.permute(2, 0, 1, 3)
+        output_hat = output_hat.permute(2, 0, 1, 3) # N, T, D
 
         return output_hat
 
