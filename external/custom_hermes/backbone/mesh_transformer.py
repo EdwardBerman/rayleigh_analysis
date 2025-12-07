@@ -267,7 +267,6 @@ class Encoder(nn.Module):
              range(nb_gn)])
 
     def forward(self, mesh_pos, edges, states, node_type, pos_enc):
-        breakpoint()
         V = torch.cat([states, node_type], dim=-1)
 
         senders = torch.gather(mesh_pos, -2, edges[..., 0].unsqueeze(-1).repeat(1, 1, 2))
