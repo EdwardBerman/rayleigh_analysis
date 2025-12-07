@@ -104,23 +104,22 @@ class GraphViT(nn.Module):
 
         mesh_pos        = data.pos.unsqueeze(0)      # [1,2501,3]
         state           = data.x                     # [2501,5, 1]
+        state = state.permute(1, 0, 2).unsqueeze(0)  # [1,5,2501,1]
         cluster_labels  = data.cluster_labels        # [2501]
         cluster_centers = data.cluster_centers       # [127,3]
-        edges = data.edge_index
+
+        edges = data.edge_index # [2, num_edges]
+        edges = data.edge_index.t().unsqueeze(0)  # [1, num_edges, 2]
+
         clusters = 120
+
+        B, T, N, F = state.shape
 
         clusters, cluster_mask, N_max = self.build_cluster_index_and_mask(
             cluster_labels, cluster_centers, device
         )
 
-        if hasattr(data, 'node_type'):
-            node_type = data.node_type.float()                    # assume user provided one-hot or integer class
-            if node_type.dim() == 3: node_type = node_type.unsqueeze(1)   # → [B,1,N,C]
-        else:
-            # default to “all NORMAL nodes” = 1-hot with 1 channel
-            node_type = torch.zeros(state.shape[2], state.shape[1], state.shape[0], 1,
-                                    device=state.device, dtype=state.dtype).long()
-            data.node_type = node_type
+        node_type = torch.zeros(B, T, N, 1, device=state.device, dtype=state.dtype).long()
 
         # Removed apply noise flag for fair comparison and bc paper says it hurt and didnt help
         
@@ -133,10 +132,13 @@ class GraphViT(nn.Module):
 
         output_hat = []
         
-        for t in range(1, state.shape[1]):
+        for t in range(1, T):
+            # states_t: [B, N, F], node_type_t: [B, N, C]
+            states_t    = state[:, t - 1]      # [B, N, F]
+            node_type_t = node_type[:, t - 1]  # [B, N, C]
 
 
-            V, E = self.encoder(mesh_pos, edges, state[:, t - 1], node_type[:, t - 1], mesh_posenc)
+            V, E = self.encoder(mesh_pos, edges, states_t, node_type_t, mesh_posenc)
             W = self.graph_pooling(V, clusters, mesh_posenc, clusters_mask)
 
             # We use batch size 1 so no need to adjust attention mask for multiple simulations
