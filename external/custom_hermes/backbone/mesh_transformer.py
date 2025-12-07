@@ -71,7 +71,7 @@ class GraphViT(nn.Module):
         clusters = 120
         state = data.x
         cluster_labels = data.cluster_labels
-        clusters_center = data.clusters_centers
+        cluster_center = data.clusters_centers
 
         # no cluster mask 
         clusters_mask = torch.ones(cluster_labels.shape[0], 
