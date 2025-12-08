@@ -1,4 +1,4 @@
-# Smoothness Discrepancies in Discrete Dynamics Models, And How to Avoid Them
+# Smoothness Discrepancies in Dynamics Models and How to Avoid Them
 
 From [Edward Berman](https://ebrmn.space/) and [Luisa Li](https://www.luisali.com/). This project was done for [Robin Walters](https://www.robinwalters.com/) CS 7180 Special Topics Class on Geometric Structure in Deep Learning. Our report can be found [here](https://github.com/EdwardBerman/rayleigh_analysis/blob/main/paper/berman_li_cs_7180_report.pdf)
 
