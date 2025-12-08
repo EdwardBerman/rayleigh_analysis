@@ -1,0 +1,4 @@
+name: transformer
+
+net:
+  _target_: external.custom_hermes.backbone.mesh_transformer.GraphViT
