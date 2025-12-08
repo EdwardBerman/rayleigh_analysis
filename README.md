@@ -30,7 +30,8 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 2. Alternatively, we generated sample heat and wave data with default settings (i.e. what is in the submodule) and placed it in `data`
 3. You can run training via `python3 -m external.custom_hermes.train dataset=heat backbone=hermes`, this is also in `shell_scripts/mesh/mesh.sh`. The wandb paths are specified in `external/custom_hermes/conf/train.yaml`
 4. For Hermes, EMAN, and GemCNN, we use the default Checkpoints supplied from the original Hermes paper for evaluation.
-5. Models are evaluated using `shell_scripts/mesh/eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=hermes model_save_path=model_checkpoints/[model pt file]`
+5. For the Mesh Transformer and EGNN models, we have uploaded our own pretrained checkpoints in the `model_checkpoints` folder. You can run yourself using the same procedure as in #3 
+6. Models are evaluated using `shell_scripts/mesh/eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=hermes model_save_path=model_checkpoints/[model pt file]`
 
 ### Long Range Graph Benchmark (Bonus)
 
