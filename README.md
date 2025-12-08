@@ -33,9 +33,3 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 5. For the Mesh Transformer and EGNN models, we have uploaded our own pretrained checkpoints in the `model_checkpoints` folder. You can run yourself using the same procedure as in #3 
 6. Models are evaluated using `shell_scripts/mesh/eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=hermes model_save_path=model_checkpoints/[model pt file]`
 
-### Long Range Graph Benchmark (Bonus)
-
-1. The longe range graph benchmark can be downloaded by running `python3 -m data_preprocessing.long_range_graph_benchmark`
-2. [Optional] Poke around with the datasets. Run `python3 -m data_preprocessing.homophily` to get the homophily distribution of graphs for the node level classification tasks. 
-3. Run peptides with [insert here after done]
-
