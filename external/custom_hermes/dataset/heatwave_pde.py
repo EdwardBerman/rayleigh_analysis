@@ -11,6 +11,35 @@ from torch_geometric.data.separate import separate
 from external.custom_hermes.dataset.clusterize import clusterize
 
 
+def compute_adj_mat(data: Data) -> Data:
+    num_nodes = data.pos.shape[0]
+    data.adj_mat = torch.zeros(num_nodes, num_nodes,
+                               device=data.edge_index.device, dtype=torch.bool)
+    data.adj_mat[data.edge_index[0], data.edge_index[1]] = 1
+    return data
+
+
+def compute_edges_dense(data: Data) -> Data:
+    N = data.pos.size(0)
+    edge_dim = 1
+
+    edges_dense = torch.zeros(1, N, N, edge_dim, device=data.pos.device)
+
+    src, dst = data.edge_index[0], data.edge_index[1]
+
+    rel_pos = data.pos[dst] - data.pos[src]
+    dist2 = (rel_pos ** 2).sum(dim=-1, keepdim=True)
+
+    dist2_mean = dist2.mean()
+    dist2_std = dist2.std() + 1e-8
+    dist2 = (dist2 - dist2_mean) / dist2_std
+
+    edges_dense[0, src, dst] = dist2
+
+    data.edges_dense = edges_dense
+    return data
+
+
 class HeatWavePDEonMesh(InMemoryDataset):
     def __init__(
         self,
@@ -139,7 +168,8 @@ class HeatWavePDEonMesh(InMemoryDataset):
         # Load mesh
         prefix_path = path.rsplit("_", 1)[0]
         plydata = PlyData.read(f"{prefix_path}.ply")
-        face = np.vstack(plydata["face"].data["vertex_indices"]).T.astype(np.float32)
+        face = np.vstack(
+            plydata["face"].data["vertex_indices"]).T.astype(np.float32)
         face = torch.from_numpy(face)
         pos = np.vstack([[v[0], v[1], v[2]] for v in plydata["vertex"]]).astype(
             np.float32
@@ -188,11 +218,15 @@ class HeatWavePDEonMesh(InMemoryDataset):
         assert (data.edge_index < data.pos.shape[0]).all().item()
 
         # Input feature
-        x = data.u[..., current_t_idx - self.input_length : current_t_idx][:, :, None]
+        x = data.u[..., current_t_idx -
+                   self.input_length: current_t_idx][:, :, None]
         # Target
-        data.y = data.u[..., current_t_idx : current_t_idx + self.output_length]
+        data.y = data.u[..., current_t_idx: current_t_idx + self.output_length]
 
         data.x = x
+
+        data = compute_edges_dense(data)
+        data = compute_adj_mat(data)
 
         self._data_list[idx] = copy.copy(data)
 

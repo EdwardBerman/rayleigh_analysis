@@ -1,0 +1,9 @@
+name: EGNN
+
+net:
+  _target_: external.custom_hermes.backbone.egnn.EGNN
+  update_feats: true
+  update_coors: true
+  only_sparse_neighbors: true
+  num_nearest_neighbors: 0
+  dropout: 0.0

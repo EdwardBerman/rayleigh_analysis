@@ -41,6 +41,8 @@ dependencies = [
     "polyscope (>=2.5.0,<3.0.0)",
     "robust-laplacian (>=1.0.0,<2.0.0)",
     "numba (>=0.62.1,<0.63.0)"
+    "pydec @ git+https://github.com/hirani/pydec.git",
+    "egnn-pytorch (>=0.2.8,<0.3.0)"
 ]
 
 [tool.poetry]

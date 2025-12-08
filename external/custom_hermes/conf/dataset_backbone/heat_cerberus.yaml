@@ -3,22 +3,45 @@
 train:
   epochs: 100
   batch_size: 1
-  lr: 3e-2
+  lr: 1e-4
 
 optimizer:
   _target_: torch.optim.Adam
   lr: ${train.lr}
   weight_decay: 1e-5
 
-# params: 40,337
+# params: 40,695
 backbone:
   net:
+    regular_non_lin: true
+    batch_norm: true
+    dropout: 0.0   
+    message_dims:
+      - - ${dataset.in_dim}
+        - 12
+        - 12
+        - 12
+        - 12
+    message_orders:
+      - - 0
+        - 2
+        - 2
+        - 2
+        - 2
+    update_dims:
+      - - 12
+        - 12
+        - 12
+        - ${dataset.out_dim}
+    update_orders:
+      - - 2
+        - 2
+        - 2
+        - 0
+    edge_dims: ${dataset.edge_dim}
+    final_activation: false
     block_dims:
       - ${dataset.in_dim}
-      - 14
-      - 14
-      - 14
       - ${dataset.out_dim}
-    block_orders: [0, 2, 2, 2, 0]
-    final_activation: false
+    block_orders: [0, 0]
     node_batch_size: null
