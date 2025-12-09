@@ -2,7 +2,7 @@
 
 From [Edward Berman](https://ebrmn.space/) and [Luisa Li](https://www.luisali.com/). This project was done for [Robin Walters](https://www.robinwalters.com/) CS 7180 Special Topics Class on Geometric Structure in Deep Learning. Our report can be found [here](https://github.com/EdwardBerman/rayleigh_analysis/blob/main/paper/berman_li_cs_7180_report.pdf)
 
-![Lie Unitary Rayleigh quotient Distribution Timelapse](assets/LieUni_timelapse.gif)
+![Lie Unitary Rayleigh quotient Distribution Timelapse](assets/LieUni_timelapse_loop.gif)
 
 ## Set Up Instructions
 
