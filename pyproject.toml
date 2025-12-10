@@ -1,49 +1,53 @@
-[project]
+[tool.poetry]
 name = "rayleigh-analysis"
 version = "0.1.0"
 description = "Poetry environment for Rayleigh quotient analysis"
 authors = [
-    {name = "Edward Berman",email = "berman.ed@northeastern.edu"},
-    {name = "Luisa Li", email = "li.tao@northeastern.edu"}
+    "Edward Berman <berman.ed@northeastern.edu>",
+    "Luisa Li <li.tao@northeastern.edu>"
 ]
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
-dependencies = [
-    "torch (>=2.8.0,<3.0.0)",
-    "torch-geometric (>=2.6.1,<3.0.0)",
-    "numpy (>=2.3.3,<3.0.0)",
-    "wandb (>=0.22.1,<0.23.0)",
-    "matplotlib (>=3.10.6,<4.0.0)",
-    "tqdm (>=4.67.1,<5.0.0)",
-    "simple-parsing (>=0.1.7,<0.2.0)",
-    "weave (>=0.52.8,<0.53.0)",
-    "yacs (>=0.1.8,<0.2.0)",
-    "pytorch-lightning (>=2.5.5,<3.0.0)",
-    "gymnasium (>=1.2.1,<2.0.0)",
-    "pyvista (>=0.46.3,<0.47.0)",
-    "pyvistaqt (>=0.11.3,<0.12.0)",
-    "hydra-core (>=1.3.2,<2.0.0)",
-    "networkx (>=3.5,<4.0)",
-    "ignite (>=1.1.0,<2.0.0)",
-    "pytorch-ignite (>=0.5,<0.6)",
-    "trimesh (>=4.9.0,<5.0.0)",
-    "plyfile (>=1.1.3,<2.0.0)",
-    "opt-einsum (>=3.4.0,<4.0.0)",
-    "ipython (>=9.6.0,<10.0.0)",
-    "pygsp (>=0.6.1,<0.7.0)",
-    "imageio[ffmpeg] (>=2.37.2,<3.0.0)",
-    "imageio-ffmpeg (>=0.6.0,<0.7.0)",
-    "scipy (>=1.16.3,<2.0.0)",
-    "muon-optimizer @ git+https://github.com/KellerJordan/Muon.git",
-    "scikit-learn (>=1.7.2,<2.0.0)",
-    "nvtx (>=0.2.13,<0.3.0)",
-    "cuda-python (>=13.0.3,<14.0.0)",
-    "polyscope (>=2.5.0,<3.0.0)",
-    "robust-laplacian (>=1.0.0,<2.0.0)",
-    "numba (>=0.62.1,<0.63.0)"
-    "pydec @ git+https://github.com/hirani/pydec.git",
-    "egnn-pytorch (>=0.2.8,<0.3.0)"
-]
+package-mode = false  # optional — you can remove this unless specifically needed
 
-[tool.poetry]
-package-mode = false
+[tool.poetry.dependencies]
+python = ">=3.13,<3.14"
+torch = ">=2.8.0,<3.0.0"
+torch-geometric = ">=2.6.1,<3.0.0"
+numpy = ">=2.3.3,<3.0.0"
+wandb = ">=0.22.1,<0.23.0"
+matplotlib = ">=3.10.6,<4.0.0"
+tqdm = ">=4.67.1,<5.0.0"
+simple-parsing = ">=0.1.7,<0.2.0"
+weave = ">=0.52.8,<0.53.0"
+yacs = ">=0.1.8,<0.2.0"
+pytorch-lightning = ">=2.5.5,<3.0.0"
+gymnasium = ">=1.2.1,<2.0.0"
+pyvista = ">=0.46.3,<0.47.0"
+pyvistaqt = ">=0.11.3,<0.12.0"
+hydra-core = ">=1.3.2,<2.0.0"
+networkx = ">=3.5,<4.0"
+ignite = ">=1.1.0,<2.0.0"
+pytorch-ignite = ">=0.5,<0.6"
+trimesh = ">=4.9.0,<5.0.0"
+plyfile = ">=1.1.3,<2.0.0"
+opt-einsum = ">=3.4.0,<4.0.0"
+ipython = ">=9.6.0,<10.0.0"
+pygsp = ">=0.6.1,<0.7.0"
+imageio = { version = ">=2.37.2,<3.0.0", extras = ["ffmpeg"] }
+imageio-ffmpeg = ">=0.6.0,<0.7.0"
+scipy = ">=1.16.3,<2.0.0"
+scikit-learn = ">=1.7.2,<2.0.0"
+nvtx = ">=0.2.13,<0.3.0"
+cuda-python = ">=13.0.3,<14.0.0"
+polyscope = ">=2.5.0,<3.0.0"
+robust-laplacian = ">=1.0.0,<2.0.0"
+numba = ">=0.62.1,<0.63.0"
+egnn-pytorch = ">=0.2.8,<0.3.0"
+
+# Git dependencies require table format
+muon-optimizer = { git = "https://github.com/KellerJordan/Muon.git" }
+pydec = { git = "https://github.com/hirani/pydec.git" }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
