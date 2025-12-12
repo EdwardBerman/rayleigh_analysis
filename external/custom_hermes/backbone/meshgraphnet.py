@@ -65,6 +65,8 @@ class MeshGraphNet(nn.Module):
 
     def forward(self, data):
         x = data.x.squeeze(-1)
+        # print data 
+        print(data)
 
         pos = data.pos                      # [N, 3]
         src, dst = data.edge_index          # [E], [E]
