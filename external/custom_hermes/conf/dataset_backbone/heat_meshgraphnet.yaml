@@ -22,7 +22,7 @@ model:
   node_enc_out_dim: 32
   node_enc_hid_dim: 32
   node_enc_num_layers: 2
-  edge_enc_in_dim: ${dataset.edge_dim}
+  edge_enc_in_dim: 7
   edge_enc_out_dim: 32
   edge_enc_hid_dim: 32
   edge_enc_num_layers: 2
