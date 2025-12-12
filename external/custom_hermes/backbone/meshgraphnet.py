@@ -3,6 +3,7 @@ Reference: https://github.com/CCSI-Toolset/MGN/blob/main/GNN/GNNComponents/GNNCo
 
 Modified by Hermes authors
 """
+import torch
 from torch import nn
 
 from external.custom_hermes.nn.meshgraphnet import MLP, GraphProcessor
