@@ -65,6 +65,10 @@ class MeshGraphNet(nn.Module):
 
     def forward(self, data):
         x = data.x.squeeze(-1)
+        
+        if not hasattr(self, 'printed_keys'):
+            print("Data keys:", data.keys)
+            self.printed_keys = True
 
         # message passing
         x, _ = self.graph_processor(x, data.edge_index, data.edge_attr)
