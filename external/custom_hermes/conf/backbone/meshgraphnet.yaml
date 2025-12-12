@@ -1,0 +1,4 @@
+name: MeshGraphNet
+
+net:
+  _target_: external.custom_hermes.backbone.meshgraphnet.MeshGraphNet
