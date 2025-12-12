@@ -68,7 +68,28 @@ class MeshGraphNet(nn.Module):
         
         if not hasattr(self, 'printed_keys'):
             print("Data keys:", data.keys)
-            self.printed_keys = True
+ 
+        normal = data.normal        # [N, 3]
+        pos = data.pos              # [N, 3]
+
+        src, dst = data.edge_index    # [2, E]
+
+        # Source / destination normals
+        n_src = normal[src]         # [E, 3]
+        n_dst = normal[dst]         # [E, 3]
+
+        # Squared distance between positions
+        diff = pos[src] - pos[dst]
+        sqdist = (diff * diff).sum(dim=-1, keepdim=True)  # [E, 1]
+
+        # Concatenate: [n_src, n_dst, sqdist] -> [E, 7]
+        edge_attr = torch.cat([n_src, n_dst, sqdist], dim=-1)
+
+        # Ensure same device/dtype as node features
+        edge_attr = edge_attr.to(data.x.device, dtype=data.x.dtype)
+
+        data.edge_attr = edge_attr
+        # ---------------------------------------------------           self.printed_keys = True
 
         # message passing
         x, _ = self.graph_processor(x, data.edge_index, data.edge_attr)
