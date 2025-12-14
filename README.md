@@ -40,6 +40,8 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 0. The old submodule is the reason why there are so many different frameworks in our poetry environment. Don't blame me, [Blame Brett](https://open.spotify.com/track/6twjuBZfRJIZnoHrghzWLk?si=0af01ff951cb478b)
 1. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda `
 2. `export WANDB_MODE=online` for WANDB functionality to work
-3. To actually run training, you will enter `python -m fourierflow.commands train --trial 0 experiments/airfoil/geo-fno/4_layers/config.yaml`
+3. Instructions on loading the data are in `external/fourierflow`
+4. To actually run training, you will go into the `external/fourierflow` directory and enter `python -m fourierflow.commands train --trial 0 experiments/airfoil/geo-fno/4_layers/config.yaml`
+5. To visualize results run `python -m fourierflow.commands sample experiments/elasticity/geo-fno/4_layers/config.yaml` in the same directory as above
 
 
