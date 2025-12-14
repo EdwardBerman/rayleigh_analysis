@@ -35,3 +35,10 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 5. For the Mesh Transformer and EGNN models, we have uploaded our own pretrained checkpoints in the `model_checkpoints` folder. You can run yourself using the same procedure as in #3 
 6. Models are evaluated using `shell_scripts/mesh/eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=hermes model_save_path=model_checkpoints/[model pt file]`
 
+### Operators on Meshes and Grids 
+
+0. The old submodule is the reason why there are so many different frameworks in our poetry environment.
+1. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda `
+2. To actually run training, you will enter `python -m fourierflow.commands train --trial 0 experiments/airfoil/geo-fno/4_layers/config.yaml`
+
+
