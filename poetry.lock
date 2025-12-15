@@ -1110,6 +1110,20 @@ docs = ["pydoctor (>=25.4.0)"]
 test = ["pytest"]
 
 [[package]]
+name = "dotenv"
+version = "0.9.9"
+description = "Deprecated package"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "dotenv-0.9.9-py2.py3-none-any.whl", hash = "sha256:29cf74a087b31dafdb5a446b6d7e11cbce8ed2741540e2339c69fbef92c94ce9"},
+]
+
+[package.dependencies]
+python-dotenv = "*"
+
+[[package]]
 name = "egnn-pytorch"
 version = "0.2.8"
 description = "E(n)-Equivariant Graph Neural Network - Pytorch"
@@ -7708,4 +7722,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "5ae08edb26ae9bea3249729861be6902206abdcd6490ced1f05d75e1ea166caa"
+content-hash = "8973371f5605c768510159a05f398b5e8d241ec22218aaf89cda4770e42bcf0f"
