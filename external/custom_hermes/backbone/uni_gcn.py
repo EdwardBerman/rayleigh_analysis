@@ -52,7 +52,7 @@ class Uni(nn.Module):
                                            activation  =  torch.nn.Identity)
             )
 
-        model_ortho = OrthoStack(self.blocks)
+        self.model_ortho = OrthoStack(self.blocks)
 
 
     def forward(self, data):
@@ -66,7 +66,7 @@ class Uni(nn.Module):
             non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
             x[~non_isol_mask] = 0.0
 
-        x = model_ortho(x, data.edge_index)
+        x = self.model_ortho(x, data.edge_index)
 
 
         return x[:, :, None]
