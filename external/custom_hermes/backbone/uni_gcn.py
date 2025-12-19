@@ -40,8 +40,7 @@ class Uni(nn.Module):
                                            global_bias  =  False,
                                            T  =  10,
                                            use_hermitian  =  True,
-                                           activation  =  torch.nn.Identity,
-                                           add_self_loops=True)
+                                           activation  =  torch.nn.Identity)
             )
 
 
@@ -49,12 +48,12 @@ class Uni(nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-        x = data.x[:, 3:4]
-
         # Setting the features of isolated nodes to 0
         if self.null_isolated:
             non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
             x[~non_isol_mask] = 0.0
+        
+        x = data.x[:, 3:4]
 
         data.x = x
 
