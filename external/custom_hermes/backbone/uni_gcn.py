@@ -5,15 +5,6 @@ import torch
 
 from external.ortho_gcn import OrthogonalGCNConvLayer
 
-class OrthoStack(nn.Module):
-    def __init__(self, layers: list[nn.Module]):
-        super().__init__()
-        self.layers = nn.ModuleList(layers)
-
-    def forward(self, x, edge_index):
-        for layer in self.layers:
-            x = layer(x, edge_index)
-        return x
 
 class Uni(nn.Module):
     def __init__(
@@ -52,8 +43,6 @@ class Uni(nn.Module):
                                            activation  =  torch.nn.Identity)
             )
 
-        self.model_ortho = OrthoStack(self.blocks)
-
 
     def forward(self, data):
         for transform in self.transforms:
@@ -66,7 +55,8 @@ class Uni(nn.Module):
             non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
             x[~non_isol_mask] = 0.0
 
-        x = self.model_ortho(x, data.edge_index)
-
+        for block in self.blocks:
+            x = block(data)
+            data.x = x
 
         return x[:, :, None]
