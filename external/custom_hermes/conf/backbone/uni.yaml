@@ -1,0 +1,8 @@
+name: Uni
+
+net:
+  _target_: external.custom_hermes.backbone.uni_gcn.Uni
+  add_self_loops: false
+  null_isolated: false
+  batch_norm: false
+  dropout: false

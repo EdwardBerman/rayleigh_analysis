@@ -1,0 +1,15 @@
+# @package _global_
+
+train:
+  epochs: 100
+  batch_size: 1
+  lr: 3e-4
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: ${train.lr}
+  weight_decay: 1e-5
+
+backbone:
+  net:
+    final_activation: false
