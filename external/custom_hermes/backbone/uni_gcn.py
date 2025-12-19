@@ -5,6 +5,8 @@ import torch
 
 from external.ortho_gcn import OrthogonalGCNConvLayer
 
+from torch_geometric.nn import GCNConv
+
 
 class Uni(nn.Module):
     def __init__(
@@ -32,16 +34,34 @@ class Uni(nn.Module):
         self.blocks = nn.ModuleList()
 
         for i in range(12):
-            self.blocks.append(
-                    OrthogonalGCNConvLayer(1,
-                                           1,
-                                           dropout =  dropout,
-                                           residual  =  False,
-                                           global_bias  =  False,
-                                           T  =  10,
-                                           use_hermitian  =  True,
-                                           activation  =  torch.nn.Identity)
-            )
+            if i == 0:
+                self.blocks.append(
+                        OrthogonalGCNConvLayer(1,
+                                               10,
+                                               dropout =  dropout,
+                                               residual  =  True,
+                                               global_bias  =  True,
+                                               T  =  10,
+                                               use_hermitian  =  False,
+                                               activation  =  torch.nn.ReLU)
+                
+                )
+            elif i == 11:
+                self.blocks.append(
+                        GCNConv(10, 1)
+                )
+            else:
+                self.blocks.append(
+                        OrthogonalGCNConvLayer(10,
+                                               10,
+                                               dropout =  dropout,
+                                               residual  =  False,
+                                               global_bias  =  False,
+                                               T  =  10,
+                                               use_hermitian  =  True,
+                                               activation  =  torch.nn.Identity)
+                
+                )
 
 
     def forward(self, data):
