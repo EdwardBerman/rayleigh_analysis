@@ -33,14 +33,14 @@ class Uni(nn.Module):
 
         for i in range(12):
             self.blocks.append(
-                    uni_layer = OrthogonalGCNConvLayer(1,
-                                                       1, 
-                                                       dropout =  dropout,
-                                                       residual  =  False, 		
-                                                       global_bias  =  False,
-                                                       T  =  10,
-                                                       use_hermitian  =  True,
-                                                       activation  =  torch.nn.Identity)
+                    OrthogonalGCNConvLayer(1,
+                                           1,
+                                           dropout =  dropout,
+                                           residual  =  False,
+                                           global_bias  =  False,
+                                           T  =  10,
+                                           use_hermitian  =  True,
+                                           activation  =  torch.nn.Identity)
             )
 
 
