@@ -36,15 +36,7 @@ class Uni(nn.Module):
         for i in range(12):
             if i == 0:
                 self.blocks.append(
-                        OrthogonalGCNConvLayer(1,
-                                               64,
-                                               dropout =  dropout,
-                                               residual  =  True,
-                                               global_bias  =  True,
-                                               T  =  10,
-                                               use_hermitian  =  False,
-                                               activation  =  torch.nn.ReLU)
-                
+                        GCNConv(1, 64)
                 )
             elif i == 11:
                 self.blocks.append(
