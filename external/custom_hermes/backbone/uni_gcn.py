@@ -55,8 +55,10 @@ class Uni(nn.Module):
             non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
             x[~non_isol_mask] = 0.0
 
+        data.x = x
+
         for block in self.blocks:
-            x = block(data)
-            data.x = x
+            data = block(data)
+            x = data.x
 
         return x[:, :, None]
