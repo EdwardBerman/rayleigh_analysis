@@ -36,7 +36,7 @@ class Uni(nn.Module):
         for i in range(12):
             if i == 0:
                 self.blocks.append(
-                        OrthogonalGCNConvLayer(5,
+                        OrthogonalGCNConvLayer(1,
                                                64,
                                                dropout =  dropout,
                                                residual  =  True,
