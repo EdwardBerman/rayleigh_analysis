@@ -36,8 +36,8 @@ class Uni(nn.Module):
         for i in range(12):
             if i == 0:
                 self.blocks.append(
-                        OrthogonalGCNConvLayer(1,
-                                               10,
+                        OrthogonalGCNConvLayer(5,
+                                               64,
                                                dropout =  dropout,
                                                residual  =  True,
                                                global_bias  =  True,
@@ -48,12 +48,12 @@ class Uni(nn.Module):
                 )
             elif i == 11:
                 self.blocks.append(
-                        GCNConv(10, 1)
+                        GCNConv(64, 1)
                 )
             else:
                 self.blocks.append(
-                        OrthogonalGCNConvLayer(10,
-                                               10,
+                        OrthogonalGCNConvLayer(64,
+                                               64,
                                                dropout =  dropout,
                                                residual  =  False,
                                                global_bias  =  False,
@@ -72,13 +72,16 @@ class Uni(nn.Module):
         if self.null_isolated:
             non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
             x[~non_isol_mask] = 0.0
-        
-        x = data.x[:, 3:4]
 
-        data.x = x
-
-        for block in self.blocks:
-            data = block(data)
-            x = data.x
+        x = data.x
+        edge_index = data.edge_index
+    
+        for i, block in enumerate(self.blocks):
+            if i == 11:  # Last layer is GCNConv
+                x = block(x, edge_index)
+            else:  # OrthogonalGCNConvLayer
+                data.x = x
+                data = block(data)
+                x = data.x
 
         return x[:, :, None]
