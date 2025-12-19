@@ -2,7 +2,6 @@ from torch import nn
 from torch_geometric.utils import remove_isolated_nodes
 
 import torch
-from torch_geometric.data import Data
 
 from external.ortho_gcn import OrthogonalGCNConvLayer
 
@@ -50,21 +49,16 @@ class Uni(nn.Module):
             data = transform(data)
 
         # Setting the features of isolated nodes to 0
-        if self.null_isolated:
-            non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
-            x[~non_isol_mask] = 0.0
+        #if self.null_isolated:
+            #non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
+            #x[~non_isol_mask] = 0.0
         
-        x = data.x[:, 3:4].clone()
+        x = data.x[:, 3:4]
 
-        modified_data = Data(
-            x=x,
-            edge_index=data.edge_index,
-            edge_attr=data.edge_attr if hasattr(data, 'edge_attr') else None,
-            batch=data.batch if hasattr(data, 'batch') else None
-        )
+        data.x = x
 
         for block in self.blocks:
-            modified_data = block(modified_data)
-            x = modified_data.x
+            data = block(data)
+            x = data.x
 
         return x[:, :, None]
