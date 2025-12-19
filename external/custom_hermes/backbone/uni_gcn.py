@@ -71,7 +71,7 @@ class Uni(nn.Module):
         edge_index = data.edge_index
     
         for i, block in enumerate(self.blocks):
-            if i == 11:  # Last layer is GCNConv
+            if i == 0 or i == 11:  # Last layer is GCNConv
                 x = block(x, edge_index)
             else:  # OrthogonalGCNConvLayer
                 data.x = x
