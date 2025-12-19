@@ -1,6 +1,8 @@
 from torch import nn
 from torch_geometric.utils import remove_isolated_nodes
 
+import torch
+
 from external.ortho_gcn import OrthogonalGCNConvLayer
 
 
