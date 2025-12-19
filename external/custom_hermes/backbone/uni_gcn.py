@@ -40,7 +40,8 @@ class Uni(nn.Module):
                                            global_bias  =  False,
                                            T  =  10,
                                            use_hermitian  =  True,
-                                           activation  =  torch.nn.Identity)
+                                           activation  =  torch.nn.Identity,
+                                           add_self_loops=False)
             )
 
 
