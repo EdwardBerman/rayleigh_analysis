@@ -41,7 +41,7 @@ class Uni(nn.Module):
                                            T  =  10,
                                            use_hermitian  =  True,
                                            activation  =  torch.nn.Identity,
-                                           add_self_loops=False)
+                                           add_self_loops=True)
             )
 
 
