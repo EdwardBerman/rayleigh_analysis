@@ -48,7 +48,7 @@ class Uni(nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-        x = data.x.squeeze(-1)
+        x = data.x[:, -1:]
 
         # Setting the features of isolated nodes to 0
         if self.null_isolated:
