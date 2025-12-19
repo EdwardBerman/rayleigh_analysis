@@ -29,7 +29,7 @@ class Uni(nn.Module):
 
         self.blocks = nn.ModuleList()
 
-        for i in range(len(12)):
+        for i in range(12):
             self.blocks.append(
                     uni_layer = OrthogonalGCNConvLayer(1,
                                                        1, 
