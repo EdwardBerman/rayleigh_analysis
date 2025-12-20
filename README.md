@@ -47,7 +47,8 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 ### Weather Bench
 
 1. Enter the `rayleigh_analysis` directory and then `mkdir data/weatherbench`
-2. Download data with `python3 -m weatherbench.download_era5_data`
-3. Generate mesh with  `python3 -m weatherbench.earth_mesh`
+2. Download ERAS5 with `python3 -m weatherbench.download_era5s`
+3. Download Climatology data with `python3 -m weatherbench.download_climatology`
+4. Generate Earth mesh with  `python3 -m weatherbench.construct_earth_mesh`
 
 
