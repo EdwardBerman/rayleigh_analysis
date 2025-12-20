@@ -1,16 +1,8 @@
-import copy
-import os.path as osp
-from typing import Callable, Optional
-
 import numpy as np
 import pyvista as pv
 import torch
 import xarray as xr
-from plyfile import PlyData
 from torch_geometric.data import Data, Dataset
-from torch_geometric.data.separate import separate
-
-from external.custom_hermes.dataset.clusterize import clusterize
 
 
 def mesh_to_graph(mesh_path: str):
