@@ -14,7 +14,7 @@ optimizer:
 backbone:
   net:
     state_size: 1
-    w_size: 128
+    w_size: 64
     n_attention: 4
     nb_gn: 4
     n_heads: 1
