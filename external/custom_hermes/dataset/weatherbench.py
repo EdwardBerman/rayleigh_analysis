@@ -1,8 +1,16 @@
+import copy
+import os.path as osp
+from typing import Callable, Optional
+
 import numpy as np
 import pyvista as pv
 import torch
 import xarray as xr
-from torch_geometric.data import Data, Dataset
+from plyfile import PlyData
+from torch_geometric.data import Data, Dataset, InMemoryDataset
+from torch_geometric.data.separate import separate
+
+from external.custom_hermes.dataset.clusterize import clusterize
 
 
 def mesh_to_graph(mesh_path: str):
@@ -26,24 +34,37 @@ def mesh_to_graph(mesh_path: str):
 
 class WeatherBench(Dataset):
 
-    def __init__(self, eras5_path: str, mesh_path: str):
+    def __init__(self, eras5_path: str, mesh_path: str, split: str, pre_transform: Optional[Callable] = None):
 
-        super().__init__()
+        super().__init__(None, None, pre_transform)
+
+        assert split in [
+            'train', 'test'], "Split must be one of train or test."
 
         self.eras5_path = eras5_path
         self.mesh_path = mesh_path
+        self.split = split
+        self.pre_transform = pre_transform
 
         # note that the pos, face and edge_index are *shared* across all data objects
         self.pos, self.face, self.edge_index, self.x = self._read_data()
 
     def _read_data(self):
 
+        pos, face, edge_index = mesh_to_graph(self.mesh_path)
+
         era5 = xr.open_zarr(self.eras5_path)
 
-        z500 = era5["geopotential"].sel(level=500)
-        t850 = era5["temperature"].sel(level=850)
+        z500 = era5["geopotential"]
+        t850 = era5["temperature"]
 
-        pos, face, edge_index = mesh_to_graph(self.mesh_path)
+        if self.split == "train":
+            time = slice("2012-01-01", "2018-12-31")
+        elif self.split == "test":
+            time = slice("2019-01-01", "2022-12-31")
+            
+        z500 = z500.sel(level=500, time=time)
+        t850 = t850.sel(level=850, time=time)
 
         z500_nodes = torch.from_numpy(z500.values.reshape(
             z500.shape[0], -1)).float()  # (time, num_nodes)
@@ -63,7 +84,13 @@ class WeatherBench(Dataset):
         """Builds a Data object on the fly with the shared attributes and the specific time step."""
         assert len(self) > idx + \
             1, "Cannot obtain the next step of the last step."
-        return Data(x=self.x[idx], y=self.x[idx+1], pos=self.pos, face=self.face, edge_index=self.edge_index)
+        data = Data(x=self.x[idx], y=self.x[idx+1], pos=self.pos,
+                    face=self.face, edge_index=self.edge_index)
+
+        # note that this is technically post-transform, but for memory efficiency and since we are doing data creation on the fly, the pretransform is applied here:
+        if self.pre_transform is not None:
+            data = self.pre_transform(data)
+        return data
 
 
 if __name__ == "__main__":
@@ -71,4 +98,7 @@ if __name__ == "__main__":
     era5_path = "./data/weatherbench/eras5"
     mesh_path = "./data/weatherbench/earth_mesh.vtp"
 
-    dataset = WeatherBench(era5_path, mesh_path)
+    train = WeatherBench(era5_path, mesh_path, split="train")
+    test = WeatherBench(era5_path, mesh_path, split="test")
+
+    breakpoint()

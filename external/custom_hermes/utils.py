@@ -65,6 +65,9 @@ def create_dataset_loaders(cfg, return_datasets=False):
     elif cfg.dataset.name.startswith("Objects"):
         pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test"]
+    elif cfg.dataset.name.startswith("weatherbench"):
+        pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        splits = ["train", "test"] 
     else:
         raise NotImplementedError(f"Incorrect cfg.dataset.name {cfg.dataset.name}")
 
