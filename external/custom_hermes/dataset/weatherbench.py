@@ -26,9 +26,9 @@ def mesh_to_graph(mesh_path: str):
 
 class WeatherBench(Dataset):
 
-    def __init__(self,
-                 eras5_path: str,
-                 mesh_path: str):
+    def __init__(self, eras5_path: str, mesh_path: str, transform=None, pre_transform=None):
+
+        super().__init__(None, transform, pre_transform)
 
         self.eras5_path = eras5_path
         self.mesh_path = mesh_path
@@ -38,7 +38,7 @@ class WeatherBench(Dataset):
 
     def _read_data(self):
 
-        era5 = xr.open_zarr(self.era5_path)
+        era5 = xr.open_zarr(self.eras5_path)
 
         z500 = era5["geopotential"].sel(level=500)
         t850 = era5["temperature"].sel(level=850)
@@ -70,3 +70,5 @@ if __name__ == "__main__":
 
     era5_path = "./data/weatherbench/eras5"
     mesh_path = "./data/weatherbench/earth_mesh.vtp"
+
+    dataset = WeatherBench(era5_path, mesh_path)
