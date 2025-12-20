@@ -26,9 +26,9 @@ def mesh_to_graph(mesh_path: str):
 
 class WeatherBench(Dataset):
 
-    def __init__(self, eras5_path: str, mesh_path: str, transform=None, pre_transform=None):
+    def __init__(self, eras5_path: str, mesh_path: str):
 
-        super().__init__(None, transform, pre_transform)
+        super().__init__()
 
         self.eras5_path = eras5_path
         self.mesh_path = mesh_path
