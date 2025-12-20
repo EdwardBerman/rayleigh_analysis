@@ -25,7 +25,7 @@ class MLP(nn.Module):
 
 
 class GNN(nn.Module):
-    def __init__(self, n_hidden=2, node_size=32, edge_size=32, output_size=None, layer_norm=False):
+    def __init__(self, n_hidden=2, node_size=128, edge_size=128, output_size=None, layer_norm=False):
         super(GNN, self).__init__()
         output_size = output_size or node_size
         self.f_edge = MLP(input_size=edge_size + node_size * 2, n_hidden=n_hidden, layer_norm=layer_norm,
