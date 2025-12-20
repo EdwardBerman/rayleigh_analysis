@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --time=07:59:59
-#SBATCH --job-name=[h200train]
+#SBATCH --job-name=[wave]
 #SBATCH --mem=32GB
 #SBATCH --ntasks=1
 #SBATCH --partition=gpu
