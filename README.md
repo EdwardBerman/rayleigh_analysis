@@ -39,7 +39,7 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 ### Operators on Meshes and Grids 
 
 0. The old submodule is the reason why there are so many different frameworks in our poetry environment. Don't blame me, [Blame Brett](https://open.spotify.com/track/6twjuBZfRJIZnoHrghzWLk?si=0af01ff951cb478b). To be fair, I am sure the authors of [this repository](https://github.com/alasdairtran/fourierflow/tree/main) are likely also blaming Brett.
-1. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda `
+1. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda ; poetry run pip install gpytoolbox`
 2. `export WANDB_MODE=online` for WANDB functionality to work
 3. Instructions on loading the data are in `external/fourierflow`
 4. To actually run training, you will go into the `external/fourierflow` directory and enter `python -m fourierflow.commands train --trial 0 experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/4_layers/config.yaml`
