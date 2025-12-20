@@ -50,7 +50,7 @@ class GNN(nn.Module):
 
 
 class GraphViT(nn.Module):
-    def __init__(self, state_size=1, w_size=64, n_attention=2, nb_gn=2, n_heads=1):
+    def __init__(self, state_size=1, w_size=64, n_attention=1, nb_gn=1, n_heads=1):
         super(GraphViT, self).__init__()
         pos_start = -3
         pos_length = 8
