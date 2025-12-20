@@ -62,7 +62,7 @@ class WeatherBench(Dataset):
             time = slice("2012-01-01", "2018-12-31")
         elif self.split == "test":
             time = slice("2019-01-01", "2022-12-31")
-            
+
         z500 = z500.sel(level=500, time=time)
         t850 = t850.sel(level=850, time=time)
 
