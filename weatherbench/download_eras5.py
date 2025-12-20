@@ -18,7 +18,7 @@ ds_subset = (
     ds[["geopotential", "temperature"]]
     .sel(
         level=[500, 850],
-        time=slice("2018-01-01", "2022-12-31"),
+        time=slice("2012-01-01", "2022-12-31"),
     )
 )
 
