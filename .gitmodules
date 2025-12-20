@@ -4,3 +4,6 @@
 [submodule "external/fast_flops"]
 	path = external/fast_flops
 	url = https://github.com/mitkotak/fast_flops.git
+[submodule "external/fourierflow"]
+	path = external/fourierflow
+	url = https://github.com/EdwardBerman/fourierflow.git
