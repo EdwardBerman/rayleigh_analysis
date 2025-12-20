@@ -17,4 +17,4 @@ eval "$(poetry env activate)"
 
 HYDRA_FULL_ERROR=1
 
-python3 -m external.custom_hermes.train dataset=heat backbone=transformer
+python3 -m external.custom_hermes.train dataset=wave backbone=transformer
