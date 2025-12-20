@@ -6,7 +6,7 @@ era5_path = (
     "1959-2023_01_10-6h-240x121_equiangular_with_poles_conservative.zarr"
 )
 
-out_path = "data/weatherbench/era5_t850_z500_2018_2022.zarr"
+out_path = "data/weatherbench/eras5"
 
 ds = xr.open_zarr(
     era5_path,
