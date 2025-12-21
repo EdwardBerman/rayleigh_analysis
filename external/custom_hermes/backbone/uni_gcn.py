@@ -64,7 +64,12 @@ class Uni(nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
+        print("data.x shape:", data.x.shape)
+
         x = data.x.squeeze(-1)
+
+        print("x shape:", x.shape)
+        breakpoint()
 
         with torch.no_grad():
             pos, face = data.pos.cpu(), data.face.cpu()
