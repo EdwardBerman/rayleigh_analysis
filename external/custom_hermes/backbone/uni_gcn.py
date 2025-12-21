@@ -37,26 +37,17 @@ class Uni(nn.Module):
         self.blocks = nn.ModuleList()
 
         for i in range(12):
-            if i == 0:
-                self.blocks.append(
-                        GCNConv(5, 64, add_self_loops=add_self_loops)
-                )
-            elif i == 11:
-                self.blocks.append(
-                        GCNConv(64, 5, add_self_loops=add_self_loops)
-                )
-            else:
-                self.blocks.append(
-                        OrthogonalGCNConvLayer(64,
-                                               64,
-                                               dropout =  dropout,
-                                               residual  =  False,
-                                               global_bias  =  False,
-                                               T  =  10,
-                                               use_hermitian  =  True,
-                                               activation  =  torch.nn.Identity)
-                
-                )
+            self.blocks.append(
+                    OrthogonalGCNConvLayer(5,
+                                           5,
+                                           dropout =  dropout,
+                                           residual  =  False,
+                                           global_bias  =  False,
+                                           T  =  10,
+                                           use_hermitian  =  True,
+                                           activation  =  torch.nn.Identity)
+            
+            )
 
 
 
@@ -117,13 +108,8 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
     
         for i, block in enumerate(self.blocks):
-            if i == 0:  # Last layer is GCNConv
-                x = block(x, edge_index, edge_weight)
-            elif i == 11:
-                x = block(x, edge_index, edge_weight)
-            else:  # OrthogonalGCNConvLayer
-                input_data_obj.x = x
-                input_data_obj = block(input_data_obj)
-                x = input_data_obj.x
+            input_data_obj.x = x
+            input_data_obj = block(input_data_obj)
+            x = input_data_obj.x
 
         return x[:, :, None]
