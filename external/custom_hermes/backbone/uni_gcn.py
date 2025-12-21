@@ -64,8 +64,8 @@ class Uni(nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-
-        x = data.x.squeeze(-1)
+        x3 = data.x
+        x = x3.squeeze(-1)
 
         with torch.no_grad():
             pos, face = data.pos.cpu(), data.face.cpu()
@@ -122,4 +122,4 @@ class Uni(nn.Module):
                 data = block(data)
                 x = data.x
 
-        return x[:, :, None]
+        return x
