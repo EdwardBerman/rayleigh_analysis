@@ -64,12 +64,8 @@ class Uni(nn.Module):
         for transform in self.transforms:
             data = transform(data)
 
-        print("data.x shape:", data.x.shape)
 
         x = data.x.squeeze(-1)
-
-        print("x shape:", x.shape)
-        breakpoint()
 
         with torch.no_grad():
             pos, face = data.pos.cpu(), data.face.cpu()
@@ -114,7 +110,7 @@ class Uni(nn.Module):
 
             #breakpoint()
 
-        x = data.x
+        data.x = x
         data.edge_index = edge_index
         data.edge_weight = edge_weight
     
