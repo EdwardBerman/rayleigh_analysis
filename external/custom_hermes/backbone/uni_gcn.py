@@ -81,6 +81,11 @@ class Uni(nn.Module):
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
                 x.device).to(x.dtype)
 
+            # print number of negatives on the off diagonals, also num nams 
+            print("Num negatives in edge weights:", (edge_weights < 0).sum().item())
+            print("Num NaNs in edge weights:", torch.isnan(edge_weights).sum().item())
+            breakpoint()
+
         x = data.x
         edge_index = weighted_edge_index 
         edge_weight = edge_weights
