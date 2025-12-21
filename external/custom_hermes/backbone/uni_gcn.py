@@ -126,8 +126,4 @@ class Uni(nn.Module):
                 input_data_obj = block(input_data_obj)
                 x = input_data_obj.x
 
-        print("x after model:", x.shape)
-        print("x modifided shape", x[:, :, None].shape)
-        breakpoint()
-
         return x[:, :, None]
