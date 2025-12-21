@@ -87,7 +87,7 @@ class WeatherBench(Dataset):
 
         data.x = self.x[idx]
         data.y = self.x[idx + 1].squeeze(-1)
-        
+                
         return data
 
 
@@ -98,5 +98,3 @@ if __name__ == "__main__":
 
     train = WeatherBench(era5_path, mesh_path, split="train")
     test = WeatherBench(era5_path, mesh_path, split="test")
-
-    breakpoint()
