@@ -110,8 +110,6 @@ class Uni(nn.Module):
             #breakpoint()
 
         x = data.x
-        edge_index = weighted_edge_index 
-        edge_weight = edge_weights
         data.edge_index = edge_index
         data.edge_weight = edge_weight
     
