@@ -7,6 +7,7 @@ from external.ortho_gcn import OrthogonalGCNConvLayer
 
 from torch_geometric.nn import GCNConv
 
+import robust_laplacian
 
 class Uni(nn.Module):
     def __init__(
@@ -56,23 +57,39 @@ class Uni(nn.Module):
                 )
 
 
+
     def forward(self, data):
         for transform in self.transforms:
             data = transform(data)
 
         x = data.x.squeeze(-1)
 
-        # Setting the features of isolated nodes to 0
-        if self.null_isolated:
-            non_isol_mask = remove_isolated_nodes(data.edge_index)[-1]
-            x[~non_isol_mask] = 0.0
+        with @torch.no_grad():
+            pos, face = data.pos.cpu(), data.face.cpu()
+            L, M = robust_laplacian.mesh_laplacian(
+                pos.cpu().numpy(), face.T.cpu().numpy())
+            L_np = L.toarray()
+            L_torch = torch.from_numpy(L_np).to(x.device)
+            L_torch = -L_torch
+
+            L_offdiag = L_torch.clone()
+            L_offdiag.fill_diagonal_(0)
+            A_M = L_offdiag
+
+            weighted_edge_index = A_M.nonzero(
+                as_tuple=False).t().long().to(values.device)
+            edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
+                values.device).to(values.dtype)
 
         x = data.x
-        edge_index = data.edge_index
+        edge_index = weighted_edge_index 
+        edge_weight = edge_weights
+        data.edge_index = edge_index
+        data.edge_weight = edge_weight
     
         for i, block in enumerate(self.blocks):
             if i == 0 or i == 11:  # Last layer is GCNConv
-                x = block(x, edge_index)
+                x = block(x, edge_index, edge_weight)
             else:  # OrthogonalGCNConvLayer
                 data.x = x
                 data = block(data)
