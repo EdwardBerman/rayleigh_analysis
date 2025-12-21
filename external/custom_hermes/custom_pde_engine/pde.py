@@ -52,6 +52,11 @@ class PDEEngine:
             for i in range(yy.shape[1]):
                 y = yy[..., i].unsqueeze(-1)
                 y_pred = model(x)
+                print("y_pred and y shape")
+                print(y_pred.shape, y.shape)
+                print("x.x shape before update")
+                print(x.x.shape)
+                breakpoint()
                 x.x = torch.cat([x.x[:, y_pred.shape[1] :, 0], y_pred], 1)[:, :, None]
                 edges = x.edge_index
                 loss += loss_fn(y_pred, y, edges)
