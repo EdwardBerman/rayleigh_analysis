@@ -43,7 +43,7 @@ class Uni(nn.Module):
                 )
             elif i == 11:
                 self.blocks.append(
-                        GCNConv(64, 1, add_self_loops=add_self_loops)
+                        GCNConv(64, 5, add_self_loops=add_self_loops)
                 )
             else:
                 self.blocks.append(
@@ -110,19 +110,24 @@ class Uni(nn.Module):
 
             #breakpoint()
 
-        data.x = x
-        data.edge_index = edge_index
-        data.edge_weight = edge_weight
+        input_data_obj = data.clone()
+
+        input_data_obj.x = x
+        input_data_obj.edge_index = edge_index
+        input_data_obj.edge_weight = edge_weight
     
         for i, block in enumerate(self.blocks):
             if i == 0:  # Last layer is GCNConv
                 x = block(x, edge_index, edge_weight)
             elif i == 11:
                 x = block(x, edge_index, edge_weight)
-                data.x = x
             else:  # OrthogonalGCNConvLayer
-                data.x = x
-                data = block(data)
-                x = data.x
+                input_data_obj.x = x
+                input_data_obj = block(input_data_obj)
+                x = input_data_obj.x
+
+        print("x after model:", x.shape)
+        print("x modifided shape", x[:, :, None].shape)
+        breakpoint()
 
         return x[:, :, None]
