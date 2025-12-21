@@ -69,11 +69,8 @@ class Uni(nn.Module):
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(
                 pos.cpu().numpy(), face.T.cpu().numpy())
-            L_np = L.toarray()
-            L_torch = torch.from_numpy(L_np).to(x.device)
-            L_torch = -L_torch
+            L = L.tocoo()
 
-            L = L_torch.tocoo()
             row = torch.from_numpy(L.row).long().to(data.x.device)
             col = torch.from_numpy(L.col).long().to(data.x.device)
             val = torch.from_numpy(L.data).to(data.x.device).to(data.x.dtype)
