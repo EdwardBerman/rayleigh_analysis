@@ -77,7 +77,7 @@ class Uni(nn.Module):
             A_M = L_offdiag
 
             weighted_edge_index = A_M.nonzero(
-                as_tuple=False).t().long().to(values.device)
+                as_tuple=False).t().long().to(x.device)
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
                 values.device).to(values.dtype)
 
