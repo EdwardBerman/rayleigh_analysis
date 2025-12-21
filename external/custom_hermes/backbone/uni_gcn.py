@@ -64,7 +64,7 @@ class Uni(nn.Module):
 
         x = data.x.squeeze(-1)
 
-        with @torch.no_grad():
+        with torch.no_grad():
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(
                 pos.cpu().numpy(), face.T.cpu().numpy())
