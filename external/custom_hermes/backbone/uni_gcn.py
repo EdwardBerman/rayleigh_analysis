@@ -1,5 +1,6 @@
 from torch import nn
 from torch_geometric.utils import remove_isolated_nodes
+from torch_geometric.utils import remove_self_loops
 
 import torch
 
