@@ -83,33 +83,6 @@ class Uni(nn.Module):
 
             edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
 
-            #L_offdiag = L_torch.clone()
-            #L_offdiag.fill_diagonal_(0)
-            #A_M = L_offdiag
-
-            #weighted_edge_index = A_M.nonzero(
-               # as_tuple=False).t().long().to(x.device)
-            #edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
-                #x.device).to(x.dtype)
-
-            #N_x = data.x.size(0)
-            #N_pos = data.pos.size(0)
-
-            #row, col = weighted_edge_index[0], weighted_edge_index[1]
-            #deg = scatter(edge_weights, col, dim=0, dim_size=data.num_nodes, reduce='sum')
-
-            #print("deg finite:", torch.isfinite(deg).all().item())
-            #print("deg min/max:", deg.min().item(), deg.max().item())
-            #print("deg == 0:", (deg == 0).sum().item(), "/", deg.numel())
-            #print("deg < 0:", (deg < 0).sum().item())
-
-            #deg_inv_sqrt = deg.pow(-0.5)
-            #print("deg_inv_sqrt finite:", torch.isfinite(deg_inv_sqrt).all().item())
-            #print("deg_inv_sqrt inf:", torch.isinf(deg_inv_sqrt).sum().item())
-            #print("deg_inv_sqrt nan:", torch.isnan(deg_inv_sqrt).sum().item())
-
-            #breakpoint()
-
         input_data_obj = data.clone()
 
         input_data_obj.x = x
