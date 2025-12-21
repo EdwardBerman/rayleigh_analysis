@@ -14,67 +14,65 @@ from external.custom_hermes.dataset.clusterize import clusterize
 
 
 def mesh_to_graph(mesh_path: str):
-    """Converts a mesh to graph attributes, specifically `pos`, `face` and `edge_index`"""
+    """Converts a mesh to graph attributes, specifically `pos` and `face`"""
     mesh = pv.read(mesh_path)
     pos = torch.tensor(mesh.points, dtype=torch.float)
     # looks mystical, but it is because: https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata.faces
     faces = mesh.faces.reshape(-1, 4)[:, 1:]
     face = torch.tensor(faces, dtype=torch.long)
-    edges = set()
-    for v0, v1, v2 in faces:
-        edges.update({
-            (v0, v1), (v1, v0),
-            (v1, v2), (v2, v1),
-            (v2, v0), (v0, v2)
-        })
-    edges_array = np.array(list(edges), dtype=np.int64)
-    edge_index = torch.from_numpy(edges_array).T
-    return pos, face, edge_index
+    return pos, face
 
 
 class WeatherBench(Dataset):
 
-    def __init__(self, eras5_path: str, mesh_path: str, split: str, pre_transform: Optional[Callable] = None):
+    def __init__(self, eras5_path: str, mesh_path: str, split: str, task: str, pre_transform: Optional[Callable] = None):
 
         super().__init__(None, None, pre_transform)
 
         assert split in [
             'train', 'test'], "Split must be one of train or test."
+        assert task in ['z500', 't850'], "Task must be one of z500 or t850."
 
         self.eras5_path = eras5_path
         self.mesh_path = mesh_path
         self.split = split
+        self.task = task
         self.pre_transform = pre_transform
 
         # note that the pos, face and edge_index are *shared* across all data objects
-        self.pos, self.face, self.edge_index, self.x = self._read_data()
+        self._read_data()
 
     def _read_data(self):
 
-        pos, face, edge_index = mesh_to_graph(self.mesh_path)
+        self.pos, self.face = mesh_to_graph(self.mesh_path)
 
         era5 = xr.open_zarr(self.eras5_path)
 
-        z500 = era5["geopotential"]
-        t850 = era5["temperature"]
+        if self.task == "z500":
+            ds = era5["geopotential"]
+            level = 500
+        else:
+            ds = era5["temperature"]
+            level = 850
 
         if self.split == "train":
             time = slice("2012-01-01", "2018-12-31")
         elif self.split == "test":
             time = slice("2019-01-01", "2022-12-31")
 
-        z500 = z500.sel(level=500, time=time)
-        t850 = t850.sel(level=850, time=time)
+        ds = ds.sel(level=level, time=time)
 
-        z500_nodes = torch.from_numpy(z500.values.reshape(
-            z500.shape[0], -1)).float()  # (time, num_nodes)
-        t850_nodes = torch.from_numpy(t850.values.reshape(
-            t850.shape[0], -1)).float()  # (time, num_nodes)
+        ds_nodes = torch.from_numpy(ds.values.reshape(
+            ds.shape[0], -1)).float()  # (time, num_nodes)
 
-        x = torch.stack([z500_nodes, t850_nodes],
-                        dim=-1)  # (time, num_nodes, 2)
+        self.x = ds_nodes.unsqueeze(-1).unsqueeze(-1)
 
-        return pos, face, edge_index, x
+        if self.pre_transform is not None:
+            print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
+            self.shared_data = self.pre_transform(
+                Data(pos=self.pos, face=self.face))
+        else:
+            self.shared_data = None
 
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
@@ -82,14 +80,14 @@ class WeatherBench(Dataset):
 
     def get(self, idx: int) -> Data:
         """Builds a Data object on the fly with the shared attributes and the specific time step."""
-        assert len(self) > idx + \
-            1, "Cannot obtain the next step of the last step."
-        data = Data(x=self.x[idx], y=self.x[idx+1], pos=self.pos,
-                    face=self.face, edge_index=self.edge_index)
 
-        # note that this is technically post-transform, but for memory efficiency and since we are doing data creation on the fly, the pretransform is applied here:
-        if self.pre_transform is not None:
-            data = self.pre_transform(data)
+        assert idx + 1 < self.len(), "Cannot obtain the next step of the last step."
+
+        data = Data(**self.shared_data.to_dict())
+
+        data.x = self.x[idx]
+        data.y = self.x[idx + 1].squeeze(-1)
+        
         return data
 
 

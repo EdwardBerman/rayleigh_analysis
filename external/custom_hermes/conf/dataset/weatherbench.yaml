@@ -1,14 +1,15 @@
 # @package _global_
 
 dataset:
-  name: WeatherBench 
-  in_dim: 2 # this is t850 and z500
+  name: weatherbench 
+  in_dim: 1
   edge_dim: 0
-  out_dim: 2
+  out_dim: 1
   cls:
     _target_: external.custom_hermes.dataset.weatherbench.WeatherBench
     eras5_path: "${work_dir}/data/weatherbench/eras5"
     mesh_path: "${work_dir}/data/weatherbench/earth_mesh.vtp"
+    task: "z500"
 
 loss:
   _target_: torch.nn.MSELoss
