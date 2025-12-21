@@ -79,7 +79,7 @@ class Uni(nn.Module):
             weighted_edge_index = A_M.nonzero(
                 as_tuple=False).t().long().to(x.device)
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
-                x.device).to(values.dtype)
+                x.device).to(x.dtype)
 
         x = data.x
         edge_index = weighted_edge_index 
