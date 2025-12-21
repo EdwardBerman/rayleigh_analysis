@@ -81,9 +81,20 @@ class Uni(nn.Module):
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
                 x.device).to(x.dtype)
 
-            # print number of negatives on the off diagonals, also num nams 
-            print("Num negatives in edge weights:", (edge_weights < 0).sum().item())
-            print("Num NaNs in edge weights:", torch.isnan(edge_weights).sum().item())
+            N_x = data.x.size(0)
+            N_pos = data.pos.size(0)
+
+            print("N_x:", N_x, "N_pos:", N_pos)
+            print("edge_index dtype:", weighted_edge_index.dtype, "device:", weighted_edge_index.device)
+            print("edge_index min:", weighted_edge_index.min().item(), "max:", weighted_edge_index.max().item())
+
+            bad = (weighted_edge_index < 0).any() or (weighted_edge_index >= N_x).any()
+            print("any out of bounds wrt x:", bool(bad))
+
+            # Also check for finiteness & shape invariants:
+            print("edge_weight shape:", edge_weights.shape, "finite:", torch.isfinite(edge_weights).all().item())
+            print("edge_index shape:", weighted_edge_index.shape)
+
             breakpoint()
 
         x = data.x
