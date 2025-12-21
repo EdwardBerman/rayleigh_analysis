@@ -51,7 +51,7 @@ class Uni(nn.Module):
                                                residual  =  False,
                                                global_bias  =  False,
                                                T  =  10,
-                                               use_hermitian  =  False,
+                                               use_hermitian  =  True,
                                                activation  =  torch.nn.Identity)
                 
                 )
