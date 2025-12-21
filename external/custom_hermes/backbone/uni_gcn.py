@@ -84,16 +84,18 @@ class Uni(nn.Module):
             N_x = data.x.size(0)
             N_pos = data.pos.size(0)
 
-            print("N_x:", N_x, "N_pos:", N_pos)
-            print("edge_index dtype:", weighted_edge_index.dtype, "device:", weighted_edge_index.device)
-            print("edge_index min:", weighted_edge_index.min().item(), "max:", weighted_edge_index.max().item())
+            row, col = weighted_edge_index[0], weighted_edge_index[1]
+            deg = scatter(edge_weights, col, dim=0, dim_size=data.num_nodes, reduce='sum')
 
-            bad = (weighted_edge_index < 0).any() or (weighted_edge_index >= N_x).any()
-            print("any out of bounds wrt x:", bool(bad))
+            print("deg finite:", torch.isfinite(deg).all().item())
+            print("deg min/max:", deg.min().item(), deg.max().item())
+            print("deg == 0:", (deg == 0).sum().item(), "/", deg.numel())
+            print("deg < 0:", (deg < 0).sum().item())
 
-            # Also check for finiteness & shape invariants:
-            print("edge_weight shape:", edge_weights.shape, "finite:", torch.isfinite(edge_weights).all().item())
-            print("edge_index shape:", weighted_edge_index.shape)
+            deg_inv_sqrt = deg.pow(-0.5)
+            print("deg_inv_sqrt finite:", torch.isfinite(deg_inv_sqrt).all().item())
+            print("deg_inv_sqrt inf:", torch.isinf(deg_inv_sqrt).sum().item())
+            print("deg_inv_sqrt nan:", torch.isnan(deg_inv_sqrt).sum().item())
 
             breakpoint()
 
