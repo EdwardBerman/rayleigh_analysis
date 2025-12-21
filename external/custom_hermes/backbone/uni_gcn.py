@@ -43,7 +43,7 @@ class Uni(nn.Module):
                 )
             elif i == 11:
                 self.blocks.append(
-                        GCNConv(64, 5, add_self_loops=add_self_loops)
+                        GCNConv(64, 1, add_self_loops=add_self_loops)
                 )
             else:
                 self.blocks.append(
