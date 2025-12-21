@@ -4,6 +4,7 @@ from torch_geometric.utils import remove_isolated_nodes
 import torch
 
 from external.ortho_gcn import OrthogonalGCNConvLayer
+from external.torch_scatter import scatter
 
 from torch_geometric.nn import GCNConv
 
