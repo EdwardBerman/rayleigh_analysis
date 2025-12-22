@@ -30,6 +30,7 @@ class WeatherBench(Dataset):
                  mesh_path: str,
                  split: str,
                  task: str,
+                 norm: bool,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
                  pre_transform: Optional[Callable] = None):
@@ -44,6 +45,7 @@ class WeatherBench(Dataset):
         self.mesh_path = mesh_path
         self.split = split
         self.task = task
+        self.norm = norm
         self.x_mean = x_mean
         self.x_std = x_std
         self.pre_transform = pre_transform
@@ -102,11 +104,13 @@ class WeatherBench(Dataset):
 
         data = Data(**self.shared_data.to_dict())
 
-        x_t = self.x[idx]
-        x_t_norm = (x_t - self.x_mean) / self.x_std
+        if self.norm:
+            x_t_norm = (self.x[idx] - self.x_mean) / self.x_std
+            data.x = x_t_norm
+            data.unnormx = self.x[idx]
+        else:
+            data.x = self.x[idx]
 
-        data.x = self.x[idx]
-        data.xnorm = x_t_norm  # standardized version of x
         data.y = self.x[idx + 1].squeeze(-1)
 
         return data
