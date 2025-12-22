@@ -19,7 +19,7 @@ def mesh_to_graph(mesh_path: str):
     pos = torch.tensor(mesh.points, dtype=torch.float)
     # looks mystical, but it is because: https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata.faces
     faces = mesh.faces.reshape(-1, 4)[:, 1:]
-    face = torch.tensor(faces, dtype=torch.long)
+    face = torch.tensor(faces, dtype=torch.long).T
     return pos, face
 
 
