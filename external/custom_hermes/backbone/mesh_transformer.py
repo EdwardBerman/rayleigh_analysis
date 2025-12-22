@@ -4,7 +4,7 @@ import torch
 from external.torch_scatter import scatter_sum
 
 class MLP(nn.Module):
-    def __init__(self, input_size, output_size=128, layer_norm=True, n_hidden=2, hidden_size=128):
+    def __init__(self, input_size, output_size=64, layer_norm=True, n_hidden=2, hidden_size=64):
         super(MLP, self).__init__()
         if hidden_size == 0:
             f = [nn.Linear(input_size, output_size)]
@@ -50,7 +50,7 @@ class GNN(nn.Module):
 
 
 class GraphViT(nn.Module):
-    def __init__(self, state_size=1, w_size=256, n_attention=4, nb_gn=4, n_heads=4):
+    def __init__(self, state_size=1, w_size=64, n_attention=1, nb_gn=1, n_heads=1):
         super(GraphViT, self).__init__()
         pos_start = -3
         pos_length = 8

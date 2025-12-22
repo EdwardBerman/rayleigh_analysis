@@ -98,7 +98,7 @@ class UnitaryGCNConvLayer(nn.Module):
     def forward_batch(self, batch):
         x_in = batch.x
 
-        batch.x = self.model(batch.x, batch.edge_index)
+        batch.x = self.model(batch.x, batch.edge_index, batch.edge_weight) if hasattr(batch, 'edge_weight') else self.model(batch.x, batch.edge_index)
         if self.bias is not None:
             batch.x = batch.x + self.bias
         batch.x = self.act(batch.x)
