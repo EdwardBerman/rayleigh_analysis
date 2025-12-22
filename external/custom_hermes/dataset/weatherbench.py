@@ -86,7 +86,7 @@ class WeatherBench(Dataset):
         if self.split == "train":
             x_flat = self.x.view(self.x.shape[0], -1)
             self.x_mean = x_flat.mean()
-            self.x_std = x_flat.std().clamp(min=1e-6)
+            self.x_std = x_flat.std()
         else:
             assert self.x_mean is not None and self.x_std is not None, \
                 "Test split requires `x_mean` and `x_std` from training split"
