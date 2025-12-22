@@ -96,7 +96,8 @@ class CHPDEonMesh(InMemoryDataset):
                 data = self.pre_transform(data)
 
             pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
-            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+            labels_np, centers_np = clusterize(
+                pos_np, max_cluster_size=self.max_cluster_size)
 
             data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
             data.cluster_centers = torch.from_numpy(centers_np).float()
@@ -175,9 +176,10 @@ class CHPDEonMesh(InMemoryDataset):
         assert (data.edge_index < data.pos.shape[0]).all().item()
 
         # Input feature
-        x = data.c[..., current_t_idx - self.input_length : current_t_idx][:, :, None]
+        x = data.c[..., current_t_idx -
+                   self.input_length: current_t_idx][:, :, None]
         # Target
-        data.y = data.c[..., current_t_idx : current_t_idx + self.output_length]
+        data.y = data.c[..., current_t_idx: current_t_idx + self.output_length]
 
         data.x = x
 
