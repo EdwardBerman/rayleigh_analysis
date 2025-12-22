@@ -105,7 +105,8 @@ class WeatherBench(Dataset):
         x_t = self.x[idx]
         x_t_norm = (x_t - self.x_mean) / self.x_std
 
-        data.x = x_t_norm
+        data.x = self.x[idx]
+        data.xnorm = x_t_norm  # standardized version of x
         data.y = self.x[idx + 1].squeeze(-1)
 
         return data
