@@ -2,6 +2,8 @@ import os
 import random
 
 import numpy as np
+import pyvista as pv
+import pyvistaqt as pvqt
 import torch
 import torch.nn.functional as F
 import torch_geometric.transforms as T
@@ -13,10 +15,9 @@ from torch_geometric.loader import DataLoader
 
 from external.custom_hermes.transform.edge_features import empty_edge_attr
 from external.custom_hermes.transform.simple_geometry import SimpleGeometry
-from external.custom_hermes.transform.vector_normals import compute_vertex_normals
+from external.custom_hermes.transform.vector_normals import \
+    compute_vertex_normals
 
-import pyvista as pv
-import pyvistaqt as pvqt
 
 def set_seed(seed):
     random.seed(seed)
@@ -54,31 +55,71 @@ def create_dataset_loaders(cfg, return_datasets=False):
     print("Creating datasets")
 
     if cfg.dataset.name == "FAUST":
-        pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        pre_tf = T.Compose(
+            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test", "test_gauge"]
     elif any(cfg.dataset.name.startswith(s) for s in ["Heat", "Wave", "Cahn-Hilliard"]):
-        pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        pre_tf = T.Compose(
+            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test_time", "test_init", "test_mesh"]
     elif cfg.dataset.name.startswith("Other"):
-        pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        pre_tf = T.Compose(
+            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test_time", "test_init"]
     elif cfg.dataset.name.startswith("Objects"):
-        pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        pre_tf = T.Compose(
+            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test"]
     elif cfg.dataset.name.startswith("weatherbench"):
-        pre_tf = T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
-        splits = ["train", "test"] 
+        pre_tf = T.Compose(
+            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        splits = ["train", "test"]
     else:
-        raise NotImplementedError(f"Incorrect cfg.dataset.name {cfg.dataset.name}")
+        raise NotImplementedError(
+            f"Incorrect cfg.dataset.name {cfg.dataset.name}")
 
     out_dict = {}
+
+    if cfg.dataset.name.startswith("weatherbench"):
+        # this case is special because the train statistics need to go to the test dataset
+        train_ds = instantiate(
+            cfg.dataset.cls, split='train', pre_transform=pre_tf)
+
+        test_ds = instantiate(
+            cfg.dataset.cls,
+            split="test",
+            x_mean=train_ds.x_mean,
+            x_std=train_ds.x_std,
+            pre_transform=pre_tf
+        )
+
+        if return_datasets:
+            out_dict["train"] = train_ds
+            out_dict["test"] = test_ds
+        else:
+            out_dict['train'] = DataLoader(
+                train_ds,
+                batch_size=cfg.train.batch_size,
+                shuffle=True,
+                pin_memory=True,
+            )
+            out_dict['test'] = DataLoader(
+                test_ds,
+                batch_size=cfg.train.batch_size,
+                shuffle=False,
+                pin_memory=True,
+            )
+        return out_dict
+
     for split in splits:
         train = split == "train"
 
         if any(cfg.dataset.name.startswith(prefix) for prefix in ["FAUST"]):
-            dataset = instantiate(cfg.dataset.cls, train=train, pre_transform=pre_tf)
+            dataset = instantiate(
+                cfg.dataset.cls, train=train, pre_transform=pre_tf)
         else:
-            dataset = instantiate(cfg.dataset.cls, split=split, pre_transform=pre_tf)
+            dataset = instantiate(
+                cfg.dataset.cls, split=split, pre_transform=pre_tf)
 
         if any(
             cfg.dataset.name.startswith(s) for s in ["Heat", "Wave", "Cahn-Hilliard"]
@@ -87,7 +128,8 @@ def create_dataset_loaders(cfg, return_datasets=False):
                 f"[{split}] Len: {len(dataset)}, Num nodes: {dataset._data.num_nodes}"
             )
         else:
-            print(f"[{split}] Len: {len(dataset)}, Num nodes: {dataset[0].num_nodes}")
+            print(
+                f"[{split}] Len: {len(dataset)}, Num nodes: {dataset[0].num_nodes}")
 
         if return_datasets:
             out_dict[split] = dataset
@@ -115,7 +157,8 @@ class GaugeInvarianceNLLLoss(Metric):
 
     @reinit__is_reduced
     def update(self, output):
-        y_orig, y_t, y = output[0].detach(), output[1].detach(), output[2].detach()
+        y_orig, y_t, y = output[0].detach(
+        ), output[1].detach(), output[2].detach()
 
         loss_orig = F.nll_loss(y_orig, y, reduction="none")
         loss_t = F.nll_loss(y_t, y, reduction="none")
@@ -131,6 +174,7 @@ class GaugeInvarianceNLLLoss(Metric):
                 "GaugeInvarianceNLLLoss must have at least one example before it can be computed."
             )
         return self._gauge_error.item() / self._num_examples
+
 
 def rotate_mesh_video(
     mesh,
@@ -183,9 +227,12 @@ def rotate_mesh_video(
 
     distance = 2.5 * radius
     camera_position = [
-        (center[0] + distance, center[1], center[2] + 0.25 * radius),  # position
-        (center[0], center[1], center[2]),                             # focal point
-        (0.0, 0.0, 1.0),                                               # view-up (z-axis)
+        (center[0] + distance, center[1],
+         center[2] + 0.25 * radius),  # position
+        # focal point
+        (center[0], center[1], center[2]),
+        # view-up (z-axis)
+        (0.0, 0.0, 1.0),
     ]
     pl.camera_position = camera_position
 

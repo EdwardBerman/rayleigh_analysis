@@ -25,7 +25,14 @@ def mesh_to_graph(mesh_path: str):
 
 class WeatherBench(Dataset):
 
-    def __init__(self, eras5_path: str, mesh_path: str, split: str, task: str, pre_transform: Optional[Callable] = None):
+    def __init__(self,
+                 eras5_path: str,
+                 mesh_path: str,
+                 split: str,
+                 task: str,
+                 x_mean: Optional[torch.Tensor] = None,
+                 x_std: Optional[torch.Tensor] = None,
+                 pre_transform: Optional[Callable] = None):
 
         super().__init__(None, None, pre_transform)
 
@@ -37,6 +44,8 @@ class WeatherBench(Dataset):
         self.mesh_path = mesh_path
         self.split = split
         self.task = task
+        self.x_mean = x_mean
+        self.x_std = x_std
         self.pre_transform = pre_transform
 
         # note that the pos, face and edge_index are *shared* across all data objects
@@ -74,6 +83,14 @@ class WeatherBench(Dataset):
         else:
             self.shared_data = None
 
+        if self.split == "train":
+            x_flat = self.x.view(self.x.shape[0], -1)
+            self.x_mean = x_flat.mean()
+            self.x_std = x_flat.std().clamp(min=1e-6)
+        else:
+            assert self.x_mean is not None and self.x_std is not None, \
+                "Test split requires `x_mean` and `x_std` from training split"
+
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
         return self.x.shape[0]
@@ -85,9 +102,12 @@ class WeatherBench(Dataset):
 
         data = Data(**self.shared_data.to_dict())
 
-        data.x = self.x[idx]
+        x_t = self.x[idx]
+        x_t_norm = (x_t - self.x_mean) / self.x_std
+
+        data.x = x_t_norm
         data.y = self.x[idx + 1].squeeze(-1)
-                
+
         return data
 
 
