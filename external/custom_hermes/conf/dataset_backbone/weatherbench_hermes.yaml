@@ -1,7 +1,7 @@
 # @package _global_
 
 train:
-  epochs: 1
+  epochs: 100
   batch_size: 1
   lr: 1e-4
 
@@ -15,25 +15,39 @@ backbone:
   net:
     message_dims:
       - - ${dataset.in_dim}
-        - 12
-        - 12
-        - 12
-        - 12
+        - 24
+        - 24
+        - 24
+        - 24
+        - 24
+        - 24
+        - 24
+        - 24 
     message_orders:
       - - 0
-        - 2
-        - 2
-        - 2
-        - 2
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
     update_dims:
-      - - 12
-        - 12
-        - 12
+      - - 24
+        - 24
+        - 24
+        - 24
+        - 24
+        - 24
         - ${dataset.out_dim}
     update_orders:
-      - - 2
-        - 2
-        - 2
+      - - 4
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
         - 0
     edge_dims: ${dataset.edge_dim}
     final_activation: false
