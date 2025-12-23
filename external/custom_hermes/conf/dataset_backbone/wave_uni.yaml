@@ -13,3 +13,4 @@ optimizer:
 backbone:
   net:
     final_activation: false
+    T: 10

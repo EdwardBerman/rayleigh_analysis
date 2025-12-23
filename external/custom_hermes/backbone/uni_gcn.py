@@ -14,6 +14,7 @@ class Uni(nn.Module):
         add_self_loops,
         dropout,
         final_activation,
+        T=10,
     ):
         super().__init__()
 
