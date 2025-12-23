@@ -7,6 +7,7 @@ import torch
 from torch_geometric.data import Data, InMemoryDataset
 from torch_geometric.data.separate import separate
 
+from external.custom_hermes.dataset.clusterize import clusterize
 
 class CHPDEonMesh(InMemoryDataset):
     def __init__(
