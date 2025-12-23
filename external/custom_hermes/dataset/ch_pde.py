@@ -41,7 +41,7 @@ class CHPDEonMesh(InMemoryDataset):
         super().__init__(root, transform, pre_transform, pre_filter=None)
         path = self.processed_paths[splits.index(split)]
         # self.slices is None if using one object mesh
-        self._data, self.slices = torch.load(path)
+        self._data, self.slices = torch.load(path, weights_only=False)
         self.num_meshes = self.slices["c"].size(0) - 1
 
     @property
