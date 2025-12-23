@@ -1,16 +1,12 @@
-import copy
-import os.path as osp
+
 from typing import Callable, Optional
 
-import numpy as np
 import pyvista as pv
 import torch
 import xarray as xr
-from plyfile import PlyData
-from torch_geometric.data import Data, Dataset, InMemoryDataset
-from torch_geometric.data.separate import separate
-
-from external.custom_hermes.dataset.clusterize import clusterize
+from torch_geometric.data import Data, Dataset
+from torch_geometric.loader import DataLoader
+from tqdm import tqdm
 
 
 def mesh_to_graph(mesh_path: str):
@@ -83,7 +79,7 @@ class WeatherBench(Dataset):
             self.shared_data = self.pre_transform(
                 Data(pos=self.pos, face=self.face))
         else:
-            self.shared_data = None
+            self.shared_data = Data(pos=self.pos, face=self.face)
 
         if self.split == "train":
             x_flat = self.x.view(self.x.shape[0], -1)
@@ -95,12 +91,13 @@ class WeatherBench(Dataset):
 
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
-        return self.x.shape[0]
+        return self.x.shape[0] - 1
 
     def get(self, idx: int) -> Data:
         """Builds a Data object on the fly with the shared attributes and the specific time step."""
 
-        assert idx + 1 < self.len(), "Cannot obtain the next step of the last step."
+        assert idx + \
+            1 < self.x.shape[0], "Cannot obtain the next step of the last step."
 
         data = Data(**self.shared_data.to_dict())
 
@@ -121,5 +118,16 @@ if __name__ == "__main__":
     era5_path = "./data/weatherbench/eras5"
     mesh_path = "./data/weatherbench/earth_mesh.vtp"
 
-    train = WeatherBench(era5_path, mesh_path, split="train")
-    test = WeatherBench(era5_path, mesh_path, split="test")
+    train = WeatherBench(era5_path, mesh_path, task="z500",
+                         norm=False, split="train")
+
+    train_loader = DataLoader(
+        train,
+        batch_size=1,
+        shuffle=False,
+        num_workers=0
+    )
+
+    # this dry run verfifies that the get() and len() behavior of the dataset won't run into indexing issues
+    for i, batch in enumerate(tqdm(train_loader, desc="Dry run")):
+        pass
