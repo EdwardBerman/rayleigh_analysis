@@ -231,7 +231,7 @@ class GraphRetrieveSimple(nn.Module):
         pos_size = pos_length * 12
         super(GraphRetrieveSimple, self).__init__()
         node_size = w_size + 32 + pos_size
-        self.gnn = GNN(node_size=node_size, edge_size=32, hidden_size=32, output_size=32)
+        self.gnn = GNN(node_size=node_size, edge_size=32, output_size=32)
         self.final_mlp = nn.Sequential(
             nn.Linear(32, 32), nn.Tanh(),
             nn.Linear(32, 32), nn.Tanh(),
