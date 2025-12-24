@@ -5,7 +5,7 @@
 #SBATCH --mem=32GB
 #SBATCH --ntasks=1
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:h200
+#SBATCH --gres=gpu:v100-sxm2:1
 #SBATCH --output=slurm/%j.out
 #SBATCH --error=slurm/%j.err
 #SBATCH --mail-type=ALL
