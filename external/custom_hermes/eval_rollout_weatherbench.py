@@ -11,92 +11,23 @@ import pyvista as pv
 import robust_laplacian
 import torch
 from hydra.utils import instantiate
-from matplotlib import rc
-from pyvista import examples
 from tqdm import tqdm
 
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
+from external.custom_hermes.eval_rollout import set_rc_params
 from external.custom_hermes.utils import create_dataset_loaders
 from external.hermes.src.data.pde.utils import screenshot_mesh
 
-
-def set_rc_params(fontsize=None):
-    '''
-    Set figure parameters
-    '''
-
-    if fontsize is None:
-        fontsize = 16
-    else:
-        fontsize = int(fontsize)
-
-    rc('font', **{'family': 'serif'})
-    rc('text', usetex=False)
-
-    plt.rcParams.update({'axes.linewidth': 1.3})
-    plt.rcParams.update({'xtick.labelsize': fontsize})
-    plt.rcParams.update({'ytick.labelsize': fontsize})
-    plt.rcParams.update({'xtick.major.size': 8})
-    plt.rcParams.update({'xtick.major.width': 1.3})
-    plt.rcParams.update({'xtick.minor.visible': True})
-    plt.rcParams.update({'xtick.minor.width': 1.})
-    plt.rcParams.update({'xtick.minor.size': 6})
-    plt.rcParams.update({'xtick.direction': 'out'})
-    plt.rcParams.update({'ytick.major.width': 1.3})
-    plt.rcParams.update({'ytick.major.size': 8})
-    plt.rcParams.update({'ytick.minor.visible': True})
-    plt.rcParams.update({'ytick.minor.width': 1.})
-    plt.rcParams.update({'ytick.minor.size': 6})
-    plt.rcParams.update({'ytick.direction': 'out'})
-    plt.rcParams.update({'axes.labelsize': fontsize})
-    plt.rcParams.update({'axes.titlesize': fontsize})
-    plt.rcParams.update({'legend.fontsize': int(fontsize-2)})
-    plt.rcParams['text.usetex'] = False
-    plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
-
-
 set_rc_params(15)
-
-objects = {
-    "armadillo": examples.download_armadillo(),
-    "bunny_coarse": examples.download_bunny_coarse(),
-    "bunny": examples.download_bunny_coarse(),
-    "lucy": examples.download_lucy(),
-    "sphere": pv.Sphere(),
-    "spider": examples.download_spider(),
-    "urn": examples.download_urn(),
-    "woman": examples.download_woman(),
-    "supertoroid": pv.ParametricSuperToroid(n1=0.5),
-    "ellipsoid": pv.ParametricEllipsoid(2, 1, 1),
-}
-decimate_ratio = {
-    "armadillo": 0.99,
-    "bunny_coarse": 0.0,
-    "bunny": 0.0,
-    "lucy": 0.95,
-    "sphere": 0.0,
-    "spider": 0.0,
-    "urn": 0.98,
-    "woman": 0.98,
-    "supertoroid": 0.7,
-    "ellipsoid": 0.8,
-}
 
 pv.set_plot_theme("paraview")
 
 
-def get_mesh(name):
-    mesh = objects[name]
-
-    mesh = mesh.decimate(decimate_ratio[name])
-    _ = mesh.clean(inplace=True)
-
-    return mesh
-
-
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
+    
+    cfg.device = 'cpu'
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
@@ -110,6 +41,7 @@ def main(cfg):
     loss_fn = instantiate(cfg.loss)
 
     def eval_step(dataset):
+
         results = {
             "losses": defaultdict(list),
             "predictions": defaultdict(list),
@@ -162,6 +94,7 @@ def main(cfg):
             print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
             print(
                 f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
+            
             deg = torch.zeros(N, device=values.device).index_add_(
                 0, weighted_edge_index[0], edge_weights)
             deg = deg.clamp(min=1.0)

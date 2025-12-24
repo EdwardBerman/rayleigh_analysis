@@ -11,6 +11,7 @@ dataset:
     mesh_path: "${work_dir}/data/weatherbench/earth_mesh.vtp"
     task: "z500"
     norm: false
+    rollout_steps: 40
 
 loss:
   _target_: torch.nn.MSELoss

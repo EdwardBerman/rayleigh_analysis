@@ -27,6 +27,7 @@ class WeatherBench(Dataset):
                  split: str,
                  task: str,
                  norm: bool,
+                 rollout_steps: int,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
                  pre_transform: Optional[Callable] = None):
@@ -42,9 +43,11 @@ class WeatherBench(Dataset):
         self.split = split
         self.task = task
         self.norm = norm
+        self.rollout_steps = rollout_steps
         self.x_mean = x_mean
         self.x_std = x_std
         self.pre_transform = pre_transform
+        self.input_length = 1  # hardcoded, take in one step spit out one step
 
         # note that the pos, face and edge_index are *shared* across all data objects
         self._read_data()
@@ -112,6 +115,25 @@ class WeatherBench(Dataset):
 
         return data
 
+    def num_trajectories(self):
+        return self.x.shape[0] - self.rollout_steps - 1
+
+    def get_trajectory(self, idx: int):
+
+        T = self.rollout_steps
+        assert idx + T + 1 < self.x.shape[0]
+
+        data = Data(**self.shared_data.to_dict())
+
+        # the shapes just work out this way, go yell at someone else >:(
+        data.x = self.x[idx: idx + T].squeeze(-1).squeeze(-1).T
+        data.mesh_idx = torch.tensor([0])
+        data.sample_idx = torch.tensor([idx])
+
+        if self.norm:
+            data.x = (data.x - self.x_mean) / self.x_std
+
+        return data
 
 if __name__ == "__main__":
 
