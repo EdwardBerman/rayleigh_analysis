@@ -4,7 +4,7 @@ import torch
 from external.torch_scatter import scatter_sum
 
 class MLP(nn.Module):
-    def __init__(self, input_size, output_size=64, layer_norm=True, n_hidden=2, hidden_size=64):
+    def __init__(self, input_size, output_size=32, layer_norm=True, n_hidden=2, hidden_size=64):
         super(MLP, self).__init__()
         if hidden_size == 0:
             f = [nn.Linear(input_size, output_size)]
@@ -198,7 +198,7 @@ class AttentionBlock_PreLN(nn.Module):
 class GraphPooling(nn.Module):
     def __init__(self, w_size, pos_length):
         super(GraphPooling, self).__init__()
-        input_size = 64 + pos_length * 12
+        input_size = 32 + pos_length * 12
 
         self.rnn_pooling = nn.GRU(input_size=input_size, hidden_size=w_size, batch_first=True)
         self.linear_rnn = MLP(input_size=w_size, output_size=w_size, n_hidden=1, layer_norm=False)
@@ -230,12 +230,12 @@ class GraphRetrieveSimple(nn.Module):
     def __init__(self, w_size, pos_length, state_size):
         pos_size = pos_length * 12
         super(GraphRetrieveSimple, self).__init__()
-        node_size = w_size + 64 + pos_size
-        self.gnn = GNN(node_size=node_size, output_size=64)
+        node_size = w_size + 32 + pos_size
+        self.gnn = GNN(node_size=node_size, output_size=32)
         self.final_mlp = nn.Sequential(
-            nn.Linear(64, 64), nn.Tanh(),
-            nn.Linear(64, 64), nn.Tanh(),
-            nn.Linear(64, state_size)
+            nn.Linear(32, 32), nn.Tanh(),
+            nn.Linear(32, 32), nn.Tanh(),
+            nn.Linear(32, state_size)
         )
 
     def forward(self, W, V, clusters, positional_encoding, edges, E):
@@ -257,12 +257,12 @@ class Encoder(nn.Module):
     def __init__(self, nb_gn=4, state_size=3, pos_length=7):
         super(Encoder, self).__init__()
         node_in_dim = state_size + 1
-        self.encoder_node = MLP(input_size=node_in_dim, output_size=64, n_hidden=1, layer_norm=False)
+        self.encoder_node = MLP(input_size=node_in_dim, output_size=32, n_hidden=1, layer_norm=False)
         self.encoder_edge = MLP(input_size=3, output_size=128, n_hidden=1, layer_norm=False)
 
-        node_size = 64 + pos_length * 12
+        node_size = 32 + pos_length * 12
         self.encoder_gn = nn.ModuleList(
-            [GNN(node_size=node_size, edge_size=128, output_size=64, layer_norm=True) for _ in
+            [GNN(node_size=node_size, edge_size=128, output_size=32, layer_norm=True) for _ in
              range(nb_gn)])
 
     def forward(self, mesh_pos, edges, states, node_type, pos_enc):
