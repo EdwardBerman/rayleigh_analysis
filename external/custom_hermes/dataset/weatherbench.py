@@ -19,6 +19,11 @@ def mesh_to_graph(mesh_path: str):
     return pos, face
 
 
+def earth_mesh(mesh_path: str):
+    mesh = pv.read(mesh_path)
+    return mesh
+
+
 class WeatherBench(Dataset):
 
     def __init__(self,

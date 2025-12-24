@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
+from external.custom_hermes.dataset.weatherbench import earth_mesh
 from external.custom_hermes.eval_rollout import set_rc_params
 from external.custom_hermes.utils import create_dataset_loaders
 from external.hermes.src.data.pde.utils import screenshot_mesh
@@ -26,8 +27,6 @@ pv.set_plot_theme("paraview")
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
-    
-    cfg.device = 'cpu'
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
@@ -94,7 +93,7 @@ def main(cfg):
             print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
             print(
                 f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
-            
+
             deg = torch.zeros(N, device=values.device).index_add_(
                 0, weighted_edge_index[0], edge_weights)
             deg = deg.clamp(min=1.0)
@@ -221,8 +220,8 @@ def main(cfg):
                 f"[{split}] Mesh idx: {mesh_idx}, last RMSE: {losses[:, -1].mean():.3e} +/- {1.96 * losses[:, -1].std(ddof=1):.3e}"
             )
 
-            object_name = dataset.mesh_names[mesh_idx]
-            mesh = get_mesh(object_name)
+            object_name = "earth"
+            mesh = earth_mesh("data/weatherbench/earth_mesh.vtp")
 
             save_path = (
                 Path(cfg.save_dir)
@@ -312,7 +311,7 @@ def main(cfg):
             integrated_smape_all.extend(traj_smape.tolist())
 
             for s in range(1):
-                for t in range(10, 191, 10):
+                for t in range(1, 38, 2):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
 
                     screenshot_mesh(
