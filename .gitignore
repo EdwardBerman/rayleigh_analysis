@@ -19,3 +19,4 @@ aggregate/
 rollouts/
 Cerberus/
 data/weatherbench/
+model_checkpoints/*
