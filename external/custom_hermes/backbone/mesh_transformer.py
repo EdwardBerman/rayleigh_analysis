@@ -198,7 +198,7 @@ class AttentionBlock_PreLN(nn.Module):
 class GraphPooling(nn.Module):
     def __init__(self, w_size, pos_length):
         super(GraphPooling, self).__init__()
-        input_size = 128 + pos_length * 12
+        input_size = 64 + pos_length * 12
 
         self.rnn_pooling = nn.GRU(input_size=input_size, hidden_size=w_size, batch_first=True)
         self.linear_rnn = MLP(input_size=w_size, output_size=w_size, n_hidden=1, layer_norm=False)
