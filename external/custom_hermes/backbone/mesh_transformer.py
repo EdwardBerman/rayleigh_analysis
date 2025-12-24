@@ -230,12 +230,12 @@ class GraphRetrieveSimple(nn.Module):
     def __init__(self, w_size, pos_length, state_size):
         pos_size = pos_length * 12
         super(GraphRetrieveSimple, self).__init__()
-        node_size = w_size + 128 + pos_size
-        self.gnn = GNN(node_size=node_size, output_size=128)
+        node_size = w_size + 64 + pos_size
+        self.gnn = GNN(node_size=node_size, output_size=64)
         self.final_mlp = nn.Sequential(
-            nn.Linear(128, 128), nn.Tanh(),
-            nn.Linear(128, 128), nn.Tanh(),
-            nn.Linear(128, state_size)
+            nn.Linear(64, 64), nn.Tanh(),
+            nn.Linear(64, 64), nn.Tanh(),
+            nn.Linear(64, state_size)
         )
 
     def forward(self, W, V, clusters, positional_encoding, edges, E):
@@ -257,12 +257,12 @@ class Encoder(nn.Module):
     def __init__(self, nb_gn=4, state_size=3, pos_length=7):
         super(Encoder, self).__init__()
         node_in_dim = state_size + 1
-        self.encoder_node = MLP(input_size=node_in_dim, output_size=128, n_hidden=1, layer_norm=False)
+        self.encoder_node = MLP(input_size=node_in_dim, output_size=64, n_hidden=1, layer_norm=False)
         self.encoder_edge = MLP(input_size=3, output_size=128, n_hidden=1, layer_norm=False)
 
         node_size = 128 + pos_length * 12
         self.encoder_gn = nn.ModuleList(
-            [GNN(node_size=node_size, edge_size=128, output_size=128, layer_norm=True) for _ in
+            [GNN(node_size=node_size, edge_size=128, output_size=64, layer_norm=True) for _ in
              range(nb_gn)])
 
     def forward(self, mesh_pos, edges, states, node_type, pos_enc):
