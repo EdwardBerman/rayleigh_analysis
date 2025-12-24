@@ -16,3 +16,5 @@ module load python/3.13.5
 eval "$(poetry env activate)"
 
 python3 -m external.custom_hermes.train dataset=cahn_hilliard backbone=egnn
+python3 -m external.custom_hermes.train dataset=heat backbone=egnn
+python3 -m external.custom_hermes.train dataset=wave backbone=egnn
