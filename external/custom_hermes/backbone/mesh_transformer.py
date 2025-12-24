@@ -4,7 +4,7 @@ import torch
 from external.torch_scatter import scatter_sum
 
 class MLP(nn.Module):
-    def __init__(self, input_size, output_size=32, layer_norm=True, n_hidden=2, hidden_size=64):
+    def __init__(self, input_size, output_size=32, layer_norm=True, n_hidden=2, hidden_size=32):
         super(MLP, self).__init__()
         if hidden_size == 0:
             f = [nn.Linear(input_size, output_size)]
@@ -231,7 +231,7 @@ class GraphRetrieveSimple(nn.Module):
         pos_size = pos_length * 12
         super(GraphRetrieveSimple, self).__init__()
         node_size = w_size + 32 + pos_size
-        self.gnn = GNN(node_size=node_size, edge_size=32, output_size=32)
+        self.gnn = GNN(node_size=node_size, edge_size=32, hidden_size=32, output_size=32)
         self.final_mlp = nn.Sequential(
             nn.Linear(32, 32), nn.Tanh(),
             nn.Linear(32, 32), nn.Tanh(),
