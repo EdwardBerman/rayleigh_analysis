@@ -260,7 +260,7 @@ class Encoder(nn.Module):
         self.encoder_node = MLP(input_size=node_in_dim, output_size=64, n_hidden=1, layer_norm=False)
         self.encoder_edge = MLP(input_size=3, output_size=128, n_hidden=1, layer_norm=False)
 
-        node_size = 128 + pos_length * 12
+        node_size = 64 + pos_length * 12
         self.encoder_gn = nn.ModuleList(
             [GNN(node_size=node_size, edge_size=128, output_size=64, layer_norm=True) for _ in
              range(nb_gn)])
