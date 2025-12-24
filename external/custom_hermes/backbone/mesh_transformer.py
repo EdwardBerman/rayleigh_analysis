@@ -258,7 +258,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         node_in_dim = state_size + 1
         self.encoder_node = MLP(input_size=node_in_dim, output_size=32, n_hidden=1, layer_norm=False)
-        self.encoder_edge = MLP(input_size=3, output_size=128, n_hidden=1, layer_norm=False)
+        self.encoder_edge = MLP(input_size=3, output_size=32, n_hidden=1, layer_norm=False)
 
         node_size = 32 + pos_length * 12
         self.encoder_gn = nn.ModuleList(
