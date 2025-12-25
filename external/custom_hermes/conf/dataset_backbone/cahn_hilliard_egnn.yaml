@@ -15,4 +15,4 @@ backbone:
     depth: 8
     dim: 5
     edge_dim: 1 # squared distance as edge feature
-    m_dim: 48
+    m_dim: 32 
