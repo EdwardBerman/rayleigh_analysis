@@ -18,7 +18,8 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
 from external.custom_hermes.dataset.weatherbench import earth_mesh
 from external.custom_hermes.eval_rollout import set_rc_params
 from external.custom_hermes.utils import create_dataset_loaders
-from external.hermes.src.data.pde.utils import screenshot_mesh
+
+from external.custom_hermes.utils import screenshot_mesh_weather
 
 set_rc_params(15)
 
@@ -317,8 +318,6 @@ def main(cfg):
                     screenshot_mesh(
                         mesh,
                         gt,
-                        cfg.dataset.name,
-                        object_name,
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt.png",
                     )
@@ -327,8 +326,6 @@ def main(cfg):
                     screenshot_mesh(
                         mesh,
                         preds,
-                        cfg.dataset.name,
-                        object_name,
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
