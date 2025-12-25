@@ -115,12 +115,16 @@ class CHPDEonMesh(InMemoryDataset):
                     train_data = copy.copy(data)
                     c = data.c[:, :test_time_idx]
                     train_data.c = c
+                    train_data.cluster_labels = data.cluster_labels
+                    train_data.cluster_centers = data.cluster_centers
                     train_list.append(train_data)
 
                     # Test time data
                     test_time_data = copy.copy(data)
                     c = data.c[:, test_time_idx:]
                     test_time_data.c = c
+                    test_time_data.cluster_labels = data.cluster_labels
+                    test_time_data.cluster_centers = data.cluster_centers
                     test_time_list.append(test_time_data)
                 else:
                     # Test sample data
