@@ -1,0 +1,1 @@
+python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=hermes model_save_path=model_checkpoints/weatherbench_hermes_seed1_model_temp.pt
