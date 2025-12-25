@@ -6,10 +6,10 @@ dataset:
   edge_dim: 0
   out_dim: 1
   cls:
-    _target_: external.hermes.src.data.dataset.ch_pde.CHPDEonMesh
+    _target_: external.custom_hermes.dataset.ch_pde.CHPDEonMesh
     root: "${work_dir}/data/cahn_hilliard"
     pre_transform_str: ""
-    processed_dir_str: "processed_train"
+    processed_dir_str: "processed"
     maxT: 200
     num_samples: 5
     input_length: 5
