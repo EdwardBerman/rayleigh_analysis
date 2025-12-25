@@ -248,19 +248,6 @@ def rotate_mesh_video(
 
     pl.close()
 
-def plot_mesh_weather(mesh, scalars):
-    p = pvqt.BackgroundPlotter(title=dataset_name, auto_update=True)
-
-    mesh.point_data["c"] = scalars
-    mesh.set_active_scalars("c")
-
-    print(scalars.min().item(), scalars.max().item())
-    clim = [scalars.min().item(), scalars.max().item()]
-
-    p.add_mesh(mesh, clim=clim)
-    p.view_xy(True)
-
-    return p
 
 def screenshot_mesh_weather(mesh, scalars, save_path):
     pl = pv.Plotter(off_screen=True)
@@ -269,7 +256,6 @@ def screenshot_mesh_weather(mesh, scalars, save_path):
     mesh.point_data["c"] = scalars
     mesh.set_active_scalars("c")
 
-    print(scalars.min().item(), scalars.max().item())
     clim = [scalars.min().item(), scalars.max().item()]
 
     pl.add_mesh(mesh, clim=clim)

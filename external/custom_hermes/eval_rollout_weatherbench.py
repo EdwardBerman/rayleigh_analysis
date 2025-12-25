@@ -315,7 +315,7 @@ def main(cfg):
                 for t in range(1, 38, 2):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
 
-                    screenshot_mesh(
+                    screenshot_mesh_weather(
                         mesh,
                         gt,
                         save_path
@@ -323,7 +323,7 @@ def main(cfg):
                     )
 
                     preds = results["predictions"][mesh_idx][s][:, t]
-                    screenshot_mesh(
+                    screenshot_mesh_weather(
                         mesh,
                         preds,
                         save_path
