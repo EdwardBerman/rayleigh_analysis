@@ -510,6 +510,8 @@ def main(cfg):
 
             integrated_nrmse_all.extend(traj_nrmse.tolist())
             integrated_smape_all.extend(traj_smape.tolist())
+            
+            mesh_positions = mesh.points
 
             for s in range(1):
                 for t in range(10, 191, 10):
