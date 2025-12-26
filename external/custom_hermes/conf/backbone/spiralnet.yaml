@@ -1,0 +1,5 @@
+name: SpiralNet
+
+net:
+  _target_: external.custom_hermes.backbone.spiralnet.SpiralNet
+  seq_length: 10

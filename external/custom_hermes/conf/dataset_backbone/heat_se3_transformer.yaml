@@ -1,0 +1,23 @@
+# @package _global_
+
+train:
+  epochs: 100
+  batch_size: 1
+  lr: 3e-4
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: ${train.lr}
+  weight_decay: 1e-5
+
+engine:
+  with_amp: true
+
+backbone:
+  net:
+    depth: 1
+    dim: 16
+    dim_in: ${dataset.in_dim}
+    input_degrees: 1
+    dim_out: ${dataset.out_dim}
+    output_degrees: 1
