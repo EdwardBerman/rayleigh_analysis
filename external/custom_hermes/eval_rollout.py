@@ -238,7 +238,13 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_e
     plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.png', dpi=150)
     plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.pdf')
     plt.close()
-    return np.sum(xi_gt[valid_gt] - xi_pred[valid_pred])
+
+    valid = valid_gt & valid_pred
+    if valid.any():
+        abs_diffs = np.abs(xi_gt[valid] - xi_pred[valid])
+        return abs_diffs  # Return array, not sum
+    else:
+        return np.array([])
 
 
 
@@ -631,10 +637,9 @@ def main(cfg):
     print("-----"*40)
     print("KK Errors Summary:")
     if len(correlation_errors_all) > 0:
-        overall_corr_mean = np.sum(correlation_errors_all) / (len(correlation_errors_all) * 20)
-        print(
-            f"[{split}] Combined KK Correlation Error over all meshes and rollouts: {overall_corr_mean:.6e} (n={len(correlation_errors_all)})"
-        )
+        all_errors = np.concatenate(correlation_errors_all)  # Flatten all bin errors
+        err_smooth = np.mean(all_errors)  # This gives you the formula
+        print(f"Smoothness Error err_smooth: {err_smooth:.6e}")
     print("-----"*40)
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
