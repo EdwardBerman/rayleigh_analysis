@@ -184,7 +184,7 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
         ax.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
                   label='Prediction Auto-correlation', color='red', linewidth=2)
     
-    ax.set_xlabel(r'$\Delta r')
+    ax.set_xlabel(r'$\Delta r$')
     ax.set_ylabel(r'$|\xi (r)|$')
     ax.legend()
     ax.grid(True, alpha=0.3, which='both')
