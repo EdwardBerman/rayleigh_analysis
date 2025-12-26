@@ -1,0 +1,3 @@
+python3 -m external.custom_hermes.eval_rollout dataset=heat backbone=egnn model_save_path=model_checkpoints/Heat_EGNN_seed1_model.pt
+python3 -m external.custom_hermes.eval_rollout dataset=wave backbone=egnn model_save_path=model_checkpoints/Wave_EGNN_seed1_model.pt
+python3 -m external.custom_hermes.eval_rollout dataset=cahn_hilliard backbone=egnn model_save_path=model_checkpoints/Cahn-Hilliard_EGNN_seed1_model.pt

@@ -45,4 +45,12 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 4. To actually run training, you will go into the `external/fourierflow` directory and enter `python -m fourierflow.commands train --trial 0 experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/4_layers/config.yaml`
 5. To obtain results run `python -m fourierflow.commands sample experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/4_layers/config.yaml` in the same directory as above
 
+### Weather Bench
+
+1. Enter the `rayleigh_analysis` directory and then `mkdir data/weatherbench`
+2. Download ERAS5 with `python3 -m data_preprocessing.weatherbench.download_era5s`
+3. Download Climatology data with `python3 -m data_preprocessing.weatherbench.download_climatology`
+4. Generate Earth mesh with  `python3 -m data_preprocessing.weatherbench.construct_earth_mesh`
+5. Train with `python3 -m external.custom_hermes.train dataset=weatherbench backbone=hermes` as before
+
 
