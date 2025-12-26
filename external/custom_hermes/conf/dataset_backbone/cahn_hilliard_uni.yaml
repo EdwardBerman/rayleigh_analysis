@@ -3,7 +3,7 @@
 train:
   epochs: 100
   batch_size: 1
-  lr: 1e-2
+  lr: 1e-3
 
 optimizer:
   _target_: torch.optim.Adam
