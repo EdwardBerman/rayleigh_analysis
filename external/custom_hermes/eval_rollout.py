@@ -632,6 +632,9 @@ def main(cfg):
     print("KK Errors Summary:")
     if len(correlation_errors_all) > 0:
         overall_corr_mean = np.sum(correlation_errors_all) / (len(correlation_errors_all) * 20)
+        print(
+            f"[{split}] Combined KK Correlation Error over all meshes and rollouts: {overall_corr_mean:.6e} (n={len(correlation_errors_all)})"
+        )
     print("-----"*40)
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
