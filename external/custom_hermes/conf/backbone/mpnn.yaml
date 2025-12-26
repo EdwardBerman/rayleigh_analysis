@@ -1,0 +1,9 @@
+name: MPNN
+
+net:
+  _target_: external.custom_hermes.backbone.mpnn.MPNN
+  null_isolated: false
+  message_norm: false
+  update_norm: false
+  message_dropout: false
+  update_dropout: false
