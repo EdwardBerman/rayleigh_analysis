@@ -95,6 +95,42 @@ def get_mesh(name):
 
     return mesh
 
+def compute_avg_edge_length(mesh):
+    """
+    Compute the average edge length for 1-hop neighbors in a mesh.
+    
+    Args:
+        mesh: PyVista mesh object
+    
+    Returns:
+        Average edge length (float)
+    """
+    # Extract edges from the mesh
+    edges = mesh.extract_all_edges()
+    
+    # Get the edge connectivity
+    lines = edges.lines
+    
+    # lines is a flat array: [n_points, i0, i1, n_points, i2, i3, ...]
+    # We need to extract pairs of vertex indices
+    edge_lengths = []
+    points = mesh.points
+    
+    i = 0
+    while i < len(lines):
+        n_points = lines[i]
+        if n_points == 2:  # Edge connecting 2 points
+            idx0 = lines[i + 1]
+            idx1 = lines[i + 2]
+            
+            # Compute Euclidean distance
+            length = np.linalg.norm(points[idx0] - points[idx1])
+            edge_lengths.append(length)
+            
+        i += n_points + 1
+    
+    return np.mean(edge_lengths) if edge_lengths else 0.0
+
 def compute_kk_correlation(pos, scalars_gt, scalars_pred, min_sep=0.01, max_sep=10.0, nbins=20):
     """
     Compute KK correlation function for ground truth and predicted scalar fields.
@@ -162,7 +198,7 @@ def compute_kk_correlation(pos, scalars_gt, scalars_pred, min_sep=0.01, max_sep=
         'weight_pred': kk_pred.weight,
     }
 
-def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
+def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_edge_length=None):
     """
     Plot KK correlation in log-log space.
     """
@@ -183,6 +219,10 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
     if valid_pred.any():
         ax.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
                   label='Prediction Auto-correlation', color='red', linewidth=2)
+
+    if avg_edge_length is not None and avg_edge_length > 0:
+        ax.axvline(avg_edge_length, color='green', linestyle='--', linewidth=2, 
+                   label=f'Avg Edge Length: {avg_edge_length:.3e}')
     
     ax.set_xlabel(r'$\Delta r$')
     ax.set_ylabel(r'$|\xi (r)|$')
@@ -486,6 +526,8 @@ def main(cfg):
             
             mesh_positions = mesh.points
 
+            avg_edge_length = compute_avg_edge_length(mesh)
+
             for s in range(1):
                 for t in range(10, 191, 10):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
@@ -524,7 +566,7 @@ def main(cfg):
                             nbins=20
                         )
                         
-                        plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg)
+                        plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
                         print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}")
                     except Exception as e:
                         print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
