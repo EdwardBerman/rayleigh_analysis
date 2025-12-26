@@ -59,22 +59,32 @@ class Uni(nn.Module):
 
         x = data.x.squeeze(-1)
 
-        with torch.no_grad():
-            pos, face = data.pos.cpu(), data.face.cpu()
-            L, M = robust_laplacian.mesh_laplacian(
-                pos.cpu().numpy(), face.T.cpu().numpy())
-            L = L.tocoo()
+        # check if object has "rewired" attribute
+        if not hasattr(data, 'rewired') or not data.rewired:
 
-            row = torch.from_numpy(L.row).long().to(data.x.device)
-            col = torch.from_numpy(L.col).long().to(data.x.device)
-            val = torch.from_numpy(L.data).to(data.x.device).to(data.x.dtype)
-            mask = row != col
-            row, col, val = row[mask], col[mask], val[mask]
-            edge_index = torch.stack([row, col], dim=0).contiguous()
-            edge_weight = (-val).contiguous()
+            with torch.no_grad():
+                pos, face = data.pos.cpu(), data.face.cpu()
+                L, M = robust_laplacian.mesh_laplacian(
+                    pos.cpu().numpy(), face.T.cpu().numpy())
+                L = L.tocoo()
 
-            edge_index, edge_weight = remove_self_loops(
-                edge_index, edge_weight)
+                row = torch.from_numpy(L.row).long().to(data.x.device)
+                col = torch.from_numpy(L.col).long().to(data.x.device)
+                val = torch.from_numpy(L.data).to(data.x.device).to(data.x.dtype)
+                mask = row != col
+                row, col, val = row[mask], col[mask], val[mask]
+                edge_index = torch.stack([row, col], dim=0).contiguous()
+                edge_weight = (-val).contiguous()
+
+                edge_index, edge_weight = remove_self_loops(
+                    edge_index, edge_weight)
+
+                data.rewired = True
+                data.edge_index = edge_index
+                data.edge_weight = edge_weight
+        else:
+            edge_index = data.edge_index
+            edge_weight = data.edge_weight
 
         input_data_obj = data.clone()
 

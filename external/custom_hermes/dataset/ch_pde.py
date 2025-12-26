@@ -21,6 +21,7 @@ class CHPDEonMesh(InMemoryDataset):
         num_samples=20,
         input_length=5,
         output_length=3,
+        max_cluster_size: int = 20,
         transform: Optional[Callable] = None,
         pre_transform: Optional[Callable] = None,
         pre_transform_str="",
@@ -40,6 +41,8 @@ class CHPDEonMesh(InMemoryDataset):
         self.output_length = output_length
         self.pre_transform_str = pre_transform_str
         self.processed_dir_str = processed_dir_str
+
+        self.max_cluster_size = max_cluster_size
 
         super().__init__(root, transform, pre_transform, pre_filter=None)
         path = self.processed_paths[splits.index(split)]
