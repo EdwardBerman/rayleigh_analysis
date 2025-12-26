@@ -154,18 +154,12 @@ def compute_kk_correlation(pos, scalars_gt, scalars_pred, min_sep=0.01, max_sep=
     kk_pred = treecorr.KKCorrelation(**kk_config)
     kk_pred.process(cat_pred)
     
-    # Compute cross-correlation
-    kk_cross = treecorr.KKCorrelation(**kk_config)
-    kk_cross.process(cat_gt, cat_pred)
-    
     return {
         'r': np.exp(kk_gt.meanlogr),  # Mean separation in each bin
         'xi_gt': kk_gt.xi,  # Correlation function for GT
         'xi_pred': kk_pred.xi,  # Correlation function for predictions
-        'xi_cross': kk_cross.xi,  # Cross-correlation
         'weight_gt': kk_gt.weight,
         'weight_pred': kk_pred.weight,
-        'weight_cross': kk_cross.weight,
     }
 
 
@@ -176,12 +170,10 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
     r = corr_results['r']
     xi_gt = corr_results['xi_gt']
     xi_pred = corr_results['xi_pred']
-    xi_cross = corr_results['xi_cross']
     
     # Filter out invalid values
     valid_gt = (corr_results['weight_gt'] > 0) & np.isfinite(xi_gt)
     valid_pred = (corr_results['weight_pred'] > 0) & np.isfinite(xi_pred)
-    valid_cross = (corr_results['weight_cross'] > 0) & np.isfinite(xi_cross)
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     
@@ -192,13 +184,9 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
     if valid_pred.any():
         ax1.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
                    label='Prediction Auto-correlation', color='red', linewidth=2)
-    if valid_cross.any():
-        ax1.loglog(r[valid_cross], np.abs(xi_cross[valid_cross]), '^-', 
-                   label='Cross-correlation', color='green', linewidth=2)
     
-    ax1.set_xlabel('Separation r')
-    ax1.set_ylabel('|ξ(r)|')
-    ax1.set_title('KK Correlation Functions')
+    ax1.set_xlabel(r'$\Delta r')
+    ax1.set_ylabel(r'$|\xi (r)|$')
     ax1.legend()
     ax1.grid(True, alpha=0.3, which='both')
     
