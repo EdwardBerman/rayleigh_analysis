@@ -1,0 +1,8 @@
+name: GCN
+
+net:
+  _target_: external.custom_hermes.backbone.gcn.GCN
+  add_self_loops: false
+  null_isolated: false
+  batch_norm: false
+  dropout: false
