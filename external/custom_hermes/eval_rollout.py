@@ -229,7 +229,7 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_e
     ax.legend()
     ax.grid(True, alpha=0.3, which='both')
     
-    ax.legend()
+    ax.legend(loc='upper right')
     ax.grid(True, alpha=0.3)
     
     plt.suptitle(f'Mesh {mesh_idx}, t={time_step}')
