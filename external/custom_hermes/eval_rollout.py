@@ -162,10 +162,9 @@ def compute_kk_correlation(pos, scalars_gt, scalars_pred, min_sep=0.01, max_sep=
         'weight_pred': kk_pred.weight,
     }
 
-
 def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
     """
-    Plot 1 - KK correlation in log-log space.
+    Plot KK correlation in log-log space.
     """
     r = corr_results['r']
     xi_gt = corr_results['xi_gt']
@@ -175,39 +174,25 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
     valid_gt = (corr_results['weight_gt'] > 0) & np.isfinite(xi_gt)
     valid_pred = (corr_results['weight_pred'] > 0) & np.isfinite(xi_pred)
     
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig, ax = plt.subplots(1, 1, figsize=(7, 5))
     
-    # Plot 1: Correlation functions
+    # Plot correlation functions
     if valid_gt.any():
-        ax1.loglog(r[valid_gt], np.abs(xi_gt[valid_gt]), 'o-', 
-                   label='Ground Truth Auto-correlation', color='blue', linewidth=2)
+        ax.loglog(r[valid_gt], np.abs(xi_gt[valid_gt]), 'o-', 
+                  label='Ground Truth Auto-correlation', color='blue', linewidth=2)
     if valid_pred.any():
-        ax1.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
-                   label='Prediction Auto-correlation', color='red', linewidth=2)
+        ax.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
+                  label='Prediction Auto-correlation', color='red', linewidth=2)
     
-    ax1.set_xlabel(r'$\Delta r')
-    ax1.set_ylabel(r'$|\xi (r)|$')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3, which='both')
+    ax.set_xlabel(r'$\Delta r')
+    ax.set_ylabel(r'$|\xi (r)|$')
+    ax.legend()
+    ax.grid(True, alpha=0.3, which='both')
     
-    # Plot 2: 1 - correlation (measuring decorrelation)
-    if valid_gt.any():
-        one_minus_xi_gt = 1 - np.abs(xi_gt[valid_gt]) / (np.abs(xi_gt[valid_gt]).max() + 1e-10)
-        ax2.loglog(r[valid_gt], one_minus_xi_gt + 1e-10, 'o-', 
-                   label='GT: 1 - |ξ|/|ξ|_max', color='blue', linewidth=2)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
     
-    if valid_pred.any():
-        one_minus_xi_pred = 1 - np.abs(xi_pred[valid_pred]) / (np.abs(xi_pred[valid_pred]).max() + 1e-10)
-        ax2.loglog(r[valid_pred], one_minus_xi_pred + 1e-10, 's-', 
-                   label='Pred: 1 - |ξ|/|ξ|_max', color='red', linewidth=2)
-    
-    ax2.set_xlabel('Separation r')
-    ax2.set_ylabel(r'$1 - |\zeta(r)|$')
-    ax2.set_title('Decorrelation Function')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3, which='both')
-    
-    plt.suptitle(f'KK Correlation Analysis - Mesh {mesh_idx}, t={time_step}')
+    plt.suptitle(f'Correlation Analysis - Mesh {mesh_idx}, t={time_step}')
     plt.tight_layout()
     
     plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.png', dpi=150)
