@@ -428,6 +428,7 @@ def main(cfg):
         integrated_errors_all = []
         integrated_nrmse_all = []
         integrated_smape_all = []
+        correlation_errors_all = []
 
         for mesh_idx, v in results["losses"].items():
             losses = np.asarray(v)
@@ -529,7 +530,6 @@ def main(cfg):
 
             avg_edge_length = compute_avg_edge_length(mesh)
             
-            correlation_errors_all = []
 
             for s in range(1):
                 for t in range(10, 191, 10):
