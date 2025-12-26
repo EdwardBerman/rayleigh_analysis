@@ -222,7 +222,7 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_e
 
     if avg_edge_length is not None and avg_edge_length > 0:
         ax.axvline(avg_edge_length, color='green', linestyle='--', linewidth=2, 
-                   label=f'Avg 1-hop Edge Distance: {avg_edge_length:.3e}')
+                   label=f'Avg 1-hop Norm Edge Distance: {avg_edge_length:.1e}')
     
     ax.set_xlabel(r'$\Delta r$')
     ax.set_ylabel(r'$|\xi (r)|$')
