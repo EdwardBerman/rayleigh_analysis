@@ -579,7 +579,7 @@ def main(cfg):
                         if abs_diffs is not None and len(abs_diffs) > 0:
                             correlation_errors_all.extend(abs_diffs.tolist())
                         
-                        print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}, error: {error_kk:.6e}")
+                        print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}.")
                     except Exception as e:
                         print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
 
@@ -639,7 +639,7 @@ def main(cfg):
     print("-----"*40)
     print("KK Errors Summary:")
     if len(correlation_errors_all) > 0:
-        all_errors = np.concatenate(correlation_errors_all)  # Flatten all bin errors
+        all_errors = np.array(correlation_errors_all)  # Flatten all bin errors
         err_smooth = np.mean(all_errors)  # This gives you the formula
         print(f"Smoothness Error err_smooth: {err_smooth:.6e}")
     print("-----"*40)
