@@ -192,7 +192,7 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
     ax.legend()
     ax.grid(True, alpha=0.3)
     
-    plt.suptitle(f'Correlation Analysis - Mesh {mesh_idx}, t={time_step}')
+    plt.suptitle(f'Mesh {mesh_idx}, t={time_step}')
     plt.tight_layout()
     
     plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.png', dpi=150)
