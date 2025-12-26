@@ -20,6 +20,7 @@ from external.custom_hermes.utils import (create_dataset_loaders,
                                           rotate_mesh_video)
 from external.hermes.src.data.pde.utils import screenshot_mesh
 
+import treecorr
 
 def set_rc_params(fontsize=None):
     '''
@@ -93,6 +94,138 @@ def get_mesh(name):
     _ = mesh.clean(inplace=True)
 
     return mesh
+
+def compute_kk_correlation(pos, scalars_gt, scalars_pred, min_sep=0.01, max_sep=10.0, nbins=20):
+    """
+    Compute KK correlation function for ground truth and predicted scalar fields.
+    
+    Args:
+        pos: Node positions [N, 3]
+        scalars_gt: Ground truth scalar values [N]
+        scalars_pred: Predicted scalar values [N]
+        min_sep: Minimum separation for correlation bins
+        max_sep: Maximum separation for correlation bins
+        nbins: Number of logarithmic bins
+    
+    Returns:
+        Dictionary with correlation results
+    """
+    # Convert to numpy if needed
+    if torch.is_tensor(pos):
+        pos = pos.cpu().numpy()
+    if torch.is_tensor(scalars_gt):
+        scalars_gt = scalars_gt.cpu().numpy()
+    if torch.is_tensor(scalars_pred):
+        scalars_pred = scalars_pred.cpu().numpy()
+    
+    # Flatten if needed
+    scalars_gt = scalars_gt.flatten()
+    scalars_pred = scalars_pred.flatten()
+    
+    # Create catalogs for TreeCorr
+    # We'll use x, y, z coordinates and the scalar field as kappa
+    cat_gt = treecorr.Catalog(
+        x=pos[:, 0], 
+        y=pos[:, 1], 
+        z=pos[:, 2],
+        k=scalars_gt
+    )
+    
+    cat_pred = treecorr.Catalog(
+        x=pos[:, 0], 
+        y=pos[:, 1], 
+        z=pos[:, 2],
+        k=scalars_pred
+    )
+    
+    # Configure KK correlation
+    kk_config = {
+        'min_sep': min_sep,
+        'max_sep': max_sep,
+        'nbins': nbins,
+        'bin_slop': 0.1
+    }
+    
+    # Compute auto-correlation for ground truth
+    kk_gt = treecorr.KKCorrelation(**kk_config)
+    kk_gt.process(cat_gt)
+    
+    # Compute auto-correlation for predictions
+    kk_pred = treecorr.KKCorrelation(**kk_config)
+    kk_pred.process(cat_pred)
+    
+    # Compute cross-correlation
+    kk_cross = treecorr.KKCorrelation(**kk_config)
+    kk_cross.process(cat_gt, cat_pred)
+    
+    return {
+        'r': np.exp(kk_gt.meanlogr),  # Mean separation in each bin
+        'xi_gt': kk_gt.xi,  # Correlation function for GT
+        'xi_pred': kk_pred.xi,  # Correlation function for predictions
+        'xi_cross': kk_cross.xi,  # Cross-correlation
+        'weight_gt': kk_gt.weight,
+        'weight_pred': kk_pred.weight,
+        'weight_cross': kk_cross.weight,
+    }
+
+
+def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg):
+    """
+    Plot 1 - KK correlation in log-log space.
+    """
+    r = corr_results['r']
+    xi_gt = corr_results['xi_gt']
+    xi_pred = corr_results['xi_pred']
+    xi_cross = corr_results['xi_cross']
+    
+    # Filter out invalid values
+    valid_gt = (corr_results['weight_gt'] > 0) & np.isfinite(xi_gt)
+    valid_pred = (corr_results['weight_pred'] > 0) & np.isfinite(xi_pred)
+    valid_cross = (corr_results['weight_cross'] > 0) & np.isfinite(xi_cross)
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Plot 1: Correlation functions
+    if valid_gt.any():
+        ax1.loglog(r[valid_gt], np.abs(xi_gt[valid_gt]), 'o-', 
+                   label='Ground Truth Auto-correlation', color='blue', linewidth=2)
+    if valid_pred.any():
+        ax1.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
+                   label='Prediction Auto-correlation', color='red', linewidth=2)
+    if valid_cross.any():
+        ax1.loglog(r[valid_cross], np.abs(xi_cross[valid_cross]), '^-', 
+                   label='Cross-correlation', color='green', linewidth=2)
+    
+    ax1.set_xlabel('Separation r')
+    ax1.set_ylabel('|ξ(r)|')
+    ax1.set_title('KK Correlation Functions')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3, which='both')
+    
+    # Plot 2: 1 - correlation (measuring decorrelation)
+    if valid_gt.any():
+        one_minus_xi_gt = 1 - np.abs(xi_gt[valid_gt]) / (np.abs(xi_gt[valid_gt]).max() + 1e-10)
+        ax2.loglog(r[valid_gt], one_minus_xi_gt + 1e-10, 'o-', 
+                   label='GT: 1 - |ξ|/|ξ|_max', color='blue', linewidth=2)
+    
+    if valid_pred.any():
+        one_minus_xi_pred = 1 - np.abs(xi_pred[valid_pred]) / (np.abs(xi_pred[valid_pred]).max() + 1e-10)
+        ax2.loglog(r[valid_pred], one_minus_xi_pred + 1e-10, 's-', 
+                   label='Pred: 1 - |ξ|/|ξ|_max', color='red', linewidth=2)
+    
+    ax2.set_xlabel('Separation r')
+    ax2.set_ylabel(r'$1 - |\zeta(r)|$')
+    ax2.set_title('Decorrelation Function')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3, which='both')
+    
+    plt.suptitle(f'KK Correlation Analysis - Mesh {mesh_idx}, t={time_step}')
+    plt.tight_layout()
+    
+    plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.png', dpi=150)
+    plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.pdf')
+    plt.close()
+
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
@@ -400,6 +533,26 @@ def main(cfg):
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
+
+                    try:
+                        # Compute bounding box diagonal for setting correlation scales
+                        bbox_min = mesh_positions.min(axis=0)
+                        bbox_max = mesh_positions.max(axis=0)
+                        bbox_diag = np.linalg.norm(bbox_max - bbox_min)
+                        
+                        corr_results = compute_kk_correlation(
+                            mesh_positions,
+                            gt,
+                            preds,
+                            min_sep=bbox_diag * 0.01,  # 1% of diagonal
+                            max_sep=bbox_diag * 0.5,   # 50% of diagonal
+                            nbins=20
+                        )
+                        
+                        plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg)
+                        print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}")
+                    except Exception as e:
+                        print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
 
                     # rotate_mesh_video(
                     # mesh=mesh,
