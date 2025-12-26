@@ -571,7 +571,7 @@ def main(cfg):
                         
                         error_kk = plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
                         correlation_errors_all.append(error_kk)
-                        print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}")
+                        print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}, error: {error_kk:.6e}")
                     except Exception as e:
                         print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
 
