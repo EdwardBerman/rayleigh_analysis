@@ -238,6 +238,7 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_e
     plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.png', dpi=150)
     plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.pdf')
     plt.close()
+    return np.sum(xi_gt[valid_gt] - xi_pred[valid_pred])
 
 
 
@@ -527,6 +528,8 @@ def main(cfg):
             mesh_positions = mesh.points
 
             avg_edge_length = compute_avg_edge_length(mesh)
+            
+            correlation_errors_all = []
 
             for s in range(1):
                 for t in range(10, 191, 10):
@@ -566,7 +569,8 @@ def main(cfg):
                             nbins=20
                         )
                         
-                        plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
+                        error_kk = plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
+                        correlation_errors_all.append(error_kk)
                         print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}")
                     except Exception as e:
                         print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
@@ -623,6 +627,12 @@ def main(cfg):
         )
         if len(integrated_smape_all) > 5:
             print("-----"*40)
+    
+    print("-----"*40)
+    print("KK Errors Summary:")
+    if len(correlation_errors_all) > 0:
+        overall_corr_mean = np.sum(correlation_errors_all) / (len(correlation_errors_all) * 20)
+    print("-----"*40)
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 
