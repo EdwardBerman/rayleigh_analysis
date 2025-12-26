@@ -222,7 +222,7 @@ def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_e
 
     if avg_edge_length is not None and avg_edge_length > 0:
         ax.axvline(avg_edge_length, color='green', linestyle='--', linewidth=2, 
-                   label=f'Avg 1-hop Norm Edge Distance: {avg_edge_length:.1e}')
+                   label=f'Avg 1-hop Edge Distance: {float(avg_edge_length):.1e}')
     
     ax.set_xlabel(r'$\Delta r$')
     ax.set_ylabel(r'$|\xi (r)|$')
@@ -574,9 +574,11 @@ def main(cfg):
                             max_sep=bbox_diag * 0.5,   # 50% of diagonal
                             nbins=20
                         )
+
+                        abs_diffs = plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
+                        if abs_diffs is not None and len(abs_diffs) > 0:
+                            correlation_errors_all.extend(abs_diffs.tolist())
                         
-                        error_kk = plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
-                        correlation_errors_all.append(error_kk)
                         print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}, error: {error_kk:.6e}")
                     except Exception as e:
                         print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
