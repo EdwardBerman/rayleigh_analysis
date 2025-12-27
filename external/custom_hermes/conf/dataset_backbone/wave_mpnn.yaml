@@ -1,0 +1,33 @@
+# @package _global_
+
+train:
+  epochs: 100
+  batch_size: 1
+  lr: 3e-4
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: ${train.lr}
+  weight_decay: 1e-5
+
+dataset:
+  cls:
+    # Include vertex normals as input
+    include_normals: true
+
+backbone:
+  net:
+    message_dims:
+      - - ${dataset.in_dim}
+        - 88
+        - 88
+      - - 88
+        - 88
+        - 88
+    update_dims:
+      - - 88
+        - 88
+      - - 88
+        - ${dataset.out_dim}
+    edge_dims: ${dataset.edge_dim}
+    final_activation: false
