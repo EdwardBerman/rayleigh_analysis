@@ -14,15 +14,15 @@ backbone:
   net:
     message_dims:
       - - ${dataset.in_dim}
-        - 88
-        - 88
-      - - 88
-        - 88
-        - 88
+        - 100
+        - 100
+      - - 100
+        - 100
+        - 100
     update_dims:
-      - - 88
-        - 88
-      - - 88
+      - - 100
+        - 100
+      - - 100
         - ${dataset.out_dim}
     edge_dims: ${dataset.edge_dim}
     final_activation: false
