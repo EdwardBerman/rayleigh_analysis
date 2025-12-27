@@ -26,6 +26,8 @@ class GCN(nn.Module):
         self.dropout = dropout
         self.final_activation = final_activation
 
+        print("GCN block dims:", self.block_dims)
+
         self.block_dims[0] += 3
 
         block_kwargs = dict(
