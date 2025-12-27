@@ -26,7 +26,6 @@ class GCN(nn.Module):
         self.dropout = dropout
         self.final_activation = final_activation
 
-        # Add vertex_normals to input
         self.block_dims[0] += 3
 
         block_kwargs = dict(
