@@ -17,7 +17,7 @@ optimizer:
 dataset:
   cls:
     # Include vertex normals as input
-    include_normals: true
+    include_normals: false
 
 backbone:
   net:
