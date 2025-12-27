@@ -24,7 +24,7 @@ backbone:
         - 128
         - 128
     update_dims:
-      - - 100
+      - - 128
         - ${dataset.out_dim}
     edge_dims: ${dataset.edge_dim}
     final_activation: false
