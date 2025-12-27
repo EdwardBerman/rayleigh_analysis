@@ -3,7 +3,7 @@ name: SE(3)-Transformer
 net:
   _target_: external.custom_hermes.backbone.se3_transformer.SE3Transformer
   heads: 1
-  dim_head: 16
+  dim_head: 8
   num_degrees: 3
   attend_sparse_neighbors: true
   num_neighbors: 0
