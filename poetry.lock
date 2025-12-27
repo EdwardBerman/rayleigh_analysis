@@ -3099,6 +3099,22 @@ files = [
 ]
 
 [[package]]
+name = "lsstdesc-coord"
+version = "1.3.0"
+description = "Python module for handling angles and celestial coordinates"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "LSSTDESC.Coord-1.3.0-py3-none-any.whl", hash = "sha256:c19933fc5599cd5e0d4384da145c8fa5eb07d4c74fda06937e403a28533e3b0b"},
+    {file = "LSSTDESC.Coord-1.3.0.tar.gz", hash = "sha256:50da8ff1e19472dec63ec92e8d8b3fb8bec984894c0f1ac82aa16b2051df66be"},
+]
+
+[package.dependencies]
+future = "*"
+numpy = "*"
+
+[[package]]
 name = "markdown"
 version = "3.10"
 description = "Python implementation of John Gruber's Markdown."
@@ -5116,6 +5132,21 @@ files = [
 pyasn1 = ">=0.6.1,<0.7.0"
 
 [[package]]
+name = "pybind11"
+version = "2.13.6"
+description = "Seamless operability between C++11 and Python"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "pybind11-2.13.6-py3-none-any.whl", hash = "sha256:237c41e29157b962835d356b370ededd57594a26d5894a795960f0047cb5caf5"},
+    {file = "pybind11-2.13.6.tar.gz", hash = "sha256:ba6af10348c12b24e92fa086b39cfba0eff619b61ac77c406167d813b096d39a"},
+]
+
+[package.extras]
+global = ["pybind11-global (==2.13.6)"]
+
+[[package]]
 name = "pycparser"
 version = "2.23"
 description = "C parser in Python"
@@ -6888,6 +6919,42 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,<8.2)", "pytest-mock", "pytest-mypy-testing"]
 
 [[package]]
+name = "treecorr"
+version = "5.1.2"
+description = "Python module for computing 2-point correlation functions"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "treecorr-5.1.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:844e8c8221d5ffe389b88ddf695771385871455ba5cad8f06290751cde33399c"},
+    {file = "treecorr-5.1.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c40fffb571573c25a593df609e5045256cbb0c5f0d1af45fabaa4acfeb4a9027"},
+    {file = "treecorr-5.1.2-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:5b3525c8ab7eba58636c2b68cbf03df997a0bfaf5f3e2846e3f0c110dd42c669"},
+    {file = "treecorr-5.1.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d4d0ccd7fa6d1691bc8df53f8977c886a4f4c087f1db72f54b17b67cc75e1156"},
+    {file = "treecorr-5.1.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a7b3bc6b7402df6aaab80d7a5d4b247316543f1a3a862e66af678bafaa959a2e"},
+    {file = "treecorr-5.1.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:7fa6401ce3cdbc0661fdd4ab745eefa85275cce923de371a27c2477cb97e328c"},
+    {file = "treecorr-5.1.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c16ec87ace29ca07aaad00ba388f946dc2fbd865a7a79e7a2c1e15b510a3a9a1"},
+    {file = "treecorr-5.1.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b0f0a0d595301418eb266a46bfa18f4dd0f583fac720e585d7006155405cce40"},
+    {file = "treecorr-5.1.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:7266a00219236917850d6737b6318993d02bead64ed770166a5ec616e1b4f30c"},
+    {file = "treecorr-5.1.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:cda7372367b204e78c55d02bf0694e97195256497b75b51738d870d148ad4517"},
+    {file = "treecorr-5.1.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:87ec928a50e8985797c15627dffe1e7a67993e530200152c38e32845065f6201"},
+    {file = "treecorr-5.1.2-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:0991654542f4d9b30231c22ab45553303e33da03258837805c499ff8585ba1da"},
+    {file = "treecorr-5.1.2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:abfe90530ac31142ee61cf9d4af88a457b2256148346abeea496ddafd6432b53"},
+    {file = "treecorr-5.1.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:89f32d29fdce9ce2b2a2b09d4c09a5e4a6fe436b38b549fee763ab3c9516a957"},
+    {file = "treecorr-5.1.2-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:1282555b34ced5bf6482e302b6ddeced242f5f36b3f41acad230cd656e013a20"},
+    {file = "treecorr-5.1.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:7d3fbe0e80a50830f6c236274d3f5392e807aefa4e1863cc05c9e1ce0e7a79c3"},
+    {file = "treecorr-5.1.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:079f68a630ff43a0e110ac44b5d10ef293e19f4ad89562e4c498f52ccb172331"},
+    {file = "treecorr-5.1.2-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:37848d7ecd6a2c1197e77f64d696a99efb29f54a9c3e5bacce68b3d00c832ab4"},
+    {file = "treecorr-5.1.2.tar.gz", hash = "sha256:34c87397dac263bb1f8360aa5e508b17ddfa9dda406fa694df589a9eedafe02b"},
+]
+
+[package.dependencies]
+"LSSTDESC.Coord" = ">=1.1"
+numpy = ">=1.17"
+pybind11 = ">=2.2,<3"
+pyyaml = "*"
+setuptools = ">=38"
+
+[[package]]
 name = "treescope"
 version = "0.1.10"
 description = "Treescope: An interactive HTML pretty-printer for ML research in IPython notebooks."
@@ -7722,4 +7789,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "8973371f5605c768510159a05f398b5e8d241ec22218aaf89cda4770e42bcf0f"
+content-hash = "2a6e8668932f6a5f56fee9c07ab90a5ca2e7bcaf19e7fbdbd454d2abfbbb2b49"
