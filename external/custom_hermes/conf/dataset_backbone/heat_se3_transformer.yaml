@@ -13,7 +13,7 @@ optimizer:
 backbone:
   net:
     depth: 1
-    dim: 8
+    dim: 4
     dim_in: ${dataset.in_dim}
     input_degrees: 1
     dim_out: ${dataset.out_dim}
