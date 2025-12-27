@@ -14,10 +14,6 @@ optimizer:
 #   _target_: torch.optim.lr_scheduler.CosineAnnealingLR
 #   T_max: ${train.epochs}
 
-dataset:
-  cls:
-    # Include vertex normals as input
-    include_normals: false
 
 backbone:
   net:

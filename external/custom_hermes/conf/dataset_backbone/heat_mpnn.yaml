@@ -10,11 +10,6 @@ optimizer:
   lr: ${train.lr}
   weight_decay: 1e-5
 
-dataset:
-  cls:
-    # Include vertex normals as input
-    include_normals: false
-
 backbone:
   net:
     message_dims:
