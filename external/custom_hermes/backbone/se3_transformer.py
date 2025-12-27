@@ -15,4 +15,6 @@ class SE3Transformer(BaseSE3Transformer):
 
         out = super().forward(x, pos, adj_mat=adj_mat)
 
+        print(out.shape)
+
         return out
