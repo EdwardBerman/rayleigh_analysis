@@ -1,8 +1,8 @@
-from se3_transformer_pytorch import SE3Transformer
+from se3_transformer_pytorch import SE3Transformer as BaseSE3Transformer
 from torch_geometric.utils import to_dense_adj
 
 
-class SE3Transformer(SE3Transformer):
+class SE3Transformer(BaseSE3Transformer):
     def forward(self, data):
         # Shape into [b, n, d, 1]
         x = data.x.unsqueeze(0).squeeze(-1)
