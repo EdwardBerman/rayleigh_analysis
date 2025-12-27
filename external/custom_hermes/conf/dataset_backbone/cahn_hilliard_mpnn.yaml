@@ -18,7 +18,7 @@ optimizer:
 backbone:
   net:
     message_dims:
-      - - ${dataset.in_dim}
+      - - ${eval:2 * ${dataset.in_dim} + ${dataset.edge_dim}}
         - 96
         - 96
         - 96

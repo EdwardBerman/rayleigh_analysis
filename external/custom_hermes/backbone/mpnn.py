@@ -31,8 +31,6 @@ class MPNN(nn.Module):
 
         self.null_isolated = null_isolated
 
-        self.message_dims[0][0] += 6
-
         block_kwargs = dict(
             edge_dims=edge_dims,
             message_norm=message_norm,
