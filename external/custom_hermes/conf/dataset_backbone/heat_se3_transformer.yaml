@@ -10,9 +10,6 @@ optimizer:
   lr: ${train.lr}
   weight_decay: 1e-5
 
-engine:
-  with_amp: true
-
 backbone:
   net:
     depth: 1
