@@ -17,9 +17,8 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
 from external.custom_hermes.dataset.weatherbench import earth_mesh
 from external.custom_hermes.eval_rollout import set_rc_params
-from external.custom_hermes.utils import create_dataset_loaders
-
-from external.custom_hermes.utils import screenshot_mesh_weather
+from external.custom_hermes.utils import (create_dataset_loaders,
+                                          screenshot_mesh_weather)
 
 set_rc_params(15)
 

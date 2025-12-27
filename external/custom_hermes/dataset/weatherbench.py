@@ -97,6 +97,13 @@ class WeatherBench(Dataset):
             assert self.x_mean is not None and self.x_std is not None, \
                 "Test split requires `x_mean` and `x_std` from training split"
 
+        # saving information that will be needed to convert predicitons back to .zarr files
+        self.grid_shape = (ds.latitude.size, ds.longitude.size)
+        self.lat = ds.latitude.values
+        self.lon = ds.longitude.values
+        self.time = ds.time.values
+        self.level = level
+
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
         return self.x.shape[0] - 1
