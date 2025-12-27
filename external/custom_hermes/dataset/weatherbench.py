@@ -121,17 +121,19 @@ class WeatherBench(Dataset):
         return data
 
     def num_trajectories(self):
-        return self.x.shape[0] - self.rollout_steps - 1
+        return self.x.shape[0] // self.rollout_steps
 
     def get_trajectory(self, idx: int):
 
         T = self.rollout_steps
-        assert idx + T + 1 < self.x.shape[0]
+        start = idx * T
+
+        assert start + T <= self.x.shape[0], "Trajectory index out of range"
 
         data = Data(**self.shared_data.to_dict())
 
         # the shapes just work out this way, go yell at someone else >:(
-        data.x = self.x[idx: idx + T].squeeze(-1).squeeze(-1).T
+        data.x = self.x[start: start + T].squeeze(-1).squeeze(-1).T
         data.mesh_idx = torch.tensor([0])
         data.sample_idx = torch.tensor([idx])
 
@@ -140,13 +142,14 @@ class WeatherBench(Dataset):
 
         return data
 
+
 if __name__ == "__main__":
 
     era5_path = "./data/weatherbench/eras5"
     mesh_path = "./data/weatherbench/earth_mesh.vtp"
 
     train = WeatherBench(era5_path, mesh_path, task="z500",
-                         norm=False, split="train")
+                         norm=False, rollout_steps=40, split="train")
 
     train_loader = DataLoader(
         train,
@@ -154,6 +157,9 @@ if __name__ == "__main__":
         shuffle=False,
         num_workers=0
     )
+
+    test = WeatherBench(era5_path, mesh_path, task="z500", norm=False,
+                        rollout_steps=40, split="test", x_mean=train.x_mean, x_std=train.x_std)
 
     # this dry run verfifies that the get() and len() behavior of the dataset won't run into indexing issues
     for i, batch in enumerate(tqdm(train_loader, desc="Dry run")):
