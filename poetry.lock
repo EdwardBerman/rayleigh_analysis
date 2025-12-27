@@ -6120,6 +6120,24 @@ files = [
 cpu = ["mkl", "psutil"]
 
 [[package]]
+name = "se3-transformer-pytorch"
+version = "0.9.0"
+description = "SE3 Transformer - Pytorch"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "se3-transformer-pytorch-0.9.0.tar.gz", hash = "sha256:1231154c248848a55dc4bea37b8751cf99cb2e382dd42222404d23067a57785e"},
+    {file = "se3_transformer_pytorch-0.9.0-py3-none-any.whl", hash = "sha256:0b6318f993875d0c8a264035035ade0c8760c5b13cb2485492a58af88db9a8b7"},
+]
+
+[package.dependencies]
+einops = ">=0.3"
+filelock = "*"
+numpy = "*"
+torch = ">=1.6"
+
+[[package]]
 name = "seaborn"
 version = "0.13.2"
 description = "Statistical data visualization"
@@ -7722,4 +7740,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "8973371f5605c768510159a05f398b5e8d241ec22218aaf89cda4770e42bcf0f"
+content-hash = "3fb4262f1754773b9c8844cc734478f463063791431f63b8cb6bb0bc5ab2ac92"
