@@ -31,8 +31,7 @@ class MPNN(nn.Module):
 
         self.null_isolated = null_isolated
 
-        # Add vertex_normals to input
-        self.message_dims[0][0] += 3
+        self.message_dims[0][0] += 6
 
         block_kwargs = dict(
             edge_dims=edge_dims,
