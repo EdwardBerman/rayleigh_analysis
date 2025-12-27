@@ -27,6 +27,10 @@ class MPNN(nn.Module):
         self.update_dims = update_dims
         self.edge_dims = edge_dims
 
+        print("MPNN message dims:", self.message_dims)
+        print("MPNN update dims:", self.update_dims)
+        print("MPNN edge dims:", self.edge_dims)
+
         self.out_dim = self.update_dims[-1][-1]
 
         self.null_isolated = null_isolated
