@@ -19,10 +19,10 @@ backbone:
   net:
     message_dims:
       - - ${dataset.in_dim}
-        - 100
-        - 100
-        - 100
-        - 100
+        - 128
+        - 128
+        - 128
+        - 128
     update_dims:
       - - 100
         - ${dataset.out_dim}
