@@ -73,7 +73,7 @@ class WeatherBench(Dataset):
         if self.split == "train":
             time = slice("2012-01-01", "2018-12-31")
         elif self.split == "test":
-            time = slice("2019-01-01", "2022-12-31")
+            time = slice("2019-01-01", "2019-12-31")
 
         ds = ds.sel(level=level, time=time)
         # time, lon, lat -> time, num_node
