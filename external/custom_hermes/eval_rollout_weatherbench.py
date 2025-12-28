@@ -211,8 +211,8 @@ def main(cfg):
             pred = np.array(all_preds).reshape(T, nlon, nlat)
             pred = pred[:, None, :, :]
             pred = pred[None, ...]
-            start = idx * (dataset.rollout_steps + 1)
-            init_time = np.datetime64(dataset.time[start])
+
+            init_time = np.datetime64(data.init_time)
 
             if dataset.task == "z500":
                 name = "geopotential"
