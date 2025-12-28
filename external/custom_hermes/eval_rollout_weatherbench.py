@@ -29,8 +29,6 @@ pv.set_plot_theme("paraview")
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
 
-    cfg.device = 'cpu'
-
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
     backbone = instantiate(cfg.backbone.net).to(cfg.device)
@@ -58,7 +56,7 @@ def main(cfg):
         nlat, nlon = dataset.grid_shape
         T = dataset.rollout_steps
         level = dataset.level
-        pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")      
+        pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
         zarr_path = Path(cfg.save_dir) / "wb_predictions.zarr"
         first_write = True
 
