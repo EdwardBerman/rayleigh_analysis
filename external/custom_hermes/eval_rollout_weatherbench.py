@@ -28,6 +28,8 @@ pv.set_plot_theme("paraview")
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
+    
+    cfg.device = 'cpu'
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
@@ -61,7 +63,8 @@ def main(cfg):
         first_write = True
 
         model.eval()
-        for idx in range(dataset.num_trajectories()):
+        for idx in range(2):
+        # for idx in range(dataset.num_trajectories()):
             data = dataset.get_trajectory(idx)
             data = data.to(cfg.device)
 
@@ -233,7 +236,7 @@ def main(cfg):
             )
 
             da = da.chunk({
-                "time": 1,
+                "time": 16, 
                 "prediction_timedelta": T,
                 "level": 1,
                 "longitude": nlon,
