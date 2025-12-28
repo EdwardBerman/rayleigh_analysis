@@ -53,7 +53,7 @@ def main(cfg):
         }
 
         lat, lon = dataset.lat, dataset.lon
-        nlat, nlon = dataset.grid_shape
+        nlon, nlat = dataset.grid_shape
         T = dataset.rollout_steps
         level = dataset.level
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")

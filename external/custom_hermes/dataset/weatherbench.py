@@ -98,7 +98,7 @@ class WeatherBench(Dataset):
                 "Test split requires `x_mean` and `x_std` from training split"
 
         # saving information that will be needed to convert predicitons back to .zarr files
-        self.grid_shape = (ds.latitude.size, ds.longitude.size)
+        self.grid_shape = (ds.longitude.size, ds.latitude.size)
         self.lat = ds.latitude.values
         self.lon = ds.longitude.values
         self.time = ds.time.values
@@ -128,12 +128,12 @@ class WeatherBench(Dataset):
         return data
 
     def num_trajectories(self):
-        return self.x.shape[0] // (self.rollout_steps + 1)
+        return self.x.shape[0] - self.rollout_steps
 
     def get_trajectory(self, idx: int):
 
         T = self.rollout_steps + 1
-        start = idx * T
+        start = idx
 
         assert start + T <= self.x.shape[0], "Trajectory index out of range"
 
@@ -143,6 +143,7 @@ class WeatherBench(Dataset):
         data.x = self.x[start: start + T].squeeze(-1).squeeze(-1).T
         data.mesh_idx = torch.tensor([0])
         data.sample_idx = torch.tensor([idx])
+        data.init_time = self.time[start]
 
         if self.norm:
             data.x = (data.x - self.x_mean) / self.x_std
