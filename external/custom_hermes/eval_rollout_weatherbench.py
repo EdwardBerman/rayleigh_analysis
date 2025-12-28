@@ -10,6 +10,7 @@ import numpy as np
 import pyvista as pv
 import robust_laplacian
 import torch
+import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
 
@@ -27,6 +28,8 @@ pv.set_plot_theme("paraview")
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
+
+    cfg.device = 'cpu'
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
@@ -50,6 +53,14 @@ def main(cfg):
             "nrmse": defaultdict(list),
             "smape": defaultdict(list),
         }
+
+        lat, lon = dataset.lat, dataset.lon
+        nlat, nlon = dataset.grid_shape
+        T = dataset.rollout_steps
+        level = dataset.level
+        pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")      
+        zarr_path = Path(cfg.save_dir) / "wb_predictions.zarr"
+        first_write = True
 
         model.eval()
         for idx in range(dataset.num_trajectories()):
@@ -196,6 +207,49 @@ def main(cfg):
             results["predictions"][mesh_idx].append(
                 np.array(all_preds).T
             )  # [Num_nodes, T]
+
+            # saving results for weatherbench, needs to be
+            # ('time', 'prediction_timedelta', 'level', 'longitude', 'latitude')
+            pred = np.array(all_preds).reshape(T, nlon, nlat)
+            pred = pred[:, None, :, :]
+            pred = pred[None, ...]
+            init_time = np.datetime64(dataset.time[idx])
+
+            if dataset.task == "z500":
+                name = "geopotential"
+            else:
+                name = "temperature"
+
+            da = xr.DataArray(
+                pred,
+                dims=("time", "prediction_timedelta",
+                      "level", "longitude", "latitude"),
+                coords={
+                    "time": [init_time],
+                    "prediction_timedelta": pred_timedelta,
+                    "level": [level],
+                    "longitude": lon,
+                    "latitude": lat,
+                },
+                name=name,
+            )
+
+            da = da.chunk({
+                "time": 1,
+                "prediction_timedelta": 1,
+                "level": 1,
+                "longitude": nlon,
+                "latitude": nlat,
+            })
+
+            da.to_zarr(
+                zarr_path,
+                mode="w" if first_write else "a",
+                append_dim="time" if not first_write else None,
+            )
+
+            first_write = False
+
             results["losses"][mesh_idx].append(np.array(all_losses))
 
             results["nrmse"][mesh_idx].append(np.array(nrmse))

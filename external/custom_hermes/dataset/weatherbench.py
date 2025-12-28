@@ -76,7 +76,7 @@ class WeatherBench(Dataset):
             time = slice("2019-01-01", "2022-12-31")
 
         ds = ds.sel(level=level, time=time)
-
+        # time, lon, lat -> time, num_node
         ds_nodes = torch.from_numpy(ds.values.reshape(
             ds.shape[0], -1)).float()  # (time, num_nodes)
 
@@ -128,11 +128,11 @@ class WeatherBench(Dataset):
         return data
 
     def num_trajectories(self):
-        return self.x.shape[0] // self.rollout_steps
+        return self.x.shape[0] // (self.rollout_steps + 1)
 
     def get_trajectory(self, idx: int):
 
-        T = self.rollout_steps
+        T = self.rollout_steps + 1
         start = idx * T
 
         assert start + T <= self.x.shape[0], "Trajectory index out of range"
