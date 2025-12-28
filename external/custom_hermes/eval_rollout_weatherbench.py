@@ -211,7 +211,8 @@ def main(cfg):
             pred = np.array(all_preds).reshape(T, nlon, nlat)
             pred = pred[:, None, :, :]
             pred = pred[None, ...]
-            init_time = np.datetime64(dataset.time[idx])
+            start = idx * (dataset.rollout_steps + 1)
+            init_time = np.datetime64(dataset.time[start])
 
             if dataset.task == "z500":
                 name = "geopotential"
@@ -233,7 +234,7 @@ def main(cfg):
             )
 
             da = da.chunk({
-                "time": 1,
+                "time": 16,
                 "prediction_timedelta": T,
                 "level": 1,
                 "longitude": nlon,

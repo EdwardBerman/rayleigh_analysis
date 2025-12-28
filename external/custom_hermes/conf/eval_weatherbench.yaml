@@ -1,0 +1,7 @@
+work_dir: ${hydra:runtime.cwd}
+
+defaults:
+  - dataset: weatherbench 
+  - backbone: hermes
+  - dataset_backbone: ${dataset}_${backbone}
+  - _self_
