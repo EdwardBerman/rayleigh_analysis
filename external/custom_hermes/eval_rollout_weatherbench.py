@@ -234,7 +234,7 @@ def main(cfg):
 
             da = da.chunk({
                 "time": 1,
-                "prediction_timedelta": 1,
+                "prediction_timedelta": len(pred_timedelta),
                 "level": 1,
                 "longitude": nlon,
                 "latitude": nlat,
