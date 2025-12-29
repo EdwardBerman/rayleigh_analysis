@@ -73,6 +73,6 @@ if __name__ == "__main__":
     )
 
     results['temperature'].sel(
-        metric='acc', level=850).plot()
+        metric='rmse', level=850).plot()
 
     plt.show()
