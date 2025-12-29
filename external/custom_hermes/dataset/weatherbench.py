@@ -8,6 +8,8 @@ from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
+from torch_geometric.utils import to_undirected
+
 from external.custom_hermes.dataset.heatwave_pde import compute_adj_mat, compute_edges_dense
 
 
@@ -91,17 +93,9 @@ class WeatherBench(Dataset):
 
         if self.pre_transform is not None:
             print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
-            data_obj = Data(pos=self.pos, face=self.face)
-            data_obj = compute_edges_dense(data_obj)
-            data_obj = compute_adj_mat(data_obj)
-
-            self.shared_data = self.pre_transform(data_obj)
+            self.shared_data = compute_adj_mat(compute_edges_dense(self.pre_transform(Data(pos=self.pos, face=self.face))))
         else:
-            data_obj = Data(pos=self.pos, face=self.face)
-            data_obj = compute_edges_dense(data_obj)
-            data_obj = compute_adj_mat(data_obj)
-
-            self.shared_data = data_obj
+            self.shared_data = Data(pos=self.pos, face=self.face)
 
         if self.split == "train":
             x_flat = self.x.view(self.x.shape[0], -1)
