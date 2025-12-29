@@ -1,12 +1,10 @@
 import hydra
-import numpy as np
-import weatherbench2
 import xarray as xr
+from matplotlib import pyplot as plt
 from weatherbench2 import config
-from weatherbench2.evaluation import evaluate_in_memory, evaluate_with_beam
+from weatherbench2.evaluation import evaluate_in_memory
 from weatherbench2.metrics import ACC, MSE
 
-from external.custom_hermes.dataset.weatherbench import WeatherBench
 from external.custom_hermes.utils import create_dataset_loaders
 
 
@@ -17,10 +15,6 @@ def main(cfg):
     # this is just to get some metadata
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
     train = datasets_dict['train']
-    
-    forecast = xr.open_zarr("./rollouts/fivetrajectories")
-    
-    breakpoint()
 
     if train.task == 'z500':
         variable = 'geopotential'
@@ -30,8 +24,10 @@ def main(cfg):
         level = 850
 
     forecast_path = "./rollouts/fivetrajectories"
-    climatology = "./data/weatherbench/climatology"
+    climatology_path = "./data/weatherbench/climatology"
     era5_path = "./data/weatherbench/eras5"
+
+    climatology = xr.open_zarr(climatology_path)
 
     paths = config.Paths(
         forecast=forecast_path,
@@ -63,4 +59,20 @@ def main(cfg):
 
 
 if __name__ == "__main__":
+
     main()
+
+    results = xr.open_dataset('./weatherbench_output/deterministic.nc')
+
+    results = xr.concat(
+        [
+            results,
+            results.sel(metric=['mse']).assign_coords(metric=['rmse']) ** 0.5
+        ],
+        dim='metric'
+    )
+
+    results['temperature'].sel(
+        metric='acc', level=850).plot()
+
+    plt.show()
