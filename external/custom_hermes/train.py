@@ -101,7 +101,7 @@ def main(cfg):
         gst = lambda *_: engine.trainer.state.epoch
 
         if cfg.dataset.name == "weatherbench":
-            task_str = f"_{cfg.dataset.task}"
+            task_str = f"_{cfg.dataset.cls.task}"
             filename_prefix = f"{cfg.dataset.name}_{task_str}_{cfg.backbone.name}_seed{cfg.seed}"
         else:
             task_str = ""
