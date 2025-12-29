@@ -20,6 +20,7 @@ from external.custom_hermes.utils import (create_dataset_loaders,
                                           rotate_mesh_video)
 from external.hermes.src.data.pde.utils import screenshot_mesh
 
+import treecorr
 
 def set_rc_params(fontsize=None):
     '''
@@ -93,6 +94,158 @@ def get_mesh(name):
     _ = mesh.clean(inplace=True)
 
     return mesh
+
+def compute_avg_edge_length(mesh):
+    """
+    Compute the average edge length for 1-hop neighbors in a mesh.
+    
+    Args:
+        mesh: PyVista mesh object
+    
+    Returns:
+        Average edge length (float)
+    """
+    # Extract edges from the mesh
+    edges = mesh.extract_all_edges()
+    
+    # Get the edge connectivity
+    lines = edges.lines
+    
+    # lines is a flat array: [n_points, i0, i1, n_points, i2, i3, ...]
+    # We need to extract pairs of vertex indices
+    edge_lengths = []
+    points = mesh.points
+    
+    i = 0
+    while i < len(lines):
+        n_points = lines[i]
+        if n_points == 2:  # Edge connecting 2 points
+            idx0 = lines[i + 1]
+            idx1 = lines[i + 2]
+            
+            # Compute Euclidean distance
+            length = np.linalg.norm(points[idx0] - points[idx1])
+            edge_lengths.append(length)
+            
+        i += n_points + 1
+    
+    return np.mean(edge_lengths) if edge_lengths else 0.0
+
+def compute_kk_correlation(pos, scalars_gt, scalars_pred, min_sep=0.01, max_sep=10.0, nbins=20):
+    """
+    Compute KK correlation function for ground truth and predicted scalar fields.
+    
+    Args:
+        pos: Node positions [N, 3]
+        scalars_gt: Ground truth scalar values [N]
+        scalars_pred: Predicted scalar values [N]
+        min_sep: Minimum separation for correlation bins
+        max_sep: Maximum separation for correlation bins
+        nbins: Number of logarithmic bins
+    
+    Returns:
+        Dictionary with correlation results
+    """
+    # Convert to numpy if needed
+    if torch.is_tensor(pos):
+        pos = pos.cpu().numpy()
+    if torch.is_tensor(scalars_gt):
+        scalars_gt = scalars_gt.cpu().numpy()
+    if torch.is_tensor(scalars_pred):
+        scalars_pred = scalars_pred.cpu().numpy()
+    
+    # Flatten if needed
+    scalars_gt = scalars_gt.flatten()
+    scalars_pred = scalars_pred.flatten()
+    
+    # Create catalogs for TreeCorr
+    # We'll use x, y, z coordinates and the scalar field as kappa
+    cat_gt = treecorr.Catalog(
+        x=pos[:, 0], 
+        y=pos[:, 1], 
+        z=pos[:, 2],
+        k=scalars_gt
+    )
+    
+    cat_pred = treecorr.Catalog(
+        x=pos[:, 0], 
+        y=pos[:, 1], 
+        z=pos[:, 2],
+        k=scalars_pred
+    )
+    
+    # Configure KK correlation
+    kk_config = {
+        'min_sep': min_sep,
+        'max_sep': max_sep,
+        'nbins': nbins,
+        'bin_slop': 0.1
+    }
+    
+    # Compute auto-correlation for ground truth
+    kk_gt = treecorr.KKCorrelation(**kk_config)
+    kk_gt.process(cat_gt)
+    
+    # Compute auto-correlation for predictions
+    kk_pred = treecorr.KKCorrelation(**kk_config)
+    kk_pred.process(cat_pred)
+    
+    return {
+        'r': np.exp(kk_gt.meanlogr),  # Mean separation in each bin
+        'xi_gt': kk_gt.xi,  # Correlation function for GT
+        'xi_pred': kk_pred.xi,  # Correlation function for predictions
+        'weight_gt': kk_gt.weight,
+        'weight_pred': kk_pred.weight,
+    }
+
+def plot_kk_correlation(corr_results, save_path, mesh_idx, time_step, cfg, avg_edge_length=None):
+    """
+    Plot KK correlation in log-log space.
+    """
+    r = corr_results['r']
+    xi_gt = corr_results['xi_gt']
+    xi_pred = corr_results['xi_pred']
+    
+    # Filter out invalid values
+    valid_gt = (corr_results['weight_gt'] > 0) & np.isfinite(xi_gt)
+    valid_pred = (corr_results['weight_pred'] > 0) & np.isfinite(xi_pred)
+    
+    fig, ax = plt.subplots(1, 1, figsize=(7, 5))
+    
+    # Plot correlation functions
+    if valid_gt.any():
+        ax.loglog(r[valid_gt], np.abs(xi_gt[valid_gt]), 'o-', 
+                  label='Ground Truth Auto-correlation', color='blue', linewidth=2)
+    if valid_pred.any():
+        ax.loglog(r[valid_pred], np.abs(xi_pred[valid_pred]), 's-', 
+                  label='Prediction Auto-correlation', color='red', linewidth=2)
+
+    if avg_edge_length is not None and avg_edge_length > 0:
+        ax.axvline(avg_edge_length, color='green', linestyle='--', linewidth=2, 
+                   label=f'Avg 1-hop Edge Distance: {float(avg_edge_length):.1e}')
+    
+    ax.set_xlabel(r'$\Delta r$')
+    ax.set_ylabel(r'$|\xi (r)|$')
+    ax.legend()
+    ax.grid(True, alpha=0.3, which='both')
+    
+    ax.legend(loc='upper right')
+    ax.grid(True, alpha=0.3)
+    
+    plt.suptitle(f'Mesh {mesh_idx}, t={time_step}')
+    plt.tight_layout()
+    
+    plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.png', dpi=150)
+    plt.savefig(save_path / f'kk_correlation_mesh_{mesh_idx}_t{time_step}_{cfg.backbone.name}.pdf')
+    plt.close()
+
+    valid = valid_gt & valid_pred
+    if valid.any():
+        abs_diffs = np.abs(xi_gt[valid] - xi_pred[valid])
+        return abs_diffs  # Return array, not sum
+    else:
+        return np.array([])
+
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
@@ -281,6 +434,7 @@ def main(cfg):
         integrated_errors_all = []
         integrated_nrmse_all = []
         integrated_smape_all = []
+        correlation_errors_all = []
 
         for mesh_idx, v in results["losses"].items():
             losses = np.asarray(v)
@@ -377,6 +531,11 @@ def main(cfg):
 
             integrated_nrmse_all.extend(traj_nrmse.tolist())
             integrated_smape_all.extend(traj_smape.tolist())
+            
+            mesh_positions = mesh.points
+
+            avg_edge_length = compute_avg_edge_length(mesh)
+            
 
             for s in range(1):
                 for t in range(10, 191, 10):
@@ -400,6 +559,29 @@ def main(cfg):
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
+
+                    try:
+                        # Compute bounding box diagonal for setting correlation scales
+                        bbox_min = mesh_positions.min(axis=0)
+                        bbox_max = mesh_positions.max(axis=0)
+                        bbox_diag = np.linalg.norm(bbox_max - bbox_min)
+                        
+                        corr_results = compute_kk_correlation(
+                            mesh_positions,
+                            gt,
+                            preds,
+                            min_sep=bbox_diag * 0.01,  # 1% of diagonal
+                            max_sep=bbox_diag * 0.5,   # 50% of diagonal
+                            nbins=20
+                        )
+
+                        abs_diffs = plot_kk_correlation(corr_results, save_path, mesh_idx, t, cfg, avg_edge_length=avg_edge_length)
+                        if abs_diffs is not None and len(abs_diffs) > 0:
+                            correlation_errors_all.extend(abs_diffs.tolist())
+                        
+                        print(f"Computed KK correlation for mesh {mesh_idx}, sample {s}, time {t}.")
+                    except Exception as e:
+                        print(f"Failed to compute KK correlation for mesh {mesh_idx}, t={t}: {e}")
 
                     # rotate_mesh_video(
                     # mesh=mesh,
@@ -453,6 +635,14 @@ def main(cfg):
         )
         if len(integrated_smape_all) > 5:
             print("-----"*40)
+    
+    print("-----"*40)
+    print("KK Errors Summary:")
+    if len(correlation_errors_all) > 0:
+        all_errors = np.array(correlation_errors_all)  # Flatten all bin errors
+        err_smooth = np.mean(all_errors)  # This gives you the formula
+        print(f"Smoothness Error err_smooth: {err_smooth:.6e}")
+    print("-----"*40)
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 

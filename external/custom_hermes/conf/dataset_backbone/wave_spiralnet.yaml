@@ -1,0 +1,35 @@
+# @package _global_
+
+train:
+  epochs: 100
+  batch_size: 1
+  lr: 5e-4
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: ${train.lr}
+  weight_decay: 1e-5
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.StepLR
+  step_size: 1
+  gamma: 0.99
+
+# model:
+#   _target_: src.run.pde.SpiralNetPDE
+#   in_dim: ${dataset.in_dim}
+#   out_dim: ${dataset.out_dim}
+
+backbone:
+  net:
+    dims:
+      # - 16
+      # - 32
+      # - 32
+      # - 64
+      - ${dataset.in_dim}
+      - 32
+      - 64
+      - 64
+      - ${dataset.out_dim}
+    final_activation: false
