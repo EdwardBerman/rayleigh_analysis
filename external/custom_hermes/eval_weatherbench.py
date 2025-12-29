@@ -25,7 +25,7 @@ def main(cfg):
         variable = 'temperature'
         level = 850
 
-    forecast_path = "./rollouts/wbpreds"
+    forecast_path = "./rollouts/fivetrajectories"
     climatology = "./data/weatherbench/climatology"
     era5_path = "./data/weatherbench/eras5"
 
