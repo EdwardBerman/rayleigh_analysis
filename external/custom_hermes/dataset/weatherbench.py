@@ -8,6 +8,8 @@ from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
+from external.custom_hermes.dataset.weatherbench import compute_adj_mat, compute_edges_dense
+
 
 def mesh_to_graph(mesh_path: str):
     """Converts a mesh to graph attributes, specifically `pos` and `face`"""
@@ -89,10 +91,17 @@ class WeatherBench(Dataset):
 
         if self.pre_transform is not None:
             print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
-            self.shared_data = self.pre_transform(
-                Data(pos=self.pos, face=self.face))
+            data_obj = Data(pos=self.pos, face=self.face)
+            data_obj = compute_edges_dense(data_obj)
+            data_obj = compute_adj_mat(data_obj)
+
+            self.shared_data = self.pre_transform(data_obj)
         else:
-            self.shared_data = Data(pos=self.pos, face=self.face)
+            data_obj = Data(pos=self.pos, face=self.face)
+            data_obj = compute_edges_dense(data_obj)
+            data_obj = compute_adj_mat(data_obj)
+
+            self.shared_data = data_obj
 
         if self.split == "train":
             x_flat = self.x.view(self.x.shape[0], -1)
