@@ -8,7 +8,7 @@ from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
-from external.custom_hermes.dataset.weatherbench import compute_adj_mat, compute_edges_dense
+from external.custom_hermes.dataset.heatwave_pde import compute_adj_mat, compute_edges_dense
 
 
 def mesh_to_graph(mesh_path: str):
