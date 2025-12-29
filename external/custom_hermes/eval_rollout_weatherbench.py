@@ -215,10 +215,6 @@ def main(cfg):
 
             init_time = np.datetime64(data.init_time)
 
-            print("INIT TIME")
-            print(init_time)
-            print(dataset.get_trajectory(idx).init_time)
-
             if dataset.task == "z500":
                 name = "geopotential"
             else:
@@ -245,6 +241,16 @@ def main(cfg):
                 "longitude": nlon,
                 "latitude": nlat,
             })
+
+            # it seems to be guessing units for time delta to be days instead of hours without this
+
+            da["time"] = da["time"].astype("datetime64[ns]")
+
+            da["time"].encoding = {
+                "units": "nanoseconds since 1970-01-01",
+                "dtype": "int64",
+                "calendar": "proleptic_gregorian",
+            }
 
             da.to_zarr(
                 zarr_path,
