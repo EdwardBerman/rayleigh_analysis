@@ -99,9 +99,17 @@ def main(cfg):
 
     if cfg.get("save_dir"):
         gst = lambda *_: engine.trainer.state.epoch
+
+        if cfg.dataset.name == "weatherbench":
+            task_str = f"_{cfg.dataset.task}"
+            filename_prefix = f"{cfg.dataset.name}_{task_str}_{cfg.backbone.name}_seed{cfg.seed}"
+        else:
+            task_str = ""
+            filename_prefix = f"{cfg.dataset.name}{task_str}_{cfg.backbone.name}_seed{cfg.seed}"
+
         checkpoint_handler = ModelCheckpoint(
             cfg.save_dir,
-            filename_prefix=f"{cfg.dataset.name}_{cfg.backbone.name}_seed{cfg.seed}",
+            filename_prefix=filename_prefix,
             n_saved=1,
             require_empty=False,
             global_step_transform=gst,
