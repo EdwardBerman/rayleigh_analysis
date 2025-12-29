@@ -8,6 +8,7 @@ from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
+from external.custom_hermes.dataset.clusterize import clusterize
 
 def mesh_to_graph(mesh_path: str):
     """Converts a mesh to graph attributes, specifically `pos` and `face`"""
