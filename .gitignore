@@ -18,4 +18,5 @@ outputs/
 aggregate/
 rollouts/
 Cerberus/
+data/weatherbench/
 GCN/
