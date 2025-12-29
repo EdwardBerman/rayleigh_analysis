@@ -1,6 +1,5 @@
 """
-Analogous to `eval_rollout.py` for the PDE datasets for working with Weatherbench. 
-Specifically evaluates different rollouts for many starting times on the Earth mesh, and in the process saves forecast predictions to a zarr file that enables `eval_weatherbench.py` to be run. 
+A faster version of `eval_rollout_weatherbench.py` achieved by only evaluating on a subsample of the starting time steps. This is meant to enable faster iteration with model testing. 
 """
 
 import copy
@@ -60,11 +59,17 @@ def main(cfg):
         T = dataset.rollout_steps
         level = dataset.level
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
-        zarr_path = Path(cfg.save_dir) / {dataset.variable} / {dataset.level}
+        zarr_path = Path(cfg.save_dir) / \
+            {dataset.variable} / {dataset.level} / "toy"
         first_write = True
 
         model.eval()
-        for idx in range(dataset.num_trajectories()):
+
+        # NOTE: This is how we are doing subsampling to get significantly less trajectories to evalute on.
+        n = dataset.num_trajectories()
+        indices = range(0, n, 10)
+
+        for idx in indices:
             data = dataset.get_trajectory(idx)
             data = data.to(cfg.device)
 

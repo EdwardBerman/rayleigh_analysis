@@ -54,8 +54,21 @@ class WeatherBench(Dataset):
         self.pre_transform = pre_transform
         self.input_length = 1  # hardcoded, take in one step spit out one step
 
+        # saving the time frames used as train and test
+        self.train_slice = slice("2013-01-01", "2019-12-31")
+        self.test_slice = slice("2020-01-01", "2020-12-31")
+
         # note that the pos, face and edge_index are *shared* across all data objects
         self._read_data()
+
+    def task_to_variable(self, task: str):
+        """Takes an internal named task and returns the corresponding Weatherbench variable and level"""
+        if task == "z500":
+            return "geopotential", 500
+        elif task == "t850":
+            return "temperature", 850
+        else:
+            raise Exception("Not implemented task.")
 
     def _read_data(self):
 
@@ -63,19 +76,11 @@ class WeatherBench(Dataset):
 
         era5 = xr.open_zarr(self.eras5_path)
 
-        if self.task == "z500":
-            ds = era5["geopotential"]
-            level = 500
-        else:
-            ds = era5["temperature"]
-            level = 850
+        self.variable, self.level = self.task_to_variable(self.task)
+        ds = era5[self.variable]
+        self.time_slice = self.train_slice if self.split == "train" else self.test_slice
 
-        if self.split == "train":
-            time = slice("2012-01-01", "2018-12-31")
-        elif self.split == "test":
-            time = slice("2019-01-01", "2019-12-31")
-
-        ds = ds.sel(level=level, time=time)
+        ds = ds.sel(level=self.level, time=self.time_slice)
         # time, lon, lat -> time, num_node
         ds_nodes = torch.from_numpy(ds.values.reshape(
             ds.shape[0], -1)).float()  # (time, num_nodes)
@@ -102,7 +107,6 @@ class WeatherBench(Dataset):
         self.lat = ds.latitude.values
         self.lon = ds.longitude.values
         self.time = ds.time.values
-        self.level = level
 
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""

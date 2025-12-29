@@ -45,12 +45,37 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 4. To actually run training, you will go into the `external/fourierflow` directory and enter `python -m fourierflow.commands train --trial 0 experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/4_layers/config.yaml`
 5. To obtain results run `python -m fourierflow.commands sample experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/4_layers/config.yaml` in the same directory as above
 
-### Weather Bench
+### Weatherbench2
 
+We engineer the Weatherbench2 dataset and evaluation framework so that it is compatible with the rest of the evaluation framework used for the PDE data. 
+
+**Directory:**
+- `data_preprocessing/weatherbench` contains the scripts used to download the ERAS5 data from Weatherbench2 and the code used to construct the mesh for the Earth. 
+- `data/weatherbench` is where the downloaded datat will be saved. `data/weatherbench/climatology` should contain the climatology data. `data/weatherbench/eras5` should contain the ERAS5 data for the necessary time slice, and `data/weatherbench/earth_mesh.vtp` should be the file containing the Earth mesh. 
+- `external/custom_hermes/dataset/weatherbench.py` contains the Weatherbench dataset. 
+- `rollouts` will contain the rollout results after running the evaluation scripts. `weatherbench` will contain our own evaluation, and the zarr files used to run Weatherbench2 evaluation will be saved to `rollouts/{variable}/{level}`.
+- `external/custom_hermes/eval_rollout_weatherbench.py` evaluates outputs with our evaluation framework, *and* saves the zarr files needed to run `eval_weatherbench.py`. 
+- `external/custom_hermes/eval_weatherbench.py` evaluates forecasts with the provided evaluation framework. 
+
+**Downloading data**:
 1. Enter the `rayleigh_analysis` directory and then `mkdir data/weatherbench`
 2. Download ERAS5 with `python3 -m data_preprocessing.weatherbench.download_era5s`
 3. Download Climatology data with `python3 -m data_preprocessing.weatherbench.download_climatology`
 4. Generate Earth mesh with  `python3 -m data_preprocessing.weatherbench.construct_earth_mesh`
-5. Train with `python3 -m external.custom_hermes.train dataset=weatherbench backbone=hermes` as before
 
+**Training**:
+1. Train with `python3 -m external.custom_hermes.train dataset=weatherbench backbone=[model]` as before
 
+**Evaluation**:
+1. Evaluate with our metrics with `python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=[backbone] model_save_path=[model-checkpoint]`
+2. Evaluate with Weatherbench2 specific metrics with `python3 -m external.custom_hermes.eval_weatherbench backbone=hermes`. See the detailed command line arguments at `external/custom_hermes/conf/eval_weatherbench.yaml`.
+[Extra] A evaluation script that runs rollouts on ~1/10 of the test trajectories only can be found here: `external/custom_hermes/eval_rollout_weatherbench_toy.py`. It will run exactly the same as the above script but evaluates only a subset of the data for faster iteration.
+
+Further details: 
+- Training period: 2013-01-01 to 2019-12-31, testing period: 2020-01-01 to 2020-12-31
+- Trained and evaluated on ERAS5 data, so model is non-operational 
+- Evaluated on RMSE and ACC via the provided Weatherbench2 evaluation framework, and our own metrics for smoothness and correctness.
+- Evaluate on two tasks, Z500 (geopotential at level=500) and T850 (temperature at level=850).
+- 1.4 degree resolution (no regridding)
+- 6 hour time steps
+- To project data onto a mesh, we take each (lat, lon) pair to be a node, subdivide each cell into two triangles for triangulation. See exactly how the Earth mesh is constructed in `data_preprocessing/weatherbench/construct_earth_mesh.py`.
