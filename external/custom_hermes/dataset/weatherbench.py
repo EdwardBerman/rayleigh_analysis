@@ -33,6 +33,7 @@ class WeatherBench(Dataset):
                  task: str,
                  norm: bool,
                  rollout_steps: int,
+                 max_cluster_size: int = 20,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
                  pre_transform: Optional[Callable] = None):
@@ -57,6 +58,8 @@ class WeatherBench(Dataset):
         # saving the time frames used as train and test
         self.train_slice = slice("2013-01-01", "2019-12-31")
         self.test_slice = slice("2020-01-01", "2020-12-31")
+        
+        self.max_cluster_size = max_cluster_size
 
         # note that the pos, face and edge_index are *shared* across all data objects
         self._read_data()
@@ -91,8 +94,21 @@ class WeatherBench(Dataset):
             print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
             self.shared_data = self.pre_transform(
                 Data(pos=self.pos, face=self.face))
+            
+            pos_np = self.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+
+            self.shared_data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
+            self.shared_data.cluster_centers = torch.from_numpy(centers_np).float()
         else:
             self.shared_data = Data(pos=self.pos, face=self.face)
+            
+            pos_np = self.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+
+            self.shared_data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
+            self.shared_data.cluster_centers = torch.from_numpy(centers_np).float()
+            
 
         if self.split == "train":
             x_flat = self.x.view(self.x.shape[0], -1)
