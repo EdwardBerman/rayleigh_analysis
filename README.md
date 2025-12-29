@@ -71,7 +71,7 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 2. Evaluate with Weatherbench2 specific metrics with `python3 -m external.custom_hermes.eval_weatherbench backbone=hermes`. See the detailed command line arguments at `external/custom_hermes/conf/eval_weatherbench.yaml`.
 [Extra] A evaluation script that runs rollouts on ~1/10 of the test trajectories only can be found here: `external/custom_hermes/eval_rollout_weatherbench_toy.py`. It will run exactly the same as the above script but evaluates only a subset of the data for faster iteration.
 
-Further details: 
+**Further details**: 
 - Training period: 2013-01-01 to 2019-12-31, testing period: 2020-01-01 to 2020-12-31
 - Trained and evaluated on ERAS5 data, so model is non-operational 
 - Evaluated on RMSE and ACC via the provided Weatherbench2 evaluation framework, and our own metrics for smoothness and correctness.
