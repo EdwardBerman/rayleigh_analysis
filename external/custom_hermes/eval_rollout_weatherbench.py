@@ -215,6 +215,10 @@ def main(cfg):
 
             init_time = np.datetime64(data.init_time)
 
+            print("INIT TIME")
+            print(init_time)
+            print(dataset.get_trajectory(idx).init_time)
+
             if dataset.task == "z500":
                 name = "geopotential"
             else:

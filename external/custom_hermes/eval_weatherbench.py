@@ -17,6 +17,10 @@ def main(cfg):
     # this is just to get some metadata
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
     train = datasets_dict['train']
+    
+    forecast = xr.open_zarr("./rollouts/fivetrajectories")
+    
+    breakpoint()
 
     if train.task == 'z500':
         variable = 'geopotential'
