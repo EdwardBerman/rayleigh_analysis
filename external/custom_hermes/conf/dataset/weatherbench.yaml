@@ -12,6 +12,7 @@ dataset:
     task: "t850"
     norm: false
     rollout_steps: 40
+    cluster: false
 
 loss:
   _target_: torch.nn.MSELoss

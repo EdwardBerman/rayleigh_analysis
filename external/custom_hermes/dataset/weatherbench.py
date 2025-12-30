@@ -40,6 +40,7 @@ class WeatherBench(Dataset):
                  task: str,
                  norm: bool,
                  rollout_steps: int,
+                 cluster: bool
                  max_cluster_size: int = 20,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
@@ -57,6 +58,7 @@ class WeatherBench(Dataset):
         self.task = task
         self.norm = norm
         self.rollout_steps = rollout_steps
+        self.cluster = cluster
         self.x_mean = x_mean
         self.x_std = x_std
         self.pre_transform = pre_transform
@@ -98,16 +100,19 @@ class WeatherBench(Dataset):
 
         if self.pre_transform is not None:
             print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
-            pos_np = self.pos.cpu().numpy().astype(np.float32)   # [N, 3]
-            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
 
-            cluster_labels = torch.from_numpy(labels_np).long()    # [N]
-            cluster_centers = torch.from_numpy(centers_np).float()
+            if self.cluster:
+                pos_np = self.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+                labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+
+                cluster_labels = torch.from_numpy(labels_np).long()    # [N]
+                cluster_centers = torch.from_numpy(centers_np).float()
 
             self.shared_data = compute_adj_mat(compute_edges_dense(self.pre_transform(Data(pos=self.pos, face=self.face))))
 
-            self.shared_data.cluster_labels = cluster_labels
-            self.shared_data.cluster_centers = cluster_centers
+            if self.cluster:
+                self.shared_data.cluster_labels = cluster_labels
+                self.shared_data.cluster_centers = cluster_centers
         else:
             self.shared_data = Data(pos=self.pos, face=self.face)
 
