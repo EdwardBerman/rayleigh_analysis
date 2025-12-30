@@ -42,6 +42,7 @@ class WeatherBench(Dataset):
                  rollout_steps: int,
                  cluster: bool,
                  compute_edges: bool,
+                 compute_adj: bool,
                  max_cluster_size: int = 20,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
@@ -61,6 +62,7 @@ class WeatherBench(Dataset):
         self.rollout_steps = rollout_steps
         self.cluster = cluster
         self.compute_edges = compute_edges
+        self.compute_adj = compute_adj
         self.x_mean = x_mean
         self.x_std = x_std
         self.pre_transform = pre_transform
@@ -110,8 +112,10 @@ class WeatherBench(Dataset):
                 cluster_labels = torch.from_numpy(labels_np).long()    # [N]
                 cluster_centers = torch.from_numpy(centers_np).float()
 
-            if self.compute_edges:
+            if self.compute_edges and self.compute_adj:
                 self.shared_data = compute_adj_mat(compute_edges_dense(self.pre_transform(Data(pos=self.pos, face=self.face))))
+            elif self.compute_edges:
+                self.shared_data = compute_edges_dense(self.pre_transform(Data(pos=self.pos, face=self.face)))
             else:
                 self.shared_data = self.pre_transform(Data(pos=self.pos, face=self.face))
 
