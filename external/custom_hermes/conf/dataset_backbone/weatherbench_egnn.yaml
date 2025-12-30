@@ -13,6 +13,6 @@ optimizer:
 backbone:
   net:
     depth: 8
-    dim: 5 # node feature dimension
+    dim: 1 # node feature dimension
     edge_dim: 1 # squared distance as edge feature
     m_dim: 32 
