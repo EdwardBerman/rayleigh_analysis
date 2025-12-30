@@ -40,7 +40,7 @@ class WeatherBench(Dataset):
                  task: str,
                  norm: bool,
                  rollout_steps: int,
-                 cluster: bool
+                 cluster: bool,
                  max_cluster_size: int = 20,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
