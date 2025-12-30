@@ -60,7 +60,7 @@ def main(cfg):
         T = dataset.rollout_steps
         level = dataset.level
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
-        zarr_path = Path(cfg.save_dir) / {dataset.variable} / {dataset.level}
+        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level)
         first_write = True
 
         model.eval()
