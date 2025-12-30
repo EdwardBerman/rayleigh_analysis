@@ -95,9 +95,7 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
 
         for i, block in enumerate(self.blocks):
-            if i == 0:  # Last layer is GCNConv
-                x = block(x, edge_index, edge_weight)
-            elif i == 11:
+            if i == 11:
                 x = block(x, edge_index, edge_weight)
             else:  # OrthogonalGCNConvLayer
                 input_data_obj.x = x
