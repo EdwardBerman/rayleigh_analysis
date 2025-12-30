@@ -8,6 +8,8 @@ from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
+import numpy as np
+
 from torch_geometric.utils import to_undirected
 
 from external.custom_hermes.dataset.clusterize import clusterize
