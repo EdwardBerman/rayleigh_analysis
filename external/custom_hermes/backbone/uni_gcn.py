@@ -32,11 +32,7 @@ class Uni(nn.Module):
         self.blocks = nn.ModuleList()
 
         for i in range(12):
-            if i == 0:
-                self.blocks.append(
-                    GCNConv(5, 64, add_self_loops=add_self_loops)
-                )
-            elif i == 11:
+            if i == 11:
                 self.blocks.append(
                     GCNConv(64, 1, add_self_loops=add_self_loops)
                 )
@@ -58,6 +54,12 @@ class Uni(nn.Module):
             data = transform(data)
 
         x = data.x.squeeze(-1)
+
+        if x.dim() == 1:
+            x = x.unsqueeze(-1)
+        
+        padding_size = 64 - x.shape[-1]
+        x = torch.nn.functional.pad(x, (0, padding_size), mode='constant', value=0)
 
         # check if object has "rewired" attribute
         if not hasattr(data, 'rewired') or not data.rewired:
