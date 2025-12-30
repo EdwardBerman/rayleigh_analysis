@@ -13,6 +13,7 @@ dataset:
     norm: false
     rollout_steps: 40
     cluster: false
+    compute_edges: false
 
 loss:
   _target_: torch.nn.MSELoss
