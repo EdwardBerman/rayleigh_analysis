@@ -96,7 +96,7 @@ class WeatherBench(Dataset):
 
         if self.pre_transform is not None:
             print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
-            pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+            pos_np = self.pos.cpu().numpy().astype(np.float32)   # [N, 3]
             labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
 
             cluster_labels = torch.from_numpy(labels_np).long()    # [N]
