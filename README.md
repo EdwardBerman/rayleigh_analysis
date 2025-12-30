@@ -82,11 +82,12 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 
 **Training**:
 1. Train with `python3 -m external.custom_hermes.train dataset=weatherbench backbone=[model]` as before
+2. To store less in memory, `external/custom_hermes/conf/dataset/weatherbench.yaml` has `cluster` and `compute_edges` set to `False` by default, but the transformer requires cluster be set to True and similarly EGNN requires you to compute edges
 
 **Evaluation**:
 1. Evaluate with our metrics with `python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=[backbone] model_save_path=[model-checkpoint]`
 2. Evaluate with Weatherbench2 specific metrics with `python3 -m external.custom_hermes.eval_weatherbench backbone=hermes`. See the detailed command line arguments at `external/custom_hermes/conf/eval_weatherbench.yaml`.
-[Extra] A evaluation script that runs rollouts on ~1/10 of the test trajectories only can be found here: `external/custom_hermes/eval_rollout_weatherbench_toy.py`. It will run exactly the same as the above script but evaluates only a subset of the data for faster iteration.
+3. **[Extra]** A evaluation script that runs rollouts on ~1/10 of the test trajectories only can be found here: `external/custom_hermes/eval_rollout_weatherbench_toy.py`. It will run exactly the same as the above script but evaluates only a subset of the data for faster iteration.
 
 **Further details**: 
 - Training period: 2013-01-01 to 2019-12-31, testing period: 2020-01-01 to 2020-12-31
