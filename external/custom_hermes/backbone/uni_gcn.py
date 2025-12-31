@@ -8,7 +8,7 @@ from external.ortho_gcn import GroupSort, OrthogonalGCNConvLayer
 
 
 class PadToDim(nn.Module):
-    def __init__(self, input_dim: int, hidden_dim: int):
+    def __init__(self, input_dim: int, hidden_dim: int, *args, **kwargs):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -19,9 +19,9 @@ class PadToDim(nn.Module):
         return torch.nn.functional.pad(x, (0, padding_size), value=0)
 
 
-def determine_xcoder(xcoder: str) -> nn.Module:
-    """Determines the encoder/decoder"""
-    match xcoder:
+def determine_layer(layer: str) -> nn.Module:
+    """Determines the layer type for non-Uni layers"""
+    match layer:
         case "gcn":
             return GCNConv
         case "gat":
@@ -36,9 +36,10 @@ class Uni(nn.Module):
         input_dim: int,
         hidden_dim: int,
         output_dim: int,
-        num_layers: int,
-        encoder: str,
+        projection: str,
+        num_encoder_layers: int,
         decoder: str,
+        num_decoder_layers: int,
         null_isolated,
         add_self_loops,
         dropout,
@@ -48,14 +49,16 @@ class Uni(nn.Module):
         """
         Unitary Convolution on meshes.
 
-        Parameters
-        ----------
-        encoder : str
-            Encoder to go from input_dim -> hidden_dim. 
+        projection : str
+            Projection layer into the hidden_dim. 
             One of 'gcn', 'gat', or 'pad'.
+        num_encoder_layers : int
+            Number of layers in the encoder, includes the projection layer and the unitary convolution layers. 
         decoder : str
             Decoder to go from hidden_dim -> output_dim. 
             One of 'gcn', 'gat'. 
+        num_decoder_layers : int
+            Number of decoder layers. 
         T : int, optional
             # of terms in the Taylor series truncations, by default 10
         """
@@ -65,26 +68,25 @@ class Uni(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
+        self.projection = determine_layer(projection)
+        self.num_encoder_layers = num_encoder_layers
+        self.decoder = determine_layer(decoder)
+        self.num_decoder_layers = num_decoder_layers
+
         self.null_isolated = null_isolated
         self.add_self_loops = add_self_loops
         self.dropout = dropout
         self.final_activation = final_activation
+        self.T = T
 
         self.transforms = []
         self.blocks = nn.ModuleList()
-        self.encoder = determine_xcoder(encoder)
-        assert self.decoder is not "pad", "Decoder cannot be `pad`"
-        self.decoder = determine_xcoder(decoder)
 
-        for i in range(num_layers):
+        for i in range(self.num_decoder_layers):
             if i == 0:
                 self.blocks.append(
-                    self.encoder(self.input_dim, self.hidden_dim)
-                )
-            elif i == num_layers - 1:
-                self.blocks.append(
-                    decoder(self.hidden_dim, self.output_dim,
-                            add_self_loops=add_self_loops)
+                    self.projection(self.input_dim, self.hidden_dim,
+                                    add_self_loops=add_self_loops)
                 )
             else:
                 self.blocks.append(
@@ -98,6 +100,16 @@ class Uni(nn.Module):
                                            activation=GroupSort)
 
                 )
+
+        for i in range(self.num_decoder_layers):
+            if i == self.num_decoder_layers - 1:
+                self.blocks.append(
+                    self.decoder(self.hidden_dim, self.output_dim,
+                                 add_self_loops=add_self_loops)
+                )
+            else:
+                self.blocks.append(self.decoder(
+                    self.hidden_dim, self.hidden_dim, add_self_loops=add_self_loops))
 
     def forward(self, data):
         for transform in self.transforms:
@@ -143,9 +155,11 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
 
         for i, block in enumerate(self.blocks):
-            if i == 0 or i == len(self.blocks) - 1:
+            # projection layer or decoder layers
+            if i == 0 or i > self.num_encoder_layers - 1:
                 x = block(x, edge_index, edge_weight)
-            else:  # OrthogonalGCNConvLayer
+            # OrthogonalGCNConvLayer
+            else:
                 input_data_obj.x = x
                 input_data_obj = block(input_data_obj)
                 x = input_data_obj.x
