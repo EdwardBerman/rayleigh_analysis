@@ -11,6 +11,7 @@ dataset:
     mesh_path: "${work_dir}/data/weatherbench/earth_mesh.vtp"
     task: "t850"
     norm: false
+    input_steps: 3
     rollout_steps: 40
     cluster: false
     compute_edges: true
