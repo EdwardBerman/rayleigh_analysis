@@ -49,9 +49,9 @@ class WeatherBench(Dataset):
                  norm: bool,
                  input_steps: int,
                  rollout_steps: int,
-                 cluster: bool,
-                 compute_edges: bool,
-                 compute_adj: bool,
+                 cluster: bool = False,
+                 compute_edges: bool = False,
+                 compute_adj: bool = False,
                  max_cluster_size: int = 20,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
@@ -100,7 +100,7 @@ class WeatherBench(Dataset):
         ds_nodes = torch.from_numpy(ds.values.reshape(
             ds.shape[0], -1)).float()  # (time, num_nodes)
 
-        self.x = ds_nodes.unsqueeze(-1).unsqueeze(-1)
+        self.x = ds_nodes
 
         if self.pre_transform is not None:
             print("WARNING: This operation here assumes that no pre-transforms use data specific to at time step. As such we compute the pre-transformed values once using a dummy Data() object, and reuse it for streaming.")
@@ -130,9 +130,8 @@ class WeatherBench(Dataset):
             self.shared_data = Data(pos=self.pos, face=self.face)
 
         if self.split == "train":
-            x_flat = self.x.view(self.x.shape[0], -1)
-            self.x_mean = x_flat.mean()
-            self.x_std = x_flat.std()
+            self.x_mean = self.x.mean()
+            self.x_std = self.x.std()
         else:
             assert self.x_mean is not None and self.x_std is not None, \
                 "Test split requires `x_mean` and `x_std` from training split"
@@ -145,47 +144,57 @@ class WeatherBench(Dataset):
 
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
-        return self.x.shape[0] - 1
+        return self.x.shape[0] - self.input_length
 
     def get(self, idx: int) -> Data:
         """Builds a Data object on the fly with the shared attributes and the specific time step."""
 
         assert idx + \
-            1 < self.x.shape[0], "Cannot obtain the next step of the last step."
+            self.input_length < self.x.shape[0], "Window out of range."
 
         data = Data(**self.shared_data.to_dict())
 
-        if self.norm:
-            x_t_norm = (self.x[idx] - self.x_mean) / self.x_std
-            data.x = x_t_norm
-            data.unnormx = self.x[idx]
-        else:
-            data.x = self.x[idx]
+        # x should be of shape (num_nodes, input_length, node_features)
+        # y should be of shape (num_nodes, output_length)
+        x = self.x[idx: idx + self.input_length].T.unsqueeze(-1)
+        y = self.x[idx + self.input_length].unsqueeze(-1)
 
-        data.y = self.x[idx + 1].squeeze(-1)
+        if self.norm:
+            xnorm = (x - self.x_mean) / self.x_std
+            data.x = xnorm
+            data.unnormx = x
+        else:
+            data.x = x
+
+        data.y = y
 
         return data
 
     def num_trajectories(self):
-        return self.x.shape[0] - self.rollout_steps
+        return self.x.shape[0] - (self.input_length + self.rollout_steps) + 1
 
     def get_trajectory(self, idx: int):
 
-        T = self.rollout_steps + 1
+        # data.x should have shape (num_nodes, trajectory_length)
+        # this is definitely a little bit sketchy but we are just going to run with it :3
+        K = self.input_length
+        T = self.rollout_steps
         start = idx
 
-        assert start + T <= self.x.shape[0], "Trajectory index out of range"
+        assert start + K + \
+            T <= self.x.shape[0], "Trajectory index out of range"
 
         data = Data(**self.shared_data.to_dict())
 
         # the shapes just work out this way, go yell at someone else >:(
-        data.x = self.x[start: start + T].squeeze(-1).squeeze(-1).T
-        data.mesh_idx = torch.tensor([0])
-        data.sample_idx = torch.tensor([idx])
-        data.init_time = self.time[start]
+        data.x = self.x[start: start + T + K].T
 
         if self.norm:
             data.x = (data.x - self.x_mean) / self.x_std
+
+        data.mesh_idx = torch.tensor([0])
+        data.sample_idx = torch.tensor([idx])
+        data.init_time = self.time[start]
 
         return data
 
@@ -196,7 +205,7 @@ if __name__ == "__main__":
     mesh_path = "./data/weatherbench/earth_mesh.vtp"
 
     train = WeatherBench(era5_path, mesh_path, task="z500",
-                         norm=False, rollout_steps=40, split="train")
+                         norm=False, input_steps=5, rollout_steps=40, split="train")
 
     train_loader = DataLoader(
         train,
@@ -206,8 +215,12 @@ if __name__ == "__main__":
     )
 
     test = WeatherBench(era5_path, mesh_path, task="z500", norm=False,
-                        rollout_steps=40, split="test", x_mean=train.x_mean, x_std=train.x_std)
+                        rollout_steps=40, input_steps=5, split="test", x_mean=train.x_mean, x_std=train.x_std)
 
     # this dry run verfifies that the get() and len() behavior of the dataset won't run into indexing issues
-    for i, batch in enumerate(tqdm(train_loader, desc="Dry run")):
+    for i, batch in enumerate(tqdm(train_loader, desc="Dry run for Weatherbench training frames!")):
         pass
+
+    # this dry run verifies that the get() and len() for trajectories won't run into indexing issues
+    for i in tqdm(range(test.num_trajectories()), desc="Dry run for Weatherbench trajectories!"):
+        test.get_trajectory(i)

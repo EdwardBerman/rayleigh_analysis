@@ -9,10 +9,14 @@ from external.custom_hermes.utils import create_dataset_loaders, numel, prepare_
 
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
+
+    cfg.device = 'cpu'
     set_seed(cfg.seed)
 
-    loaders_dict = create_dataset_loaders(cfg)
-
+    loaders_dict = create_dataset_loaders(cfg, return_datasets=True)
+    
+    breakpoint()
+    
     # Create backbone and model
 
     backbone = instantiate(cfg.backbone.net).to(cfg.device)
