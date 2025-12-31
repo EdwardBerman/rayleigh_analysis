@@ -64,7 +64,7 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 
 ### Weatherbench2
 
-We engineer the Weatherbench2 dataset and evaluation framework so that it is compatible with the rest of the evaluation framework used for the PDE data. 
+We engineer the Weatherbench2 dataset and evaluation framework so that it is compatible with the rest of the evaluation framework used for the PDE data. You may need to run `pip install git+https://github.com/google-research/weatherbench2.git` in your Poetry environment
 
 **Directory**:
 - `data_preprocessing/weatherbench` contains the scripts used to download the ERAS5 data from Weatherbench2 and the code used to construct the mesh for the Earth. 
@@ -82,7 +82,7 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 
 **Training**:
 1. Train with `python3 -m external.custom_hermes.train dataset=weatherbench backbone=[model]` as before
-2. To store less in memory, `external/custom_hermes/conf/dataset/weatherbench.yaml` has `cluster` and `compute_edges` set to `False` by default, but the transformer requires cluster be set to True and similarly EGNN requires you to compute edges
+2. To store less in memory, `external/custom_hermes/conf/dataset/weatherbench.yaml` has `cluster` and `compute_edges` set to `False` by default, but the transformer requires cluster be set to True and similarly EGNN requires you to compute edges. We use `EGNN` for the PyVista meshes and `EGNN_Local` for Weatherbench2 due to memory constraints
 
 **Evaluation**:
 1. Evaluate with our metrics with `python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=[backbone] model_save_path=[model-checkpoint]`
