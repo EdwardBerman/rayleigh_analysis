@@ -348,9 +348,9 @@ def main(cfg):
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                save_path / f"wb_rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"wb_rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
             plt.tight_layout()
