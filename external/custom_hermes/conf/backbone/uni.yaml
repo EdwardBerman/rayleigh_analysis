@@ -5,3 +5,20 @@ net:
   add_self_loops: false
   null_isolated: false
   dropout: false
+
+
+
+class Uni(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        num_layers: int,
+        encoder: nn.Module | None,  # if None, will pad to hidden_dim insteads
+        null_isolated,
+        add_self_loops,
+        dropout,
+        final_activation,
+        T=10,
+    ):
+        """

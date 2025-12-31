@@ -1,7 +1,7 @@
 import robust_laplacian
 import torch
 from torch import nn
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import MP, GATConv, GCNConv
 from torch_geometric.utils import remove_self_loops
 
 from external.ortho_gcn import GroupSort, OrthogonalGCNConvLayer
@@ -19,13 +19,23 @@ class PadToDim(nn.Module):
         return torch.nn.functional.pad(x, (0, padding_size), value=0)
 
 
+def determine_encoder(encoder: str) -> nn.Module:
+    match encoder:
+        case "gcn":
+            return GCNConv
+        case "gat":
+            return GATConv
+        case "pad":
+            return PadToDim
+
+
 class Uni(nn.Module):
     def __init__(
         self,
         input_dim: int,
         hidden_dim: int,
         num_layers: int,
-        encoder: nn.Module | None,  # if None, will pad to hidden_dim insteads
+        encoder: str,
         null_isolated,
         add_self_loops,
         dropout,
@@ -37,8 +47,9 @@ class Uni(nn.Module):
 
         Parameters
         ----------
-        encoder : nn.Module | None
-            Encoder to go from input_dim -> hidden_dim, if None, pads the input to be of size hidden_dim instead of using an encoder.
+        encoder : str
+            Encoder to go from input_dim -> hidden_dim. 
+            One of 'gcn', 'gat', or 'pad'.
         T : int, optional
             # of terms in the Taylor series truncations, by default 10
         """
@@ -53,15 +64,8 @@ class Uni(nn.Module):
         self.final_activation = final_activation
 
         self.transforms = []
-
         self.blocks = nn.ModuleList()
-
-        if encoder is None:
-            self.encoder = PadToDim
-            self.pad = True
-        else:
-            self.encoder = encoder
-            self.pad = False
+        self.encoder = determine_encoder(encoder)
 
         for i in range(num_layers):
             if i == 0:
