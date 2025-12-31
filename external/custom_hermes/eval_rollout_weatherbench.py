@@ -428,6 +428,25 @@ def main(cfg):
         if len(integrated_smape_all) > 5:
             print("-----"*40)
 
+    if len(integrated_errors_all) > 0 and len(integrated_nrmse_all) > 0 and len(integrated_smape_all) > 0:
+        summary_metrics = np.array([
+            [np.mean(integrated_errors_all), np.std(integrated_errors_all)],
+            [np.mean(integrated_nrmse_all), np.std(integrated_nrmse_all)],
+            [np.mean(integrated_smape_all), np.std(integrated_smape_all)]
+        ])
+        
+        # Save to the main save directory
+        summary_save_path = Path(cfg.save_dir) / cfg.dataset.name / split / cfg.backbone.name
+        summary_save_path.mkdir(parents=True, exist_ok=True)
+        
+        np.save(summary_save_path / "summary_metrics.npy", summary_metrics)
+        
+        print(f"\nSaved summary metrics to: {summary_save_path / 'summary_metrics.npy'}")
+        print("Array shape: (3, 2)")
+        print("Row 0: [Rayleigh mean, Rayleigh std]")
+        print("Row 1: [NRMSE mean, NRMSE std]")
+        print("Row 2: [SMAPE mean, SMAPE std]")
+
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 
 

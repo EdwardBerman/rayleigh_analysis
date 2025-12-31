@@ -59,15 +59,14 @@ def main(cfg):
         T = dataset.rollout_steps
         level = dataset.level
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
-        zarr_path = Path(cfg.save_dir) / \
-            {dataset.variable} / {dataset.level} / "toy"
+        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level)
         first_write = True
 
         model.eval()
 
         # NOTE: This is how we are doing subsampling to get significantly less trajectories to evalute on.
         n = dataset.num_trajectories()
-        indices = range(0, n, 10)
+        indices = range(0, n, 100)
 
         for idx in indices:
             data = dataset.get_trajectory(idx)
