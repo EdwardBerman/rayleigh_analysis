@@ -1,53 +1,115 @@
 import robust_laplacian
 import torch
 from torch import nn
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import GATConv, GCNConv
 from torch_geometric.utils import remove_self_loops
 
-from external.ortho_gcn import OrthogonalGCNConvLayer, GroupSort
+from external.ortho_gcn import GroupSort, OrthogonalGCNConvLayer
+
+
+class PadToDim(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, *args, **kwargs):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+
+    def forward(self, x, *args, **kwargs):
+        """Pads x to the desired dimension. Takes in whatever other arguments but ignores them to be compatible with PyG style models like the GCN."""
+        padding_size = self.hidden_dim - self.input_dim
+        return torch.nn.functional.pad(x, (0, padding_size), value=0)
+
+
+def determine_layer(layer: str) -> nn.Module:
+    """Determines the layer type for non-Uni layers"""
+    match layer:
+        case "gcn":
+            return GCNConv
+        case "gat":
+            return GATConv
+        case "pad":
+            return PadToDim
 
 
 class Uni(nn.Module):
     def __init__(
         self,
+        input_dim: int,
+        hidden_dim: int,
+        output_dim: int,
+        projection: str,
+        num_encoder_layers: int,
+        decoder: str,
+        num_decoder_layers: int,
         null_isolated,
         add_self_loops,
         dropout,
         final_activation,
         T=10,
     ):
+        """
+        Unitary Convolution on meshes.
+
+        projection : str
+            Projection layer into the hidden_dim. 
+            One of 'gcn', 'gat', or 'pad'.
+        num_encoder_layers : int
+            Number of layers in the encoder, includes the projection layer and the unitary convolution layers. 
+        decoder : str
+            Decoder to go from hidden_dim -> output_dim. 
+            One of 'gcn', 'gat'. 
+        num_decoder_layers : int
+            Number of decoder layers. 
+        T : int, optional
+            # of terms in the Taylor series truncations, by default 10
+        """
+
         super().__init__()
+
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.projection = determine_layer(projection)
+        self.num_encoder_layers = num_encoder_layers
+        self.decoder = determine_layer(decoder)
+        self.num_decoder_layers = num_decoder_layers
 
         self.null_isolated = null_isolated
         self.add_self_loops = add_self_loops
         self.dropout = dropout
         self.final_activation = final_activation
-
-        block_kwargs = dict(
-            add_self_loops=add_self_loops, dropout=dropout
-        )
+        self.T = T
 
         self.transforms = []
-
         self.blocks = nn.ModuleList()
 
-        for i in range(12):
-            if i == 11:
+        for i in range(self.num_decoder_layers):
+            if i == 0:
                 self.blocks.append(
-                    GCNConv(64, 1, add_self_loops=add_self_loops)
+                    self.projection(self.input_dim, self.hidden_dim,
+                                    add_self_loops=add_self_loops)
                 )
             else:
                 self.blocks.append(
-                    OrthogonalGCNConvLayer(64,
-                                           64,
+                    OrthogonalGCNConvLayer(self.hidden_dim,
+                                           self.hidden_dim,
                                            dropout=dropout,
                                            residual=False,
                                            global_bias=False,
-                                           T=10,
+                                           T=T,
                                            use_hermitian=True,
                                            activation=GroupSort)
 
                 )
+
+        for i in range(self.num_decoder_layers):
+            if i == self.num_decoder_layers - 1:
+                self.blocks.append(
+                    self.decoder(self.hidden_dim, self.output_dim,
+                                 add_self_loops=add_self_loops)
+                )
+            else:
+                self.blocks.append(self.decoder(
+                    self.hidden_dim, self.hidden_dim, add_self_loops=add_self_loops))
 
     def forward(self, data):
         for transform in self.transforms:
@@ -57,22 +119,20 @@ class Uni(nn.Module):
 
         if x.dim() == 1:
             x = x.unsqueeze(-1)
-        
-        padding_size = 64 - x.shape[-1]
-        x = torch.nn.functional.pad(x, (0, padding_size), mode='constant', value=0)
 
         # check if object has "rewired" attribute
         if not hasattr(data, 'rewired') or not data.rewired:
 
             with torch.no_grad():
                 pos, face = data.pos.cpu(), data.face.cpu()
-                L, M = robust_laplacian.mesh_laplacian(
+                L, _ = robust_laplacian.mesh_laplacian(
                     pos.cpu().numpy(), face.T.cpu().numpy())
                 L = L.tocoo()
 
                 row = torch.from_numpy(L.row).long().to(data.x.device)
                 col = torch.from_numpy(L.col).long().to(data.x.device)
-                val = torch.from_numpy(L.data).to(data.x.device).to(data.x.dtype)
+                val = torch.from_numpy(L.data).to(
+                    data.x.device).to(data.x.dtype)
                 mask = row != col
                 row, col, val = row[mask], col[mask], val[mask]
                 edge_index = torch.stack([row, col], dim=0).contiguous()
@@ -95,9 +155,11 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
 
         for i, block in enumerate(self.blocks):
-            if i == 11:
+            # projection layer or decoder layers
+            if i == 0 or i > self.num_encoder_layers - 1:
                 x = block(x, edge_index, edge_weight)
-            else:  # OrthogonalGCNConvLayer
+            # OrthogonalGCNConvLayer
+            else:
                 input_data_obj.x = x
                 input_data_obj = block(input_data_obj)
                 x = input_data_obj.x
