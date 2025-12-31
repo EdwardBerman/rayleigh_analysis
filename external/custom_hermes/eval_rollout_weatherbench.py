@@ -87,6 +87,8 @@ def plot_mse_and_variance(all_gts, all_preds, save_path, cfg):
     np.save(save_path / "mse_per_timestep.npy", mse_per_timestep)
     np.save(save_path / "variance_per_timestep.npy", variance_per_timestep)
 
+    print(f"Saved MSE and Variance plots to: {save_path}")
+
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
