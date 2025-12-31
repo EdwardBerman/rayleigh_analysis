@@ -63,7 +63,7 @@ def plot_mse_and_variance(all_gts, all_preds, save_path, cfg):
     plt.plot(timesteps, mse_per_timestep, label='MSE', color='red', linewidth=2, marker='o', markersize=4)
     
     # Plot Variance
-    plt.plot(timesteps, variance_per_timestep, label=r'$\mathbb{V}[\lVer f \rVert ]$', color='blue', linewidth=2, marker='s', markersize=4)
+    plt.plot(timesteps, variance_per_timestep, label=r'$\mathbb{V}[\lVert f \rVert ]$', color='blue', linewidth=2, marker='s', markersize=4)
     
     plt.xlabel('Timestep', fontsize=14)
     plt.ylabel('Value', fontsize=14)
