@@ -343,16 +343,16 @@ def main(cfg):
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                save_path / f"wb_rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                save_path / f"wb_rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
             plt.tight_layout()
             plt.savefig(
-                save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
             integrated_errors_all.extend(traj_error.tolist())
