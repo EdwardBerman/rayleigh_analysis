@@ -82,7 +82,7 @@ class Uni(nn.Module):
         self.transforms = []
         self.blocks = nn.ModuleList()
 
-        for i in range(self.num_decoder_layers):
+        for i in range(self.num_encoder_layers):
             if i == 0:
                 self.blocks.append(
                     self.projection(self.input_dim, self.hidden_dim,
