@@ -7,19 +7,42 @@ from torch_geometric.utils import remove_self_loops
 from external.ortho_gcn import GroupSort, OrthogonalGCNConvLayer
 
 
+class PadToDim(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+
+    def forward(self, x, *args, **kwargs):
+        """Pads x to the desired dimension. Takes in whatever other arguments but ignores them to be compatible with PyG style models like the GCN."""
+        padding_size = self.hidden_dim - self.input_dim
+        return torch.nn.functional.pad(x, (0, padding_size), value=0)
+
+
 class Uni(nn.Module):
     def __init__(
         self,
         input_dim: int,
         hidden_dim: int,
         num_layers: int,
-        encoder: nn.Module | None,  # if None, will pad.
+        encoder: nn.Module | None,  # if None, will pad to hidden_dim insteads
         null_isolated,
         add_self_loops,
         dropout,
         final_activation,
         T=10,
     ):
+        """
+        Unitary Convolution on meshes.
+
+        Parameters
+        ----------
+        encoder : nn.Module | None
+            Encoder to go from input_dim -> hidden_dim, if None, pads the input to be of size hidden_dim instead of using an encoder.
+        T : int, optional
+            # of terms in the Taylor series truncations, by default 10
+        """
+
         super().__init__()
 
         self.input_dim = input_dim
@@ -33,8 +56,19 @@ class Uni(nn.Module):
 
         self.blocks = nn.ModuleList()
 
+        if encoder is None:
+            self.encoder = PadToDim
+            self.pad = True
+        else:
+            self.encoder = encoder
+            self.pad = False
+
         for i in range(num_layers):
-            if i == num_layers - 1:
+            if i == 0:
+                self.blocks.append(
+                    self.encoder(self.input_dim, self.hidden_dim)
+                )
+            elif i == num_layers - 1:
                 self.blocks.append(
                     GCNConv(self.hidden_dim, self.input_dim,
                             add_self_loops=add_self_loops)
@@ -61,16 +95,12 @@ class Uni(nn.Module):
         if x.dim() == 1:
             x = x.unsqueeze(-1)
 
-        padding_size = self.hidden_dim - x.shape[-1]
-        x = torch.nn.functional.pad(
-            x, (0, padding_size), mode='constant', value=0)
-
         # check if object has "rewired" attribute
         if not hasattr(data, 'rewired') or not data.rewired:
 
             with torch.no_grad():
                 pos, face = data.pos.cpu(), data.face.cpu()
-                L, M = robust_laplacian.mesh_laplacian(
+                L, _ = robust_laplacian.mesh_laplacian(
                     pos.cpu().numpy(), face.T.cpu().numpy())
                 L = L.tocoo()
 
@@ -100,7 +130,7 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
 
         for i, block in enumerate(self.blocks):
-            if i == len(self.blocks) - 1:
+            if i == 0 or i == len(self.blocks) - 1:
                 x = block(x, edge_index, edge_weight)
             else:  # OrthogonalGCNConvLayer
                 input_data_obj.x = x
