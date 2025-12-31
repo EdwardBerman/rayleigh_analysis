@@ -32,6 +32,63 @@ set_rc_params(15)
 pv.set_plot_theme("paraview")
 
 
+def plot_mse_and_variance(all_gts, all_preds, save_path, cfg):
+    """
+    For the first trajectory, compute MSE and variance of the true function at each timestep
+    and plot them together.
+    
+    Args:
+        all_gts: List of ground truth arrays [Num_nodes] for each timestep
+        all_preds: List of prediction arrays [Num_nodes] for each timestep
+        save_path: Path to save the plot
+        cfg: Configuration object
+    """
+    # Convert to numpy arrays
+    gts = np.array(all_gts)  # Shape: [T, Num_nodes]
+    preds = np.array(all_preds)  # Shape: [T, Num_nodes]
+    
+    # Compute MSE at each timestep
+    mse_per_timestep = np.mean((preds - gts) ** 2, axis=1)  # Shape: [T]
+    
+    # Compute variance of true function at each timestep
+    absolute_gt = np.abs(gts)
+    variance_per_timestep = np.var(absolute_gt, axis=1)  # Shape: [T]
+    
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    
+    timesteps = np.arange(len(mse_per_timestep))
+    
+    # Plot MSE
+    plt.plot(timesteps, mse_per_timestep, label='MSE', color='red', linewidth=2, marker='o', markersize=4)
+    
+    # Plot Variance
+    plt.plot(timesteps, variance_per_timestep, label=r'$\mathbb{V}[\lVer f \rVert ]$', color='blue', linewidth=2, marker='s', markersize=4)
+    
+    plt.xlabel('Timestep', fontsize=14)
+    plt.ylabel('Value', fontsize=14)
+    plt.title('Performance Vs. Unitary LB', fontsize=16)
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    # Save plot
+    plt.savefig(save_path / f"mse_variance_comparison_{cfg.backbone.name}.png", dpi=300)
+    plt.savefig(save_path / f"mse_variance_comparison_{cfg.backbone.name}.pdf")
+    
+    # Also save with log scale
+    plt.yscale('log')
+    plt.title('Performance Vs. Unitary LB', fontsize=16)
+    plt.tight_layout()
+    plt.savefig(save_path / f"mse_variance_comparison_log_{cfg.backbone.name}.png", dpi=300)
+    plt.savefig(save_path / f"mse_variance_comparison_log_{cfg.backbone.name}.pdf")
+    plt.close()
+    
+    np.save(save_path / "mse_per_timestep.npy", mse_per_timestep)
+    np.save(save_path / "variance_per_timestep.npy", variance_per_timestep)
+
+
+
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
 
@@ -67,6 +124,8 @@ def main(cfg):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
         first_write = True
+
+        first_trajectory_plotted = False
 
         model.eval()
         for idx in range(dataset.num_trajectories()):
@@ -213,6 +272,20 @@ def main(cfg):
             results["predictions"][mesh_idx].append(
                 np.array(all_preds).T
             )  # [Num_nodes, T]
+
+            if idx == 0 and not first_trajectory_plotted:
+                object_name = "earth"
+                save_path = (
+                    Path(cfg.save_dir)
+                    / cfg.dataset.name
+                    / "val"  # Assuming this is validation split
+                    / object_name
+                    / cfg.backbone.name
+                )
+                save_path.mkdir(parents=True, exist_ok=True)
+                
+                plot_mse_and_variance(all_gts, all_preds, save_path, cfg)
+                first_trajectory_plotted = True
 
             # saving results for weatherbench, needs to be
             # ('time', 'prediction_timedelta', 'level', 'longitude', 'latitude')
