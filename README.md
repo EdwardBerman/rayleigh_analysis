@@ -46,22 +46,6 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 **Evaluation**:
 1. Models are evaluated using `shell_scripts/mesh/eval_mesh.sh` or `python3 -m external.custom_hermes.eval_rollout dataset=[dataset] backbone=[backbone] model_save_path=model_checkpoints/[model pt file]`
 
-### Operators on Meshes and Grids 
-
-**Preliminaries**:
-1. The old submodule is the reason why there are so many different frameworks in our poetry environment. Don't blame me, [Blame Brett](https://open.spotify.com/track/6twjuBZfRJIZnoHrghzWLk?si=0af01ff951cb478b). To be fair, I am sure the authors of [this repository](https://github.com/alasdairtran/fourierflow/tree/main) are likely also blaming Brett.
-2. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda ; poetry run pip install gpytoolbox`
-3. `export WANDB_MODE=online` for WANDB functionality to work
-
-**Downloading Data**:
-1. Instructions on loading the data are in `external/fourierflow`
-
-**Training**:
-1. To actually run training, you will go into the `external/fourierflow` directory and enter `python -m fourierflow.commands train --trial 0 experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/[num layers]_layers/config.yaml`. num layers can be one of `4, 8, 12, 16, 20, 24`
-
-**Evaluation**:
-1. To obtain results run `python -m fourierflow.commands sample experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/[num layers]_layers/config.yaml` in the same directory as above. The acceptable number of layers is again `4, 8, 12, 16, 20, 24`
-
 ### Weatherbench2
 
 We engineer the Weatherbench2 dataset and evaluation framework so that it is compatible with the rest of the evaluation framework used for the PDE data. You may need to run `pip install git+https://github.com/google-research/weatherbench2.git` in your Poetry environment
@@ -97,3 +81,19 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 - 1.4 degree resolution (no regridding)
 - 6 hour time steps
 - To project data onto a mesh, we take each (lat, lon) pair to be a node, subdivide each cell into two triangles for triangulation. See exactly how the Earth mesh is constructed in `data_preprocessing/weatherbench/construct_earth_mesh.py`.
+
+### Operators on Meshes and Grids 
+
+**Preliminaries**:
+1. The old submodule is the reason why there are so many different frameworks in our poetry environment. Don't blame me, [Blame Brett](https://open.spotify.com/track/6twjuBZfRJIZnoHrghzWLk?si=0af01ff951cb478b). To be fair, I am sure the authors of [this repository](https://github.com/alasdairtran/fourierflow/tree/main) are likely also blaming Brett.
+2. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda ; poetry run pip install gpytoolbox`
+3. `export WANDB_MODE=online` for WANDB functionality to work
+
+**Downloading Data**:
+1. Instructions on loading the data are in `external/fourierflow`
+
+**Training**:
+1. To actually run training, you will go into the `external/fourierflow` directory and enter `python -m fourierflow.commands train --trial 0 experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/[num layers]_layers/config.yaml`. num layers can be one of `4, 8, 12, 16, 20, 24`
+
+**Evaluation**:
+1. To obtain results run `python -m fourierflow.commands sample experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/[num layers]_layers/config.yaml` in the same directory as above. The acceptable number of layers is again `4, 8, 12, 16, 20, 24`
