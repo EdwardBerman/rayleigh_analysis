@@ -17,6 +17,9 @@ import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
 
+import os
+from datetime import datetime
+
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
 from external.custom_hermes.dataset.weatherbench import earth_mesh
@@ -60,7 +63,9 @@ def main(cfg):
         T = dataset.rollout_steps
         level = dataset.level
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
-        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
         first_write = True
 
         model.eval()
