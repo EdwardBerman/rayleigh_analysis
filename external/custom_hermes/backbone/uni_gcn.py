@@ -1,7 +1,7 @@
 import robust_laplacian
 import torch
 from torch import nn
-from torch_geometric.nn import MP, GATConv, GCNConv
+from torch_geometric.nn import GATConv, GCNConv
 from torch_geometric.utils import remove_self_loops
 
 from external.ortho_gcn import GroupSort, OrthogonalGCNConvLayer
