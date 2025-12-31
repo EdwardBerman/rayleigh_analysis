@@ -19,8 +19,9 @@ class PadToDim(nn.Module):
         return torch.nn.functional.pad(x, (0, padding_size), value=0)
 
 
-def determine_encoder(encoder: str) -> nn.Module:
-    match encoder:
+def determine_xcoder(xcoder: str) -> nn.Module:
+    """Determines the encoder/decoder"""
+    match xcoder:
         case "gcn":
             return GCNConv
         case "gat":
@@ -34,8 +35,10 @@ class Uni(nn.Module):
         self,
         input_dim: int,
         hidden_dim: int,
+        output_dim: int,
         num_layers: int,
         encoder: str,
+        decoder: str,
         null_isolated,
         add_self_loops,
         dropout,
@@ -50,6 +53,9 @@ class Uni(nn.Module):
         encoder : str
             Encoder to go from input_dim -> hidden_dim. 
             One of 'gcn', 'gat', or 'pad'.
+        decoder : str
+            Decoder to go from hidden_dim -> output_dim. 
+            One of 'gcn', 'gat'. 
         T : int, optional
             # of terms in the Taylor series truncations, by default 10
         """
@@ -58,6 +64,7 @@ class Uni(nn.Module):
 
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
         self.null_isolated = null_isolated
         self.add_self_loops = add_self_loops
         self.dropout = dropout
@@ -65,7 +72,9 @@ class Uni(nn.Module):
 
         self.transforms = []
         self.blocks = nn.ModuleList()
-        self.encoder = determine_encoder(encoder)
+        self.encoder = determine_xcoder(encoder)
+        assert self.decoder is not "pad", "Decoder cannot be `pad`"
+        self.decoder = determine_xcoder(decoder)
 
         for i in range(num_layers):
             if i == 0:
@@ -74,7 +83,7 @@ class Uni(nn.Module):
                 )
             elif i == num_layers - 1:
                 self.blocks.append(
-                    GCNConv(self.hidden_dim, self.input_dim,
+                    decoder(self.hidden_dim, self.output_dim,
                             add_self_loops=add_self_loops)
                 )
             else:
