@@ -215,9 +215,14 @@ def main(cfg):
 
             # saving results for weatherbench, needs to be
             # ('time', 'prediction_timedelta', 'level', 'longitude', 'latitude')
+            # all_preds: (rollout_timesteps, num_nodes)
+            # (rollout_timesteps, nlon, nlat)
             pred = np.array(all_preds).reshape(T, nlon, nlat)
+            # create level axis: (rollout_timesteps, 1, nlon, nlat)
             pred = pred[:, None, :, :]
+            # create time axis: (1, rollout_timesteps, 1, nlon, nlat)
             pred = pred[None, ...]
+            # 1 because we are only predicting for one level and for one single start time.
 
             init_time = np.datetime64(data.init_time)
 
