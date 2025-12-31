@@ -1,6 +1,7 @@
 
 from typing import Callable, Optional
 
+import numpy as np
 import pyvista as pv
 import torch
 import xarray as xr
@@ -8,12 +9,19 @@ from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
-import numpy as np
-
-from torch_geometric.utils import to_undirected
-
 from external.custom_hermes.dataset.clusterize import clusterize
-from external.custom_hermes.dataset.heatwave_pde import compute_adj_mat, compute_edges_dense
+from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
+                                                         compute_edges_dense)
+
+
+def task_to_variable(task: str):
+    """Takes an internal named task and returns the corresponding Weatherbench variable and level"""
+    if task == "z500":
+        return "geopotential", 500
+    elif task == "t850":
+        return "temperature", 850
+    else:
+        raise Exception("Not implemented task.")
 
 
 def mesh_to_graph(mesh_path: str):
@@ -39,6 +47,7 @@ class WeatherBench(Dataset):
                  split: str,
                  task: str,
                  norm: bool,
+                 input_steps: int,
                  rollout_steps: int,
                  cluster: bool,
                  compute_edges: bool,
@@ -59,6 +68,7 @@ class WeatherBench(Dataset):
         self.split = split
         self.task = task
         self.norm = norm
+        self.input_length = input_steps
         self.rollout_steps = rollout_steps
         self.cluster = cluster
         self.compute_edges = compute_edges
@@ -67,7 +77,6 @@ class WeatherBench(Dataset):
         self.x_std = x_std
         self.pre_transform = pre_transform
         self.max_cluster_size = max_cluster_size
-        self.input_length = 1  # hardcoded, take in one step spit out one step
 
         # saving the time frames used as train and test
         self.train_slice = slice("2013-01-01", "2019-12-31")
@@ -76,22 +85,13 @@ class WeatherBench(Dataset):
         # note that the pos, face and edge_index are *shared* across all data objects
         self._read_data()
 
-    def task_to_variable(self, task: str):
-        """Takes an internal named task and returns the corresponding Weatherbench variable and level"""
-        if task == "z500":
-            return "geopotential", 500
-        elif task == "t850":
-            return "temperature", 850
-        else:
-            raise Exception("Not implemented task.")
-
     def _read_data(self):
 
         self.pos, self.face = mesh_to_graph(self.mesh_path)
 
         era5 = xr.open_zarr(self.eras5_path)
 
-        self.variable, self.level = self.task_to_variable(self.task)
+        self.variable, self.level = task_to_variable(self.task)
         ds = era5[self.variable]
         self.time_slice = self.train_slice if self.split == "train" else self.test_slice
 
@@ -107,17 +107,21 @@ class WeatherBench(Dataset):
 
             if self.cluster:
                 pos_np = self.pos.cpu().numpy().astype(np.float32)   # [N, 3]
-                labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+                labels_np, centers_np = clusterize(
+                    pos_np, max_cluster_size=self.max_cluster_size)
 
                 cluster_labels = torch.from_numpy(labels_np).long()    # [N]
                 cluster_centers = torch.from_numpy(centers_np).float()
 
             if self.compute_edges and self.compute_adj:
-                self.shared_data = compute_adj_mat(compute_edges_dense(self.pre_transform(Data(pos=self.pos, face=self.face))))
+                self.shared_data = compute_adj_mat(compute_edges_dense(
+                    self.pre_transform(Data(pos=self.pos, face=self.face))))
             elif self.compute_edges:
-                self.shared_data = compute_edges_dense(self.pre_transform(Data(pos=self.pos, face=self.face)))
+                self.shared_data = compute_edges_dense(
+                    self.pre_transform(Data(pos=self.pos, face=self.face)))
             else:
-                self.shared_data = self.pre_transform(Data(pos=self.pos, face=self.face))
+                self.shared_data = self.pre_transform(
+                    Data(pos=self.pos, face=self.face))
 
             if self.cluster:
                 self.shared_data.cluster_labels = cluster_labels

@@ -18,7 +18,8 @@ from tqdm import tqdm
 
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
-from external.custom_hermes.dataset.weatherbench import earth_mesh
+from external.custom_hermes.dataset.weatherbench import (earth_mesh,
+                                                         task_to_variable)
 from external.custom_hermes.eval_rollout import set_rc_params
 from external.custom_hermes.utils import (create_dataset_loaders,
                                           screenshot_mesh_weather)
@@ -226,10 +227,7 @@ def main(cfg):
 
             init_time = np.datetime64(data.init_time)
 
-            if dataset.task == "z500":
-                name = "geopotential"
-            else:
-                name = "temperature"
+            name, _ = task_to_variable(dataset.task)
 
             da = xr.DataArray(
                 pred,
