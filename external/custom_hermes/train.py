@@ -11,6 +11,8 @@ from external.custom_hermes.utils import (create_dataset_loaders, numel,
 
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
+    
+    cfg.device = 'cpu'
 
     set_seed(cfg.seed)
 

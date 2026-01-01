@@ -47,7 +47,7 @@ class WeatherBench(Dataset):
                  split: str,
                  task: str,
                  norm: bool,
-                 input_steps: int,
+                 input_length: int,
                  rollout_steps: int,
                  cluster: bool = False,
                  compute_edges: bool = False,
@@ -68,7 +68,7 @@ class WeatherBench(Dataset):
         self.split = split
         self.task = task
         self.norm = norm
-        self.input_length = input_steps
+        self.input_length = input_length
         self.rollout_steps = rollout_steps
         self.cluster = cluster
         self.compute_edges = compute_edges
