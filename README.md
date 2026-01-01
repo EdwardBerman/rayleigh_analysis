@@ -97,3 +97,7 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 
 **Evaluation**:
 1. To obtain results run `python -m fourierflow.commands sample experiments/[airfoil | elasticity | plasticity]/[geo-fno | ffno]/[num layers]_layers/config.yaml` in the same directory as above. The acceptable number of layers is again `4, 8, 12, 16, 20, 24`
+
+### Long Range Graph Benchmark
+
+This didn't make into our final paper as the focused converged to dynamics modeling, but we have some support for it if you poke around :)
