@@ -13,9 +13,6 @@ dataset:
     norm: false
     input_length: 3
     rollout_steps: 40
-    cluster: false
-    compute_edges: true
-    compute_adj: false
 
 loss:
   _target_: torch.nn.MSELoss
@@ -27,4 +24,4 @@ engine:
   _target_: external.hermes.src.run.pde.PDEEngine
   device: ${device}
   disable_tqdm: false
-  grad_accum_steps: 1
+  grad_accum_steps: 3 
