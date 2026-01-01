@@ -136,13 +136,23 @@ class Uni(nn.Module):
 
         for i in range(self.num_decoder_layers):
             if i == self.num_decoder_layers - 1:
-                self.blocks.append(
-                    self.decoder(self.hidden_dim, self.output_dim,
-                                 add_self_loops=add_self_loops)
-                )
+                if self.decoder == MLP:
+                    self.blocks.append(
+                        self.decoder(self.hidden_dim, self.hidden_dim, self.output_dim)
+                    )
+                else:
+                    self.blocks.append(
+                        self.decoder(self.hidden_dim, self.output_dim,
+                                     add_self_loops=add_self_loops)
+                    )
             else:
-                self.blocks.append(self.decoder(
-                    self.hidden_dim, self.hidden_dim, add_self_loops=add_self_loops))
+                if self.decoder == MLP:
+                    self.blocks.append(
+                        self.decoder(self.hidden_dim, self.hidden_dim, self.hidden_dim)
+                    )
+                else:
+                    self.blocks.append(self.decoder(
+                        self.hidden_dim, self.hidden_dim, add_self_loops=add_self_loops))
 
     def forward(self, data):
         for transform in self.transforms:
