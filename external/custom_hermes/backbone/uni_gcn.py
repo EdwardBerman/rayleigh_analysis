@@ -18,6 +18,35 @@ class PadToDim(nn.Module):
         padding_size = self.hidden_dim - self.input_dim
         return torch.nn.functional.pad(x, (0, padding_size), value=0)
 
+class Sin(nn.Module):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, x):
+        return torch.sin(x)
+
+class MLP(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, num_layers: int=3, activation: str="sin"):
+        super().__init__()
+        layers = []
+        dims = [input_dim] + [hidden_dim] * (num_layers - 1) + [output_dim]
+
+        if activation == "relu":
+            act_fn = nn.ReLU()
+        elif activation == "sin":
+            act_fn = Sin()
+        else:
+            raise ValueError(f"Activation {activation} not recognized.")
+
+        for i in range(len(dims) - 1):
+            layers.append(nn.Linear(dims[i], dims[i + 1]))
+            if i < len(dims) - 2:
+                layers.append(act_fn)
+        self.network = nn.Sequential(*layers)
+
+    def forward(self, x, *args, **kwargs):
+        return self.network(x)
+
 
 def determine_layer(layer: str) -> nn.Module:
     """Determines the layer type for non-Uni layers"""
@@ -28,6 +57,10 @@ def determine_layer(layer: str) -> nn.Module:
             return GATConv
         case "pad":
             return PadToDim
+        case "mlp":
+            return MLP
+        case _:
+            raise ValueError(f"Layer type {layer} not recognized.")
 
 
 class Uni(nn.Module):
@@ -157,7 +190,10 @@ class Uni(nn.Module):
         for i, block in enumerate(self.blocks):
             # projection layer or decoder layers
             if i == 0 or i > self.num_encoder_layers - 1:
-                x = block(x, edge_index, edge_weight)
+                if isinstance(block, MLP):
+                    x = block(x)
+                else:
+                    x = block(x, edge_index, edge_weight)
             # OrthogonalGCNConvLayer
             else:
                 input_data_obj.x = x

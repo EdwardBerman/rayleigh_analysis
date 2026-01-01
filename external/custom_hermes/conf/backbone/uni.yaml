@@ -5,10 +5,10 @@ net:
   input_dim: 1
   hidden_dim: 64
   output_dim: 1
-  projection: "gat"
-  num_encoder_layers: 9
-  decoder: "gat"
-  num_decoder_layers: 3
+  projection: "pad"
+  num_encoder_layers: 11
+  decoder: "mlp"
+  num_decoder_layers: 1
   null_isolated: false
   add_self_loops: false
   dropout: false
