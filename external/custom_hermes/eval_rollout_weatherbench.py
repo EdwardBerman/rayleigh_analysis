@@ -4,7 +4,9 @@ Specifically evaluates different rollouts for many starting times on the Earth m
 """
 
 import copy
+import os
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 import hydra
@@ -17,12 +19,9 @@ import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
 
-import os
-from datetime import datetime
-
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
-from external.custom_hermes.dataset.weatherbench import earth_mesh
+from external.custom_hermes.dataset.weatherbench import earth_mesh, task_to_variable
 from external.custom_hermes.eval_rollout import set_rc_params
 from external.custom_hermes.utils import (create_dataset_loaders,
                                           screenshot_mesh_weather)
@@ -65,7 +64,8 @@ def main(cfg):
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
+        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / \
+            f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
         first_write = True
 
         model.eval()
@@ -222,11 +222,8 @@ def main(cfg):
 
             init_time = np.datetime64(data.init_time)
 
-            if dataset.task == "z500":
-                name = "geopotential"
-            else:
-                name = "temperature"
-
+            name, _ = task_to_variable(dataset.task)
+            
             da = xr.DataArray(
                 pred,
                 dims=("time", "prediction_timedelta",
@@ -439,14 +436,16 @@ def main(cfg):
             [np.mean(integrated_nrmse_all), np.std(integrated_nrmse_all)],
             [np.mean(integrated_smape_all), np.std(integrated_smape_all)]
         ])
-        
+
         # Save to the main save directory
-        summary_save_path = Path(cfg.save_dir) / cfg.dataset.name / split / cfg.backbone.name
+        summary_save_path = Path(cfg.save_dir) / \
+            cfg.dataset.name / split / cfg.backbone.name
         summary_save_path.mkdir(parents=True, exist_ok=True)
-        
+
         np.save(summary_save_path / "summary_metrics.npy", summary_metrics)
-        
-        print(f"\nSaved summary metrics to: {summary_save_path / 'summary_metrics.npy'}")
+
+        print(
+            f"\nSaved summary metrics to: {summary_save_path / 'summary_metrics.npy'}")
         print("Array shape: (3, 2)")
         print("Row 0: [Rayleigh mean, Rayleigh std]")
         print("Row 1: [NRMSE mean, NRMSE std]")
