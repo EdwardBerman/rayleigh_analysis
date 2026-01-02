@@ -565,11 +565,48 @@ def main(cfg):
                     )
 
                     preds = results["predictions"][mesh_idx][s][:, t]
+                    preds_reshaped = preds.reshape(nlon, nlat)
+
                     screenshot_mesh_weather(
                         mesh,
                         preds,
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
+                    )
+
+                    plot_stereographic_projection(
+                        preds_reshaped,
+                        lat,
+                        lon,
+                        f"Prediction - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                    )
+                    
+                    # Stereographic projection for predictions (single global)
+                    plot_stereographic_global(
+                        preds_reshaped,
+                        lat,
+                        lon,
+                        f"Prediction - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                    )
+                    
+                    # Create difference plot
+                    diff = preds_reshaped - gt_reshaped
+                    plot_stereographic_projection(
+                        diff,
+                        lat,
+                        lon,
+                        f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                    )
+                    
+                    plot_stereographic_global(
+                        diff,
+                        lat,
+                        lon,
+                        f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_diff.png"
                     )
 
     if len(integrated_errors_all) > 0:
