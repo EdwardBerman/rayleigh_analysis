@@ -10,6 +10,10 @@ import numpy as np
 import pygsp as pg
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from evaluation.plotting_params import set_rc_params
+
 
 def generate_num_nodes(num: int, mean: float, variance: float) -> list[int]:
     """Generates the number of nodes of the graphs by drawing from a Gaussian"""
@@ -81,7 +85,7 @@ def visualize_heat_diffusion(G, X, times, save_dir=None):
         sc = ax.scatter(coords[:, 0], coords[:, 1], c=X[:, i],
                         cmap="coolwarm", s=200, vmin=vmin, vmax=vmax)
 
-        ax.set_title(f"Heat diffusion at t={t}")
+        ax.set_title(fr"$e^{{- \tau {t} \mathbf{{L}}}} f(0)$")
         ax.set_aspect('equal')
         ax.set_axis_off()
 
@@ -170,4 +174,5 @@ def main(save_dir: str):
 
 
 if __name__ == "__main__":
+    set_rc_params(25)
     main(save_dir="toy_heat_diffusion/data")
