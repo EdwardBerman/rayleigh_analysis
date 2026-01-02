@@ -19,6 +19,9 @@ import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
 from external.custom_hermes.dataset.weatherbench import earth_mesh, task_to_variable
@@ -29,6 +32,153 @@ from external.custom_hermes.utils import (create_dataset_loaders,
 set_rc_params(15)
 
 pv.set_plot_theme("paraview")
+
+def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, vmax=None):
+    """
+    Plot data on a stereographic projection.
+    
+    Parameters:
+    -----------
+    data : np.ndarray
+        2D array of shape (nlon, nlat) containing the data to plot
+    lat : np.ndarray
+        1D array of latitude values
+    lon : np.ndarray
+        1D array of longitude values
+    title : str
+        Title for the plot
+    save_path : Path or str
+        Path to save the figure
+    vmin, vmax : float, optional
+        Min and max values for colorbar
+    """
+    fig = plt.figure(figsize=(15, 12))
+    
+    # Create two subplots: North and South polar stereographic
+    ax1 = fig.add_subplot(1, 2, 1, projection=ccrs.NorthPolarStereo())
+    ax2 = fig.add_subplot(1, 2, 2, projection=ccrs.SouthPolarStereo())
+    
+    # Create meshgrid for plotting
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    
+    # Determine colorbar limits if not provided
+    if vmin is None:
+        vmin = np.nanmin(data)
+    if vmax is None:
+        vmax = np.nanmax(data)
+    
+    # Plot on North Polar Stereographic
+    ax1.set_extent([-180, 180, 0, 90], crs=ccrs.PlateCarree())
+    im1 = ax1.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    ax1.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax1.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    ax1.set_title(f'{title} - North Pole', fontsize=12)
+    
+    # Add circular boundary for North Pole
+    theta = np.linspace(0, 2*np.pi, 100)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    circle = plt.Circle((0.5, 0.5), 0.5, transform=ax1.transAxes, 
+                       fill=False, edgecolor='black', linewidth=2)
+    ax1.add_patch(circle)
+    ax1.set_boundary(circle, transform=ax1.transAxes)
+    
+    # Plot on South Polar Stereographic
+    ax2.set_extent([-180, 180, -90, 0], crs=ccrs.PlateCarree())
+    im2 = ax2.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    ax2.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax2.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax2.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    ax2.set_title(f'{title} - South Pole', fontsize=12)
+    
+    # Add circular boundary for South Pole
+    circle2 = plt.Circle((0.5, 0.5), 0.5, transform=ax2.transAxes, 
+                        fill=False, edgecolor='black', linewidth=2)
+    ax2.add_patch(circle2)
+    ax2.set_boundary(circle2, transform=ax2.transAxes)
+    
+    # Add a colorbar
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    cbar = fig.colorbar(im2, cax=cbar_ax, orientation='vertical')
+    cbar.set_label('Value', fontsize=12)
+    
+    plt.suptitle(title, fontsize=14, fontweight='bold', y=0.95)
+    plt.tight_layout(rect=[0, 0, 0.9, 0.95])
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+
+
+def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=None):
+    """
+    Plot data on a single global stereographic projection (centered on North Pole).
+    
+    Parameters:
+    -----------
+    data : np.ndarray
+        2D array of shape (nlon, nlat) containing the data to plot
+    lat : np.ndarray
+        1D array of latitude values
+    lon : np.ndarray
+        1D array of longitude values
+    title : str
+        Title for the plot
+    save_path : Path or str
+        Path to save the figure
+    vmin, vmax : float, optional
+        Min and max values for colorbar
+    """
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.Stereographic(central_latitude=90, central_longitude=0))
+    
+    # Create meshgrid for plotting
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    
+    # Determine colorbar limits if not provided
+    if vmin is None:
+        vmin = np.nanmin(data)
+    if vmax is None:
+        vmax = np.nanmax(data)
+    
+    # Plot the data
+    ax.set_global()
+    im = ax.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    
+    # Add map features
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
+    ax.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax, orientation='vertical', pad=0.05, shrink=0.8)
+    cbar.set_label('Value', fontsize=12)
+    
+    plt.title(title, fontsize=14, fontweight='bold', pad=20)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
@@ -300,6 +450,9 @@ def main(cfg):
             )
             save_path.mkdir(parents=True, exist_ok=True)
 
+            stereo_path = save_path / "stereographic_projections"
+            stereo_path.mkdir(parents=True, exist_ok=True)
+
             np.save(save_path / "losses.npy", results["losses"][mesh_idx])
             np.save(save_path / "predictions.npy",
                     results["predictions"][mesh_idx])
@@ -378,6 +531,10 @@ def main(cfg):
             integrated_nrmse_all.extend(traj_nrmse.tolist())
             integrated_smape_all.extend(traj_smape.tolist())
 
+            lat = dataset.lat
+            lon = dataset.lon
+            nlon, nlat = dataset.grid_shape
+
             for s in range(1):
                 for t in range(1, 38, 2):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
@@ -387,6 +544,23 @@ def main(cfg):
                         gt,
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt.png",
+                    )
+
+                    plot_stereographic_projection(
+                        gt_reshaped,
+                        lat,
+                        lon,
+                        f"Ground Truth - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                    )
+                    
+                    # Stereographic projection for ground truth (single global)
+                    plot_stereographic_global(
+                        gt_reshaped,
+                        lat,
+                        lon,
+                        f"Ground Truth - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_gt.png"
                     )
 
                     preds = results["predictions"][mesh_idx][s][:, t]
