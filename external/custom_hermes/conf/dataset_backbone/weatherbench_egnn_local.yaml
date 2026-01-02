@@ -12,7 +12,7 @@ optimizer:
 
 backbone:
   net:
-    in_node_nf: 8
+    in_node_nf: 3
     hidden_nf: 64
     out_node_nf: ${dataset.out_dim}
     in_edge_nf: ${dataset.edge_dim}
