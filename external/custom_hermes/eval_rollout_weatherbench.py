@@ -9,6 +9,8 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib.path as mpath
+
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
@@ -86,10 +88,13 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
     theta = np.linspace(0, 2*np.pi, 100)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
-    circle = plt.Circle((0.5, 0.5), 0.5, transform=ax1.transAxes, 
-                       fill=False, edgecolor='black', linewidth=2)
-    ax1.add_patch(circle)
-    ax1.set_boundary(circle, transform=ax1.transAxes)
+
+    theta = np.linspace(0, 2*np.pi, 100)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    verts = verts * radius + center
+    circle_path = mpath.Path(verts)
+    ax1.set_boundary(circle_path, transform=ax1.transAxes)
     
     # Plot on South Polar Stereographic
     ax2.set_extent([-180, 180, -90, 0], crs=ccrs.PlateCarree())
@@ -105,12 +110,8 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
     ax2.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
     ax2.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
     ax2.set_title(f'{title} - South Pole', fontsize=12)
-    
-    # Add circular boundary for South Pole
-    circle2 = plt.Circle((0.5, 0.5), 0.5, transform=ax2.transAxes, 
-                        fill=False, edgecolor='black', linewidth=2)
-    ax2.add_patch(circle2)
-    ax2.set_boundary(circle2, transform=ax2.transAxes)
+
+    ax2.set_boundary(circle_path, transform=ax2.transAxes)
     
     # Add a colorbar
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
