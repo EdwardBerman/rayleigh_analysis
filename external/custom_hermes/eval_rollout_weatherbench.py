@@ -9,6 +9,8 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib.path as mpath
+
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +20,9 @@ import torch
 import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
+
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
@@ -29,6 +34,152 @@ from external.custom_hermes.utils import (create_dataset_loaders,
 set_rc_params(15)
 
 pv.set_plot_theme("paraview")
+
+def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, vmax=None):
+    """
+    Plot data on a stereographic projection.
+    
+    Parameters:
+    -----------
+    data : np.ndarray
+        2D array of shape (nlon, nlat) containing the data to plot
+    lat : np.ndarray
+        1D array of latitude values
+    lon : np.ndarray
+        1D array of longitude values
+    title : str
+        Title for the plot
+    save_path : Path or str
+        Path to save the figure
+    vmin, vmax : float, optional
+        Min and max values for colorbar
+    """
+    fig = plt.figure(figsize=(15, 12))
+    
+    # Create two subplots: North and South polar stereographic
+    ax1 = fig.add_subplot(1, 2, 1, projection=ccrs.NorthPolarStereo())
+    ax2 = fig.add_subplot(1, 2, 2, projection=ccrs.SouthPolarStereo())
+    
+    # Create meshgrid for plotting
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    
+    # Determine colorbar limits if not provided
+    if vmin is None:
+        vmin = np.nanmin(data)
+    if vmax is None:
+        vmax = np.nanmax(data)
+    
+    # Plot on North Polar Stereographic
+    ax1.set_extent([-180, 180, 0, 90], crs=ccrs.PlateCarree())
+    im1 = ax1.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    ax1.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax1.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    ax1.set_title(f'{title} - North Pole', fontsize=12)
+    
+    # Add circular boundary for North Pole
+    theta = np.linspace(0, 2*np.pi, 100)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+
+    theta = np.linspace(0, 2*np.pi, 100)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    verts = verts * radius + center
+    circle_path = mpath.Path(verts)
+    ax1.set_boundary(circle_path, transform=ax1.transAxes)
+    
+    # Plot on South Polar Stereographic
+    ax2.set_extent([-180, 180, -90, 0], crs=ccrs.PlateCarree())
+    im2 = ax2.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    ax2.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax2.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax2.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    ax2.set_title(f'{title} - South Pole', fontsize=12)
+
+    ax2.set_boundary(circle_path, transform=ax2.transAxes)
+    
+    # Add a colorbar
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    cbar = fig.colorbar(im2, cax=cbar_ax, orientation='vertical')
+    cbar.set_label('Value', fontsize=12)
+    
+    plt.suptitle(title, fontsize=14, fontweight='bold', y=0.95)
+    plt.tight_layout(rect=[0, 0, 0.9, 0.95])
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+
+
+def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=None):
+    """
+    Plot data on a single global stereographic projection (centered on North Pole).
+    
+    Parameters:
+    -----------
+    data : np.ndarray
+        2D array of shape (nlon, nlat) containing the data to plot
+    lat : np.ndarray
+        1D array of latitude values
+    lon : np.ndarray
+        1D array of longitude values
+    title : str
+        Title for the plot
+    save_path : Path or str
+        Path to save the figure
+    vmin, vmax : float, optional
+        Min and max values for colorbar
+    """
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.Stereographic(central_latitude=90, central_longitude=0))
+    
+    # Create meshgrid for plotting
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    
+    # Determine colorbar limits if not provided
+    if vmin is None:
+        vmin = np.nanmin(data)
+    if vmax is None:
+        vmax = np.nanmax(data)
+    
+    # Plot the data
+    ax.set_global()
+    im = ax.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    
+    # Add map features
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
+    ax.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax, orientation='vertical', pad=0.05, shrink=0.8)
+    cbar.set_label('Value', fontsize=12)
+    
+    plt.title(title, fontsize=14, fontweight='bold', pad=20)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
@@ -298,6 +449,9 @@ def main(cfg):
             )
             save_path.mkdir(parents=True, exist_ok=True)
 
+            stereo_path = save_path / "stereographic_projections"
+            stereo_path.mkdir(parents=True, exist_ok=True)
+
             np.save(save_path / "losses.npy", results["losses"][mesh_idx])
             np.save(save_path / "predictions.npy",
                     results["predictions"][mesh_idx])
@@ -372,9 +526,14 @@ def main(cfg):
             integrated_nrmse_all.extend(traj_nrmse.tolist())
             integrated_smape_all.extend(traj_smape.tolist())
 
+            lat = dataset.lat
+            lon = dataset.lon
+            nlon, nlat = dataset.grid_shape
+
             for s in range(1):
                 for t in range(1, 38, 2):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
+                    gt_reshaped = gt.reshape(nlon, nlat)
 
                     screenshot_mesh_weather(
                         mesh,
@@ -383,7 +542,26 @@ def main(cfg):
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt.png",
                     )
 
+                    plot_stereographic_projection(
+                        gt_reshaped,
+                        lat,
+                        lon,
+                        f"Ground Truth - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                    )
+                    
+                    # Stereographic projection for ground truth (single global)
+                    plot_stereographic_global(
+                        gt_reshaped,
+                        lat,
+                        lon,
+                        f"Ground Truth - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                    )
+
                     preds = results["predictions"][mesh_idx][s][:, t]
+                    preds_reshaped = preds.reshape(nlon, nlat)
+
                     screenshot_mesh_weather(
                         mesh,
                         preds,
@@ -391,29 +569,73 @@ def main(cfg):
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
 
-    overall_mean = np.mean(integrated_errors_all)
-    overall_std = np.std(integrated_errors_all)
-    print("-----"*40)
-    print(
-        f"[{split}] Combined Integrated Rayleigh Quotient Error over all meshes and rollouts: {overall_mean:.6e} +/- {overall_std:.6e} (n={len(integrated_errors_all)})"
-    )
-    print("-----"*40)
+                    plot_stereographic_projection(
+                        preds_reshaped,
+                        lat,
+                        lon,
+                        f"Prediction - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                    )
+                    
+                    # Stereographic projection for predictions (single global)
+                    plot_stereographic_global(
+                        preds_reshaped,
+                        lat,
+                        lon,
+                        f"Prediction - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                    )
+                    
+                    # Create difference plot
+                    diff = preds_reshaped - gt_reshaped
+                    plot_stereographic_projection(
+                        diff,
+                        lat,
+                        lon,
+                        f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                    )
+                    
+                    plot_stereographic_global(
+                        diff,
+                        lat,
+                        lon,
+                        f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                    )
 
-    overall_nrmse_mean = np.mean(integrated_nrmse_all)
-    overall_nrmse_std = np.std(integrated_nrmse_all)
-    print("-----"*40)
-    print(
-        f"[{split}] Combined Integrated NRMSE over all meshes and rollouts: {overall_nrmse_mean:.6e} +/- {overall_nrmse_std:.6e} (n={len(integrated_nrmse_all)})"
-    )
-    print("-----"*40)
+    if len(integrated_errors_all) > 0:
+        overall_mean = np.mean(integrated_errors_all)
+        overall_std = np.std(integrated_errors_all)
+        if len(integrated_errors_all) > 5:
+            print("-----"*40)
+        print(
+            f"[{split}] Combined Integrated Rayleigh Quotient Error over all meshes and rollouts: {overall_mean:.6e} +/- {overall_std:.6e} (n={len(integrated_errors_all)})"
+        )
+        if len(integrated_errors_all) > 5:
+            print("-----"*40)
 
-    overall_smape_mean = np.mean(integrated_smape_all)
-    overall_smape_std = np.std(integrated_smape_all)
-    print("-----"*40)
-    print(
-        f"[{split}] Combined Integrated SMAPE over all meshes and rollouts: {overall_smape_mean:.6e} +/- {overall_smape_std:.6e} (n={len(integrated_smape_all)})"
-    )
-    print("-----"*40)
+    if len(integrated_nrmse_all) > 0:
+        overall_nrmse_mean = np.mean(integrated_nrmse_all)
+        overall_nrmse_std = np.std(integrated_nrmse_all)
+        if len(integrated_nrmse_all) > 5:
+            print("-----"*40)
+        print(
+            f"[{split}] Combined Integrated NRMSE over all meshes and rollouts: {overall_nrmse_mean:.6e} +/- {overall_nrmse_std:.6e} (n={len(integrated_nrmse_all)})"
+        )
+        if len(integrated_nrmse_all) > 5:
+            print("-----"*40)
+
+    if len(integrated_smape_all) > 0:
+        overall_smape_mean = np.mean(integrated_smape_all)
+        overall_smape_std = np.std(integrated_smape_all)
+        if len(integrated_smape_all) > 5:
+            print("-----"*40)
+        print(
+            f"[{split}] Combined Integrated SMAPE over all meshes and rollouts: {overall_smape_mean:.6e} +/- {overall_smape_std:.6e} (n={len(integrated_smape_all)})"
+        )
+        if len(integrated_smape_all) > 5:
+            print("-----"*40)
 
     if len(integrated_errors_all) > 0 and len(integrated_nrmse_all) > 0 and len(integrated_smape_all) > 0:
         summary_metrics = np.array([
