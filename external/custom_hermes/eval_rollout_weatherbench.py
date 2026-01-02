@@ -9,9 +9,10 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-import matplotlib.path as mpath
-
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import hydra
+import matplotlib.path as mpath
 import matplotlib.pyplot as plt
 import numpy as np
 import pyvista as pv
@@ -21,12 +22,10 @@ import xarray as xr
 from hydra.utils import instantiate
 from tqdm import tqdm
 
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
                                                          compute_edges_dense)
-from external.custom_hermes.dataset.weatherbench import earth_mesh, task_to_variable
+from external.custom_hermes.dataset.weatherbench import (earth_mesh,
+                                                         task_to_variable)
 from external.custom_hermes.eval_rollout import set_rc_params
 from external.custom_hermes.utils import (create_dataset_loaders,
                                           screenshot_mesh_weather)
@@ -35,10 +34,46 @@ set_rc_params(15)
 
 pv.set_plot_theme("paraview")
 
+
+def plot_flat_earth(data, lat, lon, title, save_path):
+    """
+    Plot a 2D latitude–longitude field on a flat grid using imshow.
+
+    Parameters:
+    -----------
+    data : np.ndarray
+        2D array of shape (nlon, nlat) containing the data to plot
+    lat : np.ndarray
+        1D array of latitude values
+    lon : np.ndarray
+        1D array of longitude values
+    title : str
+        Title for the plot
+    save_path : Path or str
+        Path to save the figure
+    """
+    plt.figure(figsize=(12, 6))
+    plt.imshow(
+        data.T,
+        origin="lower",
+        cmap="RdBu_r",
+        aspect="auto",
+        extent=[0, len(lon), 0, len(lat)],
+    )
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title(title)
+
+    if save_path is not None:
+        plt.savefig(save_path, bbox_inches="tight", dpi=150)
+
+    plt.show()
+
+
 def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, vmax=None):
     """
     Plot data on a stereographic projection.
-    
+
     Parameters:
     -----------
     data : np.ndarray
@@ -55,20 +90,20 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
         Min and max values for colorbar
     """
     fig = plt.figure(figsize=(15, 12))
-    
+
     # Create two subplots: North and South polar stereographic
     ax1 = fig.add_subplot(1, 2, 1, projection=ccrs.NorthPolarStereo())
     ax2 = fig.add_subplot(1, 2, 2, projection=ccrs.SouthPolarStereo())
-    
+
     # Create meshgrid for plotting
     lon_grid, lat_grid = np.meshgrid(lon, lat)
-    
+
     # Determine colorbar limits if not provided
     if vmin is None:
         vmin = np.nanmin(data)
     if vmax is None:
         vmax = np.nanmax(data)
-    
+
     # Plot on North Polar Stereographic
     ax1.set_extent([-180, 180, 0, 90], crs=ccrs.PlateCarree())
     im1 = ax1.pcolormesh(
@@ -80,10 +115,12 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
         shading='auto'
     )
     ax1.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
-    ax1.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
-    ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    ax1.add_feature(cfeature.BORDERS, linewidth=0.3,
+                    edgecolor='gray', alpha=0.5)
+    ax1.gridlines(draw_labels=False, linewidth=0.5,
+                  color='gray', alpha=0.5, linestyle='--')
     ax1.set_title(f'{title} - North Pole', fontsize=12)
-    
+
     # Add circular boundary for North Pole
     theta = np.linspace(0, 2*np.pi, 100)
     center, radius = [0.5, 0.5], 0.5
@@ -95,7 +132,7 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
     verts = verts * radius + center
     circle_path = mpath.Path(verts)
     ax1.set_boundary(circle_path, transform=ax1.transAxes)
-    
+
     # Plot on South Polar Stereographic
     ax2.set_extent([-180, 180, -90, 0], crs=ccrs.PlateCarree())
     im2 = ax2.pcolormesh(
@@ -107,17 +144,19 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
         shading='auto'
     )
     ax2.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
-    ax2.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
-    ax2.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
+    ax2.add_feature(cfeature.BORDERS, linewidth=0.3,
+                    edgecolor='gray', alpha=0.5)
+    ax2.gridlines(draw_labels=False, linewidth=0.5,
+                  color='gray', alpha=0.5, linestyle='--')
     ax2.set_title(f'{title} - South Pole', fontsize=12)
 
     ax2.set_boundary(circle_path, transform=ax2.transAxes)
-    
+
     # Add a colorbar
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(im2, cax=cbar_ax, orientation='vertical')
     cbar.set_label('Value', fontsize=12)
-    
+
     plt.suptitle(title, fontsize=14, fontweight='bold', y=0.95)
     plt.tight_layout(rect=[0, 0, 0.9, 0.95])
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -127,7 +166,7 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
 def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=None):
     """
     Plot data on a single global stereographic projection (centered on North Pole).
-    
+
     Parameters:
     -----------
     data : np.ndarray
@@ -144,17 +183,18 @@ def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=
         Min and max values for colorbar
     """
     fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.Stereographic(central_latitude=90, central_longitude=0))
-    
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.Stereographic(
+        central_latitude=90, central_longitude=0))
+
     # Create meshgrid for plotting
     lon_grid, lat_grid = np.meshgrid(lon, lat)
-    
+
     # Determine colorbar limits if not provided
     if vmin is None:
         vmin = np.nanmin(data)
     if vmax is None:
         vmax = np.nanmax(data)
-    
+
     # Plot the data
     ax.set_global()
     im = ax.pcolormesh(
@@ -165,17 +205,20 @@ def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=
         vmax=vmax,
         shading='auto'
     )
-    
+
     # Add map features
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
-    ax.add_feature(cfeature.BORDERS, linewidth=0.3, edgecolor='gray', alpha=0.5)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.3,
+                   edgecolor='gray', alpha=0.5)
     ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
-    ax.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
-    
+    ax.gridlines(draw_labels=False, linewidth=0.5,
+                 color='gray', alpha=0.5, linestyle='--')
+
     # Add colorbar
-    cbar = plt.colorbar(im, ax=ax, orientation='vertical', pad=0.05, shrink=0.8)
+    cbar = plt.colorbar(im, ax=ax, orientation='vertical',
+                        pad=0.05, shrink=0.8)
     cbar.set_label('Value', fontsize=12)
-    
+
     plt.title(title, fontsize=14, fontweight='bold', pad=20)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -236,11 +279,11 @@ def main(cfg):
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(
                 pos.cpu().numpy(), face.T.cpu().numpy())
-            #print("Computed robust Laplacian")
+            # print("Computed robust Laplacian")
             # verify L symmetric
             L_np = L.toarray()
             L_torch = torch.from_numpy(L_np).to(values.device)
-            #print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
+            # print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
             L_torch = -L_torch  # opposite sign convention
 
             M = M.toarray()
@@ -256,9 +299,9 @@ def main(cfg):
                 as_tuple=False).t().long().to(values.device)
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
                 values.device).to(values.dtype)
-            #print("Computed weighted edge index and weights")
-            #print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
-            #print(f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
+            # print("Computed weighted edge index and weights")
+            # print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
+            # print(f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
 
             deg = torch.zeros(N, device=values.device).index_add_(
                 0, weighted_edge_index[0], edge_weights)
@@ -372,7 +415,7 @@ def main(cfg):
             init_time = np.datetime64(data.init_time)
 
             name, _ = task_to_variable(dataset.task)
-            
+
             da = xr.DataArray(
                 pred,
                 dims=("time", "prediction_timedelta",
@@ -452,6 +495,9 @@ def main(cfg):
             stereo_path = save_path / "stereographic_projections"
             stereo_path.mkdir(parents=True, exist_ok=True)
 
+            flatearth_path = save_path / "flat_earth_plots"
+            flatearth_path.mkdir(parents=True, exist_ok=True)
+
             np.save(save_path / "losses.npy", results["losses"][mesh_idx])
             np.save(save_path / "predictions.npy",
                     results["predictions"][mesh_idx])
@@ -490,7 +536,7 @@ def main(cfg):
                              pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
-            #print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()))
+            # print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()))
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
             plt.tight_layout()
@@ -511,7 +557,7 @@ def main(cfg):
 
             integrated_rayleigh_error = traj_error.mean()
             integrated_rayleigh_error_std = traj_error.std()
-            #print(f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}")
+            # print(f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}")
 
             nrmse = np.stack(
                 results["nrmse"][mesh_idx], axis=0
@@ -547,17 +593,27 @@ def main(cfg):
                         lat,
                         lon,
                         f"Ground Truth - Sample {s}, Time Step {t}",
-                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                        stereo_path /
+                        f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_gt.png"
                     )
-                    
+
                     # Stereographic projection for ground truth (single global)
                     plot_stereographic_global(
                         gt_reshaped,
                         lat,
                         lon,
                         f"Ground Truth - Sample {s}, Time Step {t}",
-                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                        stereo_path /
+                        f"stereo_global_{cfg.dataset.name}_{s}_t{t}_gt.png"
                     )
+
+                    plot_flat_earth(gt_reshaped,
+                                    lat,
+                                    lon,
+                                    f"Ground Truth - Sample {s}, Time Step {t}",
+                                    flatearth_path /
+                                    f"gt_sample_{s}_time_step_{t}.png"
+                                    )
 
                     preds = results["predictions"][mesh_idx][s][:, t]
                     preds_reshaped = preds.reshape(nlon, nlat)
@@ -574,18 +630,28 @@ def main(cfg):
                         lat,
                         lon,
                         f"Prediction - Sample {s}, Time Step {t}",
-                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                        stereo_path /
+                        f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_preds.png"
                     )
-                    
+
                     # Stereographic projection for predictions (single global)
                     plot_stereographic_global(
                         preds_reshaped,
                         lat,
                         lon,
                         f"Prediction - Sample {s}, Time Step {t}",
-                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                        stereo_path /
+                        f"stereo_global_{cfg.dataset.name}_{s}_t{t}_preds.png"
                     )
-                    
+
+                    plot_flat_earth(preds_reshaped,
+                                    lat,
+                                    lon,
+                                    f"Prediction - Sample {s}, Time Step {t}",
+                                    flatearth_path /
+                                    f"pred_sample_{s}_time_step_{t}.png"
+                                    )
+
                     # Create difference plot
                     diff = preds_reshaped - gt_reshaped
                     plot_stereographic_projection(
@@ -593,16 +659,26 @@ def main(cfg):
                         lat,
                         lon,
                         f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
-                        stereo_path / f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                        stereo_path /
+                        f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_diff.png"
                     )
-                    
+
                     plot_stereographic_global(
                         diff,
                         lat,
                         lon,
                         f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
-                        stereo_path / f"stereo_global_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                        stereo_path /
+                        f"stereo_global_{cfg.dataset.name}_{s}_t{t}_diff.png"
                     )
+
+                    plot_flat_earth(diff,
+                                    lat,
+                                    lon,
+                                    f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                                    flatearth_path /
+                                    f"diff_sample_{s}_time_step_{t}.png"
+                                    )
 
     if len(integrated_errors_all) > 0:
         overall_mean = np.mean(integrated_errors_all)

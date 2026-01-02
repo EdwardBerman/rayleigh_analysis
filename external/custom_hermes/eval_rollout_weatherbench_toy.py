@@ -1,12 +1,18 @@
 """
-A faster version of `eval_rollout_weatherbench.py` achieved by only evaluating on a subsample of the starting time steps. This is meant to enable faster iteration with model testing. 
+Analogous to `eval_rollout.py` for the PDE datasets for working with Weatherbench. 
+Specifically evaluates different rollouts for many starting times on the Earth mesh, and in the process saves forecast predictions to a zarr file that enables `eval_weatherbench.py` to be run. 
 """
 
 import copy
+import os
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import hydra
+import matplotlib.path as mpath
 import matplotlib.pyplot as plt
 import numpy as np
 import pyvista as pv
@@ -21,6 +27,8 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
 from external.custom_hermes.dataset.weatherbench import (earth_mesh,
                                                          task_to_variable)
 from external.custom_hermes.eval_rollout import set_rc_params
+from external.custom_hermes.eval_rollout_weatherbench import (
+    plot_flat_earth, plot_stereographic_global, plot_stereographic_projection)
 from external.custom_hermes.utils import (create_dataset_loaders,
                                           screenshot_mesh_weather)
 
@@ -60,7 +68,10 @@ def main(cfg):
         T = dataset.rollout_steps
         level = dataset.level
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
-        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / \
+            f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
         first_write = True
 
         model.eval()
@@ -85,12 +96,11 @@ def main(cfg):
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(
                 pos.cpu().numpy(), face.T.cpu().numpy())
-            print("Computed robust Laplacian")
+            # print("Computed robust Laplacian")
             # verify L symmetric
             L_np = L.toarray()
             L_torch = torch.from_numpy(L_np).to(values.device)
-            print("L symmetric:", torch.allclose(
-                L_torch, L_torch.T, atol=1e-6))
+            # print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
             L_torch = -L_torch  # opposite sign convention
 
             M = M.toarray()
@@ -106,10 +116,9 @@ def main(cfg):
                 as_tuple=False).t().long().to(values.device)
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
                 values.device).to(values.dtype)
-            print("Computed weighted edge index and weights")
-            print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
-            print(
-                f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
+            # print("Computed weighted edge index and weights")
+            # print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
+            # print(f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
 
             deg = torch.zeros(N, device=values.device).index_add_(
                 0, weighted_edge_index[0], edge_weights)
@@ -305,6 +314,12 @@ def main(cfg):
             )
             save_path.mkdir(parents=True, exist_ok=True)
 
+            stereo_path = save_path / "stereographic_projections"
+            stereo_path.mkdir(parents=True, exist_ok=True)
+
+            flatearth_path = save_path / "flat_earth_plots"
+            flatearth_path.mkdir(parents=True, exist_ok=True)
+
             np.save(save_path / "losses.npy", results["losses"][mesh_idx])
             np.save(save_path / "predictions.npy",
                     results["predictions"][mesh_idx])
@@ -350,16 +365,16 @@ def main(cfg):
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
             plt.tight_layout()
             plt.savefig(
-                save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
             integrated_errors_all.extend(traj_error.tolist())
@@ -383,9 +398,14 @@ def main(cfg):
             integrated_nrmse_all.extend(traj_nrmse.tolist())
             integrated_smape_all.extend(traj_smape.tolist())
 
+            lat = dataset.lat
+            lon = dataset.lon
+            nlon, nlat = dataset.grid_shape
+
             for s in range(1):
                 for t in range(1, 38, 2):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
+                    gt_reshaped = gt.reshape(nlon, nlat)
 
                     screenshot_mesh_weather(
                         mesh,
@@ -394,13 +414,97 @@ def main(cfg):
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt.png",
                     )
 
+                    plot_stereographic_projection(
+                        gt_reshaped,
+                        lat,
+                        lon,
+                        f"Ground Truth - Sample {s}, Time Step {t}",
+                        stereo_path /
+                        f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                    )
+
+                    # Stereographic projection for ground truth (single global)
+                    plot_stereographic_global(
+                        gt_reshaped,
+                        lat,
+                        lon,
+                        f"Ground Truth - Sample {s}, Time Step {t}",
+                        stereo_path /
+                        f"stereo_global_{cfg.dataset.name}_{s}_t{t}_gt.png"
+                    )
+
+                    plot_flat_earth(gt_reshaped,
+                                    lat,
+                                    lon,
+                                    f"Ground Truth - Sample {s}, Time Step {t}",
+                                    flatearth_path /
+                                    f"gt_sample_{s}_time_step_{t}.png"
+                                    )
+
                     preds = results["predictions"][mesh_idx][s][:, t]
+                    preds_reshaped = preds.reshape(nlon, nlat)
+
                     screenshot_mesh_weather(
                         mesh,
                         preds,
                         save_path
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
+
+                    plot_stereographic_projection(
+                        preds_reshaped,
+                        lat,
+                        lon,
+                        f"Prediction - Sample {s}, Time Step {t}",
+                        stereo_path /
+                        f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                    )
+
+                    # Stereographic projection for predictions (single global)
+                    plot_stereographic_global(
+                        preds_reshaped,
+                        lat,
+                        lon,
+                        f"Prediction - Sample {s}, Time Step {t}",
+                        stereo_path /
+                        f"stereo_global_{cfg.dataset.name}_{s}_t{t}_preds.png"
+                    )
+
+                    plot_flat_earth(preds_reshaped,
+                                    lat,
+                                    lon,
+                                    f"Prediction - Sample {s}, Time Step {t}",
+                                    flatearth_path /
+                                    f"pred_sample_{s}_time_step_{t}.png"
+                                    )
+
+                    # Create difference plot
+                    diff = preds_reshaped - gt_reshaped
+                    plot_stereographic_projection(
+                        diff,
+                        lat,
+                        lon,
+                        f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                        stereo_path /
+                        f"stereo_dual_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                    )
+
+                    plot_stereographic_global(
+                        diff,
+                        lat,
+                        lon,
+                        f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                        stereo_path /
+                        f"stereo_global_{cfg.dataset.name}_{s}_t{t}_diff.png"
+                    )
+
+                    plot_flat_earth(diff,
+                                    lat,
+                                    lon,
+                                    f"Difference (Pred - GT) - Sample {s}, Time Step {t}",
+                                    flatearth_path /
+                                    f"diff_sample_{s}_time_step_{t}.png"
+                                    )
 
     if len(integrated_errors_all) > 0:
         overall_mean = np.mean(integrated_errors_all)
@@ -434,6 +538,27 @@ def main(cfg):
         )
         if len(integrated_smape_all) > 5:
             print("-----"*40)
+
+    if len(integrated_errors_all) > 0 and len(integrated_nrmse_all) > 0 and len(integrated_smape_all) > 0:
+        summary_metrics = np.array([
+            [np.mean(integrated_errors_all), np.std(integrated_errors_all)],
+            [np.mean(integrated_nrmse_all), np.std(integrated_nrmse_all)],
+            [np.mean(integrated_smape_all), np.std(integrated_smape_all)]
+        ])
+
+        # Save to the main save directory
+        summary_save_path = Path(cfg.save_dir) / \
+            cfg.dataset.name / split / cfg.backbone.name
+        summary_save_path.mkdir(parents=True, exist_ok=True)
+
+        np.save(summary_save_path / "summary_metrics.npy", summary_metrics)
+
+        print(
+            f"\nSaved summary metrics to: {summary_save_path / 'summary_metrics.npy'}")
+        print("Array shape: (3, 2)")
+        print("Row 0: [Rayleigh mean, Rayleigh std]")
+        print("Row 1: [NRMSE mean, NRMSE std]")
+        print("Row 2: [SMAPE mean, SMAPE std]")
 
         # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 
