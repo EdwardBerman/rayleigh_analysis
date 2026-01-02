@@ -236,12 +236,11 @@ def main(cfg):
             pos, face = data.pos.cpu(), data.face.cpu()
             L, M = robust_laplacian.mesh_laplacian(
                 pos.cpu().numpy(), face.T.cpu().numpy())
-            print("Computed robust Laplacian")
+            #print("Computed robust Laplacian")
             # verify L symmetric
             L_np = L.toarray()
             L_torch = torch.from_numpy(L_np).to(values.device)
-            print("L symmetric:", torch.allclose(
-                L_torch, L_torch.T, atol=1e-6))
+            #print("L symmetric:", torch.allclose(L_torch, L_torch.T, atol=1e-6))
             L_torch = -L_torch  # opposite sign convention
 
             M = M.toarray()
@@ -257,10 +256,9 @@ def main(cfg):
                 as_tuple=False).t().long().to(values.device)
             edge_weights = A_M[weighted_edge_index[0], weighted_edge_index[1]].to(
                 values.device).to(values.dtype)
-            print("Computed weighted edge index and weights")
-            print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
-            print(
-                f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
+            #print("Computed weighted edge index and weights")
+            #print(f"Weighted graph has {weighted_edge_index.shape[1]} edges.")
+            #print(f"Edge weights stats: min {edge_weights.min().item():.6e}, max {edge_weights.max().item():.6e}, mean {edge_weights.mean().item():.6e}")
 
             deg = torch.zeros(N, device=values.device).index_add_(
                 0, weighted_edge_index[0], edge_weights)
@@ -492,9 +490,7 @@ def main(cfg):
                              pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
-            print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(
-                true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()
-            ))
+            #print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()))
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
             plt.tight_layout()
@@ -515,9 +511,7 @@ def main(cfg):
 
             integrated_rayleigh_error = traj_error.mean()
             integrated_rayleigh_error_std = traj_error.std()
-            print(
-                f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}"
-            )
+            #print(f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}")
 
             nrmse = np.stack(
                 results["nrmse"][mesh_idx], axis=0
