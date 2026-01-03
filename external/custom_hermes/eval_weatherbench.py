@@ -81,6 +81,11 @@ def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
     )
     np.save(acc_npy_path, acc_values)
     np.save(rmse_npy_path, rmse_values)
+    
+    print(f"Saved RMSE plot to: {rmse_path}")
+    print(f"Saved ACC plot to: {acc_path}")
+    print(f"Saved ACC values to: {acc_npy_path}")
+    print(f"Saved RMSE values to: {rmse_npy_path}")
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_weatherbench")
