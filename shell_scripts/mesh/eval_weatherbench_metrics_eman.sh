@@ -15,4 +15,4 @@ module load python/3.13.5
 
 eval "$(poetry env activate)"
 
-python3 -m external.custom_hermes.eval_weatherbench backbone=hermes
+python3 -m external.custom_hermes.eval_weatherbench backbone=hermes paths.forecast=./rollouts/temperature/850/forecasts_Hermes_20260102_175819_449525.zarr
