@@ -14,6 +14,8 @@ from weatherbench2.metrics import ACC, MSE
 
 from external.custom_hermes.utils import create_dataset_loaders
 
+from evaluation.plotting_params import set_rc_params
+
 
 def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
 
@@ -105,5 +107,5 @@ def main(cfg):
 
 
 if __name__ == "__main__":
-
+    set_rc_params(20)
     main()
