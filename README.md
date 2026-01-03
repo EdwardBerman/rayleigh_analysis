@@ -19,7 +19,7 @@ For plotting, you might need to download additional tex support locally for the 
 
 ### Simulated Heat Diffusion on Grid Graphs
 
-<details>
+<details><summary>Details</summary>
 
 **Generating Data**:
 1. To generate the heat diffusion data on a graph, do: `python3 -m toy_heat_diffusion.heat_data --n_sources 20 --minheat 1 --maxheat 1  --num_graphs 10000 --size_mean 10 --size_std 2 --time_max 10 --time_step 0.5`. Alternatively, the dataset we generated is available on Zenodo for download at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17632910.svg)](https://doi.org/10.5281/zenodo.17632910)
@@ -34,8 +34,8 @@ Note, you can either set the seed with the `--set_seed` flag or aggregate result
 **Evaluation**:
 1. In addition to wandb, you can reproduce our plots by running `python3 -m toy_heat_diffusion.eval --data_dir_GCN [path to saved GCN npy files after training] --data_dir_UNI [path to uni npy files] --save_dir [optionally specify savedir, ../assets by default]`
 
-<details><summary>Details</summary>
 
+</details>
 
 ### PDEs on PyVista Meshes
 
