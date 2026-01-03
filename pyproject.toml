@@ -7,7 +7,7 @@ authors = [
     {name = "Luisa Li", email = "li.tao@northeastern.edu"}
 ]
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "torch (>=2.8.0,<3.0.0)",
     "torch-geometric (>=2.6.1,<3.0.0)",
