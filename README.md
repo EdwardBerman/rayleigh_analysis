@@ -66,7 +66,7 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 
 **Training**:
 1. Train with `python3 -m external.custom_hermes.train dataset=weatherbench backbone=[model]` as before
-2. To store less in memory, `external/custom_hermes/conf/dataset/weatherbench.yaml` has `cluster` and `compute_edges` set to `False` by default, but the transformer requires cluster be set to True and similarly EGNN requires you to compute edges. We use `EGNN` for the PyVista meshes and `EGNN_Local` for Weatherbench2 due to memory constraints
+2. To store less in memory, `external/custom_hermes/conf/dataset/weatherbench.yaml` has `cluster` set to `False` by default, but the transformer requires cluster be set to True. We use `EGNN` for the PyVista meshes and `EGNN_Local` for Weatherbench2 due to memory constraints
 
 **Evaluation**:
 1. Evaluate with our metrics with `python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=[backbone] model_save_path=[model-checkpoint]`
