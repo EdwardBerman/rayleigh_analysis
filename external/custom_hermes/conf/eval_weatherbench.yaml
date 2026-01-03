@@ -1,7 +1,7 @@
 work_dir: ${hydra:runtime.cwd}
 
 paths:
-  forecast: ${work_dir}/rollouts/temperature/850
+  forecast: ${work_dir}/rollouts/temperature/850/forecasts_Hermes_20260102_175819_449525.zarr
   climatology: ${work_dir}/data/weatherbench/climatology
   obs: ${work_dir}/data/weatherbench/eras5
   output_dir: ${work_dir}/weatherbench_output
