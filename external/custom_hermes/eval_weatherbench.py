@@ -5,6 +5,8 @@ See documentation at: `https://weatherbench2.readthedocs.io/en/latest/evaluation
 
 import os
 
+import numpy as np
+
 import hydra
 import xarray as xr
 from matplotlib import pyplot as plt
@@ -13,6 +15,8 @@ from weatherbench2.evaluation import evaluate_in_memory
 from weatherbench2.metrics import ACC, MSE
 
 from external.custom_hermes.utils import create_dataset_loaders
+
+from evaluation.plotting_params import set_rc_params
 
 
 def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
@@ -56,6 +60,27 @@ def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
     )
     plt.savefig(acc_path, dpi=200)
     plt.close()
+
+    # save acc and rmse as numpy files
+
+    # This will be useful for comparing different performances later
+    acc_values = results[variable].sel(
+        metric="acc",
+        level=level,
+    ).values
+    rmse_values = results[variable].sel(
+        metric="rmse",
+        level=level,
+    ).values
+
+    acc_npy_path = os.path.join(
+        output_dir, f"{variable}_acc_{level}.npy"
+    )
+    rmse_npy_path = os.path.join(
+        output_dir, f"{variable}_rmse_{level}.npy"
+    )
+    np.save(acc_npy_path, acc_values)
+    np.save(rmse_npy_path, rmse_values)
 
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_weatherbench")
@@ -105,5 +130,5 @@ def main(cfg):
 
 
 if __name__ == "__main__":
-
+    set_rc_params(20)
     main()
