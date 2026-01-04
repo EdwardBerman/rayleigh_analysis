@@ -15,4 +15,4 @@ module load python/3.13.5
 
 eval "$(poetry env activate)"
 
-python3 -m external.custom_hermes.eval_weatherbench backbone=hermes
+python3 -m external.custom_hermes.eval_rollout_weatherbench_toy dataset=weatherbench backbone=eman model_save_path=model_checkpoints/weatherbench__t850_EMAN_seed1_model.pt
