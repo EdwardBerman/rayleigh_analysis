@@ -10,12 +10,16 @@ From [Edward Berman](https://ebrmn.space/) and [Luisa Li](https://www.luisali.co
 
 ### General
 
+<details><summary>Details</summary>
+
 1. This repository contains a submodule. To run this repository and access the submodules, run `git clone https://github.com/EdwardBerman/rayleigh_analysis.git ; git submodule add https://github.com/mitkotak/fast_flops.git ; git submodule add https://github.com/EdwardBerman/fourierflow` followed by `git submodule update --init --recursive`. All submodules should be in `external`.
 2. The repo will require non Pythonic dependencies `cmake` and `gfortran`. On Ubuntu or PopOS! (my OS :D) you can run `sudo apt install cmake gfortran`. 
 3. Install poetry and run `poetry install`
 4. Install wandb via and login via `wandb login [api key]`
 
 For plotting, you might need to download additional tex support locally for the LaTeX strings.
+
+</details>
 
 ### Simulated Heat Diffusion on Grid Graphs
 
@@ -81,8 +85,9 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 
 **Evaluation**:
 1. Evaluate with our metrics with `python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=[backbone] model_save_path=[model-checkpoint]`
-2. Evaluate with Weatherbench2 specific metrics with `python3 -m external.custom_hermes.eval_weatherbench backbone=hermes`. See the detailed command line arguments at `external/custom_hermes/conf/eval_weatherbench.yaml`.
-3. **[Extra]** A evaluation script that runs rollouts on ~1/10 of the test trajectories only can be found here: `external/custom_hermes/eval_rollout_weatherbench_toy.py`. It will run exactly the same as the above script but evaluates only a subset of the data for faster iteration.
+2. The Weatherbench2 specific library causes problems, so we have our own environment for it. A requirements.txt for it is in our repo. We used a venv for this one: `python -m venv weatherbench2 ; source weatherbench2/bin/activate ; pip install -r requirements.txt`. This was done with python 3.13.5
+3. Evaluate with Weatherbench2 specific metrics with `python3 -m external.custom_hermes.eval_weatherbench backbone=hermes`. See the detailed command line arguments at `external/custom_hermes/conf/eval_weatherbench.yaml`.
+4. **[Extra]** A evaluation script that runs rollouts on ~1/10 of the test trajectories only can be found here: `external/custom_hermes/eval_rollout_weatherbench_toy.py`. It will run exactly the same as the above script but evaluates only a subset of the data for faster iteration.
 
 **Further details**: 
 - Training period: 2013-01-01 to 2019-12-31, testing period: 2020-01-01 to 2020-12-31
