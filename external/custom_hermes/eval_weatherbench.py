@@ -138,5 +138,5 @@ def main(cfg):
 
 
 if __name__ == "__main__":
-    set_rc_params(20)
+    set_rc_params(20, use_tex=False)
     main()
