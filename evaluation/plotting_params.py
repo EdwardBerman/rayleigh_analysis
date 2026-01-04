@@ -32,7 +32,7 @@ def set_rc_params(fontsize=None):
     plt.rcParams.update({'axes.labelsize': fontsize})
     plt.rcParams.update({'axes.titlesize': fontsize})
     plt.rcParams.update({'legend.fontsize': int(fontsize-2)})
-    plt.rcParams['text.usetex'] = True
+    plt.rcParams['text.usetex'] = False 
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amssymb}'
 
 
