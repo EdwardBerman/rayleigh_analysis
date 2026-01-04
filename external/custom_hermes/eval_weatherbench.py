@@ -51,14 +51,17 @@ def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
     results[variable].sel(
         metric="acc",
         level=level,
-    ).plot()
+    ).plot(color='blue')
+    plt.axhline(y=0.6, color='red', linestyle='--', label='ECMWF baseline')
     plt.title(f"{variable.upper()} ACC @ {level} hPa")
+    plt.legend()
     plt.tight_layout()
 
     acc_path = os.path.join(
         output_dir, f"{variable}_acc_{level}.png"
     )
     plt.savefig(acc_path, dpi=200)
+    # ECMWF
     plt.close()
 
     # save acc and rmse as numpy files
