@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --time=07:59:59
-#SBATCH --job-name=eval_wb
+#SBATCH --job-name=[weatherEMAN]
 #SBATCH --mem=32GB
 #SBATCH --ntasks=1
 #SBATCH --partition=gpu
@@ -13,6 +13,6 @@
 
 module load python/3.13.5
 
-source weatherbench2/bin/activate
+eval "$(poetry env activate)"
 
-python3 -m external.custom_hermes.eval_weatherbench backbone=hermes paths.forecast=./rollouts/temperature/850/forecasts_Hermes_20260102_175819_449525.zarr
+python3 -m external.custom_hermes.train dataset=weatherbench backbone=gcn
