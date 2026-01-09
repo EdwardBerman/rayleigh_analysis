@@ -18,4 +18,16 @@ outputs/
 aggregate/
 rollouts/
 Cerberus/
+data/weatherbench/
 GCN/
+-copilot.log
+Uni/
+assets/rayleigh_quotients_comparison.png
+external/custom_hermes/generate_diffusion_small.py
+external/transformer/
+mse_plot.py
+nmse_comparison.png
+plot.py
+rqe_comparison.png
+stereographic_projections/
+weatherbench_output/

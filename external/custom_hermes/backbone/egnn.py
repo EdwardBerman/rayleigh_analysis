@@ -49,6 +49,11 @@ class EGNN(nn.Module):
         self,
         data
     ):
+        if data.x.dim() == 2:
+            feats = data.x.unsqueeze(-1).permute(2, 0, 1)  # [nodes, time] -> [nodes, time, 1] -> [1, nodes, time]
+        else:
+            feats = data.x.permute(2, 0, 1)  # [nodes, time, features] -> [features, nodes, time]
+
         node_out, _ = self.model(
             feats=data.x.permute(2, 0, 1),
             coors=data.pos.unsqueeze(0),

@@ -3,12 +3,15 @@ from hydra.utils import instantiate
 from ignite.engine import Events
 from ignite.handlers import LRScheduler, ModelCheckpoint
 from omegaconf import OmegaConf
-import wandb
 
-from external.custom_hermes.utils import create_dataset_loaders, numel, prepare_batch_fn, set_seed
+import wandb
+from external.custom_hermes.utils import (create_dataset_loaders, numel,
+                                          prepare_batch_fn, set_seed)
+
 
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
+    
     set_seed(cfg.seed)
 
     loaders_dict = create_dataset_loaders(cfg)
@@ -52,18 +55,19 @@ def main(cfg):
     )
 
     # This now uses deprecated wandb logger from ignite (or will cause issues with sync at least)
-    
-    #engine.set_epoch_loggers(loaders_dict)
-    #wandb_config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-    #wandb_config["num_params"] = num_params
-    #_ = engine.create_wandb_logger(
+
+    # engine.set_epoch_loggers(loaders_dict)
+    # wandb_config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+    # wandb_config["num_params"] = num_params
+    # _ = engine.create_wandb_logger(
     #    log_interval=1, optimizer=optimizer, config=wandb_config, **cfg.wandb
-    #)
+    # )
 
     # ------------------------------
     # W&B setup WITHOUT using Ignite's WandBLogger (which passes sync=...)
     # ------------------------------
-    wandb_config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+    wandb_config = OmegaConf.to_container(
+        cfg, resolve=True, throw_on_missing=True)
     wandb_config["num_params"] = num_params
     wandb_kwargs = dict(cfg.wandb)
     run = wandb.init(
@@ -94,14 +98,21 @@ def main(cfg):
         log_epoch_summary,
     )
 
-    #engine.set_epoch_loggers(loaders_dict)
-
+    # engine.set_epoch_loggers(loaders_dict)
 
     if cfg.get("save_dir"):
         gst = lambda *_: engine.trainer.state.epoch
+
+        if cfg.dataset.name == "weatherbench":
+            task_str = f"_{cfg.dataset.cls.task}"
+            filename_prefix = f"{cfg.dataset.name}_{task_str}_{cfg.backbone.name}_seed{cfg.seed}"
+        else:
+            task_str = ""
+            filename_prefix = f"{cfg.dataset.name}{task_str}_{cfg.backbone.name}_seed{cfg.seed}"
+
         checkpoint_handler = ModelCheckpoint(
             cfg.save_dir,
-            filename_prefix=f"{cfg.dataset.name}_{cfg.backbone.name}_seed{cfg.seed}",
+            filename_prefix=filename_prefix,
             n_saved=1,
             require_empty=False,
             global_step_transform=gst,
@@ -116,7 +127,8 @@ def main(cfg):
     # Set LR scheduler if needed (for SpiralNet)
     if scheduler:
         ignite_scheduler = LRScheduler(scheduler)
-        engine.trainer.add_event_handler(Events.EPOCH_STARTED, ignite_scheduler)
+        engine.trainer.add_event_handler(
+            Events.EPOCH_STARTED, ignite_scheduler)
 
     print(
         f"[{model.__class__.__name__}, Backbone={backbone.__class__.__name__}] No. trainable parameters = {num_params}"

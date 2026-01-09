@@ -1,0 +1,6 @@
+name: EGNN_Local
+
+net:
+  _target_: external.custom_hermes.backbone.egnn_local.EGNN
+  residual: true
+  normalize: false
