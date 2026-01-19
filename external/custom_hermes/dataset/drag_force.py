@@ -192,6 +192,9 @@ def test_dataset():
         split='val',
         validation_meshes=[0, 1, 2, 3, 4]
     )
+
+    print(len(dataset_train), "training meshes")
+    print(len(dataset_val), "validation meshes")
     
     print("\n" + "=" * 80)
     print("Training set sample:")
