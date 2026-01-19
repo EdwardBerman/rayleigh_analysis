@@ -1,0 +1,21 @@
+# @package _global_
+
+dataset:
+  name: drag_force
+  in_dim: ${dataset.cls.input_length}
+  cls:
+    _target_: external.custom_hermes.dataset.drag_force.DragForceDataset
+    drag_force_path: "${work_dir}/data/drag_force/drag_dataset_84k.pt"
+
+loss:
+  _target_: torch.nn.MSELoss
+
+model:
+  _target_: external.custom_hermes.custom_drag_engine.drag.DragForceRegressor
+
+engine:
+  _target_: external.custom_hermes.custom_drag_engine.drag.DragForceEngine
+  device: ${device}
+  disable_tqdm: false
+  prepare_batch: external.custom_hermes.run.drag_regressor.prepare_batch_drag_force
+  loader_keys: ["train", "val"]
