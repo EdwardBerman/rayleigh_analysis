@@ -27,8 +27,6 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
 from external.custom_hermes.dataset.weatherbench import (earth_mesh,
                                                          task_to_variable)
 from external.custom_hermes.eval_rollout import set_rc_params
-from external.custom_hermes.eval_rollout_weatherbench import (
-    plot_flat_earth, plot_stereographic_global, plot_stereographic_projection)
 from external.custom_hermes.utils import (create_dataset_loaders,
                                           screenshot_mesh_weather)
 
@@ -37,8 +35,141 @@ set_rc_params(15)
 pv.set_plot_theme("paraview")
 
 
+def plot_flat_earth(data, lat, lon, title, save_path):
+    plt.figure(figsize=(12, 6))
+    plt.imshow(
+        data.T,
+        origin="lower",
+        cmap="RdBu_r",
+        aspect="auto",
+        extent=[0, len(lon), 0, len(lat)],
+    )
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title(title)
+
+    if save_path is not None:
+        plt.savefig(save_path, bbox_inches="tight", dpi=150)
+    plt.close()
+
+
+def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, vmax=None):
+    fig = plt.figure(figsize=(15, 12))
+
+    ax1 = fig.add_subplot(1, 2, 1, projection=ccrs.NorthPolarStereo())
+    ax2 = fig.add_subplot(1, 2, 2, projection=ccrs.SouthPolarStereo())
+
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+
+    if vmin is None:
+        vmin = np.nanmin(data)
+    if vmax is None:
+        vmax = np.nanmax(data)
+
+    ax1.set_extent([-180, 180, 0, 90], crs=ccrs.PlateCarree())
+    ax1.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    ax1.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax1.add_feature(cfeature.BORDERS, linewidth=0.3,
+                    edgecolor='gray', alpha=0.5)
+    ax1.gridlines(draw_labels=False, linewidth=0.5,
+                  color='gray', alpha=0.5, linestyle='--')
+    ax1.set_title(f'{title} - North Pole', fontsize=12)
+
+    theta = np.linspace(0, 2*np.pi, 100)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+
+    theta = np.linspace(0, 2*np.pi, 100)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    verts = verts * radius + center
+    circle_path = mpath.Path(verts)
+    ax1.set_boundary(circle_path, transform=ax1.transAxes)
+
+    ax2.set_extent([-180, 180, -90, 0], crs=ccrs.PlateCarree())
+    im2 = ax2.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+    ax2.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax2.add_feature(cfeature.BORDERS, linewidth=0.3,
+                    edgecolor='gray', alpha=0.5)
+    ax2.gridlines(draw_labels=False, linewidth=0.5,
+                  color='gray', alpha=0.5, linestyle='--')
+    ax2.set_title(f'{title} - South Pole', fontsize=12)
+
+    ax2.set_boundary(circle_path, transform=ax2.transAxes)
+
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    cbar = fig.colorbar(im2, cax=cbar_ax, orientation='vertical')
+    cbar.set_label('Value', fontsize=12)
+
+    plt.suptitle(title, fontsize=14, fontweight='bold', y=0.95)
+    plt.tight_layout(rect=[0, 0, 0.9, 0.95])
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+
+
+def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=None):
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.Stereographic(
+        central_latitude=90, central_longitude=0))
+
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+
+    if vmin is None:
+        vmin = np.nanmin(data)
+    if vmax is None:
+        vmax = np.nanmax(data)
+
+    ax.set_global()
+    im = ax.pcolormesh(
+        lon_grid, lat_grid, data.T,
+        transform=ccrs.PlateCarree(),
+        cmap='coolwarm',
+        vmin=vmin,
+        vmax=vmax,
+        shading='auto'
+    )
+
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
+    ax.add_feature(cfeature.BORDERS, linewidth=0.3,
+                   edgecolor='gray', alpha=0.5)
+    ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
+    ax.gridlines(draw_labels=False, linewidth=0.5,
+                 color='gray', alpha=0.5, linestyle='--')
+
+    cbar = plt.colorbar(im, ax=ax, orientation='vertical',
+                        pad=0.05, shrink=0.8)
+    cbar.set_label('Value', fontsize=12)
+
+    plt.title(title, fontsize=14, fontweight='bold', pad=20)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+
+
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
+
+    cfg.save_dir = (
+        Path(cfg.save_dir)
+        / cfg.backbone.name
+        / cfg.dataset.variable
+        / f"level_{cfg.dataset.level}"
+    )
+    cfg.save_dir.mkdir(parents=True, exist_ok=True)
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
@@ -70,8 +201,7 @@ def main(cfg):
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / \
-            f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
+        zarr_path = cfg.save_dir / f"forecasts_{timestamp}.zarr"
         first_write = True
 
         model.eval()
@@ -225,14 +355,9 @@ def main(cfg):
 
             # saving results for weatherbench, needs to be
             # ('time', 'prediction_timedelta', 'level', 'longitude', 'latitude')
-            # all_preds: (rollout_timesteps, num_nodes)
-            # (rollout_timesteps, nlon, nlat)
             pred = np.array(all_preds).reshape(T, nlon, nlat)
-            # create level axis: (rollout_timesteps, 1, nlon, nlat)
             pred = pred[:, None, :, :]
-            # create time axis: (1, rollout_timesteps, 1, nlon, nlat)
             pred = pred[None, ...]
-            # 1 because we are only predicting for one level and for one single start time.
 
             init_time = np.datetime64(data.init_time)
 
@@ -305,25 +430,16 @@ def main(cfg):
             object_name = "earth"
             mesh = earth_mesh("data/weatherbench/earth_mesh.vtp")
 
-            save_path = (
-                Path(cfg.save_dir)
-                / cfg.dataset.name
-                / split
-                / object_name
-                / cfg.backbone.name
-            )
-            save_path.mkdir(parents=True, exist_ok=True)
-
-            stereo_path = save_path / "stereographic_projections"
+            stereo_path = cfg.save_dir / "stereographic_projections"
             stereo_path.mkdir(parents=True, exist_ok=True)
 
-            flatearth_path = save_path / "flat_earth_plots"
+            flatearth_path = cfg.save_dir / "flat_earth_plots"
             flatearth_path.mkdir(parents=True, exist_ok=True)
 
-            np.save(save_path / "losses.npy", results["losses"][mesh_idx])
-            np.save(save_path / "predictions.npy",
+            np.save(cfg.save_dir / "losses.npy", results["losses"][mesh_idx])
+            np.save(cfg.save_dir / "predictions.npy",
                     results["predictions"][mesh_idx])
-            np.save(save_path / "ground_truth.npy",
+            np.save(cfg.save_dir / "ground_truth.npy",
                     results["ground_truth"][mesh_idx])
 
             true_rq = np.stack(
@@ -333,8 +449,8 @@ def main(cfg):
                 results["predicted_rayleigh_quotients"][mesh_idx], axis=0
             )  # [num_traj, T_out]
 
-            np.save(save_path / "rayleigh_true.npy", true_rq)
-            np.save(save_path / "rayleigh_pred.npy", pred_rq)
+            np.save(cfg.save_dir / "rayleigh_true.npy", true_rq)
+            np.save(cfg.save_dir / "rayleigh_pred.npy", pred_rq)
 
             plt.figure(figsize=(6, 4))
             t = np.arange(true_rq.shape[1])
@@ -358,32 +474,28 @@ def main(cfg):
                              pred_rq.mean(axis=0) + pred_rq_std, color="red", alpha=0.3)
             plt.xlabel("Time step")
             plt.ylabel("Rayleigh Quotient")
-            print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(
-                true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()
-            ))
+            # print("Rayleigh Quotient ranges: GT [{:.6e}, {:.6e}], Pred [{:.6e}, {:.6e}]".format(true_rq.min(), true_rq.max(), pred_rq.min(), pred_rq.max()))
             plt.title("Rayleigh Quotient over Time")
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.png")
+                cfg.save_dir / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.pdf")
+                cfg.save_dir / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
             plt.tight_layout()
             plt.savefig(
-                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                cfg.save_dir / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                cfg.save_dir / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
             integrated_errors_all.extend(traj_error.tolist())
 
             integrated_rayleigh_error = traj_error.mean()
             integrated_rayleigh_error_std = traj_error.std()
-            print(
-                f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}"
-            )
+            # print(f"[{split}] Mesh idx: {mesh_idx}, Integrated Rayleigh Quotient Error: {integrated_rayleigh_error:.6e} +/- {integrated_rayleigh_error_std:.6e}")
 
             nrmse = np.stack(
                 results["nrmse"][mesh_idx], axis=0
@@ -410,7 +522,7 @@ def main(cfg):
                     screenshot_mesh_weather(
                         mesh,
                         gt,
-                        save_path
+                        cfg.save_dir
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt.png",
                     )
 
@@ -447,7 +559,7 @@ def main(cfg):
                     screenshot_mesh_weather(
                         mesh,
                         preds,
-                        save_path
+                        cfg.save_dir
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
 
@@ -559,8 +671,6 @@ def main(cfg):
         print("Row 0: [Rayleigh mean, Rayleigh std]")
         print("Row 1: [NRMSE mean, NRMSE std]")
         print("Row 2: [SMAPE mean, SMAPE std]")
-
-        # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 
 
 if __name__ == "__main__":

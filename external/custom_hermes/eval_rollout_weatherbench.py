@@ -36,22 +36,6 @@ pv.set_plot_theme("paraview")
 
 
 def plot_flat_earth(data, lat, lon, title, save_path):
-    """
-    Plot a 2D latitude–longitude field on a flat grid using imshow.
-
-    Parameters:
-    -----------
-    data : np.ndarray
-        2D array of shape (nlon, nlat) containing the data to plot
-    lat : np.ndarray
-        1D array of latitude values
-    lon : np.ndarray
-        1D array of longitude values
-    title : str
-        Title for the plot
-    save_path : Path or str
-        Path to save the figure
-    """
     plt.figure(figsize=(12, 6))
     plt.imshow(
         data.T,
@@ -66,47 +50,24 @@ def plot_flat_earth(data, lat, lon, title, save_path):
 
     if save_path is not None:
         plt.savefig(save_path, bbox_inches="tight", dpi=150)
-
-    plt.show()
+    plt.close()
 
 
 def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, vmax=None):
-    """
-    Plot data on a stereographic projection.
-
-    Parameters:
-    -----------
-    data : np.ndarray
-        2D array of shape (nlon, nlat) containing the data to plot
-    lat : np.ndarray
-        1D array of latitude values
-    lon : np.ndarray
-        1D array of longitude values
-    title : str
-        Title for the plot
-    save_path : Path or str
-        Path to save the figure
-    vmin, vmax : float, optional
-        Min and max values for colorbar
-    """
     fig = plt.figure(figsize=(15, 12))
 
-    # Create two subplots: North and South polar stereographic
     ax1 = fig.add_subplot(1, 2, 1, projection=ccrs.NorthPolarStereo())
     ax2 = fig.add_subplot(1, 2, 2, projection=ccrs.SouthPolarStereo())
 
-    # Create meshgrid for plotting
     lon_grid, lat_grid = np.meshgrid(lon, lat)
 
-    # Determine colorbar limits if not provided
     if vmin is None:
         vmin = np.nanmin(data)
     if vmax is None:
         vmax = np.nanmax(data)
 
-    # Plot on North Polar Stereographic
     ax1.set_extent([-180, 180, 0, 90], crs=ccrs.PlateCarree())
-    im1 = ax1.pcolormesh(
+    ax1.pcolormesh(
         lon_grid, lat_grid, data.T,
         transform=ccrs.PlateCarree(),
         cmap='coolwarm',
@@ -121,7 +82,6 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
                   color='gray', alpha=0.5, linestyle='--')
     ax1.set_title(f'{title} - North Pole', fontsize=12)
 
-    # Add circular boundary for North Pole
     theta = np.linspace(0, 2*np.pi, 100)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
@@ -133,7 +93,6 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
     circle_path = mpath.Path(verts)
     ax1.set_boundary(circle_path, transform=ax1.transAxes)
 
-    # Plot on South Polar Stereographic
     ax2.set_extent([-180, 180, -90, 0], crs=ccrs.PlateCarree())
     im2 = ax2.pcolormesh(
         lon_grid, lat_grid, data.T,
@@ -152,7 +111,6 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
 
     ax2.set_boundary(circle_path, transform=ax2.transAxes)
 
-    # Add a colorbar
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(im2, cax=cbar_ax, orientation='vertical')
     cbar.set_label('Value', fontsize=12)
@@ -164,38 +122,17 @@ def plot_stereographic_projection(data, lat, lon, title, save_path, vmin=None, v
 
 
 def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=None):
-    """
-    Plot data on a single global stereographic projection (centered on North Pole).
-
-    Parameters:
-    -----------
-    data : np.ndarray
-        2D array of shape (nlon, nlat) containing the data to plot
-    lat : np.ndarray
-        1D array of latitude values
-    lon : np.ndarray
-        1D array of longitude values
-    title : str
-        Title for the plot
-    save_path : Path or str
-        Path to save the figure
-    vmin, vmax : float, optional
-        Min and max values for colorbar
-    """
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.Stereographic(
         central_latitude=90, central_longitude=0))
 
-    # Create meshgrid for plotting
     lon_grid, lat_grid = np.meshgrid(lon, lat)
 
-    # Determine colorbar limits if not provided
     if vmin is None:
         vmin = np.nanmin(data)
     if vmax is None:
         vmax = np.nanmax(data)
 
-    # Plot the data
     ax.set_global()
     im = ax.pcolormesh(
         lon_grid, lat_grid, data.T,
@@ -206,7 +143,6 @@ def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=
         shading='auto'
     )
 
-    # Add map features
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor='black')
     ax.add_feature(cfeature.BORDERS, linewidth=0.3,
                    edgecolor='gray', alpha=0.5)
@@ -214,7 +150,6 @@ def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=
     ax.gridlines(draw_labels=False, linewidth=0.5,
                  color='gray', alpha=0.5, linestyle='--')
 
-    # Add colorbar
     cbar = plt.colorbar(im, ax=ax, orientation='vertical',
                         pad=0.05, shrink=0.8)
     cbar.set_label('Value', fontsize=12)
@@ -227,6 +162,14 @@ def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
+
+    cfg.save_dir = (
+        Path(cfg.save_dir)
+        / cfg.backbone.name
+        / cfg.dataset.variable
+        / f"level_{cfg.dataset.level}"
+    )
+    cfg.save_dir.mkdir(parents=True, exist_ok=True)
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
 
@@ -258,8 +201,7 @@ def main(cfg):
         pred_timedelta = (np.arange(1, T + 1) * 6).astype("timedelta64[h]")
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        zarr_path = Path(cfg.save_dir) / dataset.variable / str(dataset.level) / \
-            f"forecasts_{cfg.backbone.name}_{timestamp}.zarr"
+        zarr_path = cfg.save_dir / f"forecasts_{timestamp}.zarr"
         first_write = True
 
         model.eval()
@@ -483,25 +425,16 @@ def main(cfg):
             object_name = "earth"
             mesh = earth_mesh("data/weatherbench/earth_mesh.vtp")
 
-            save_path = (
-                Path(cfg.save_dir)
-                / cfg.dataset.name
-                / split
-                / object_name
-                / cfg.backbone.name
-            )
-            save_path.mkdir(parents=True, exist_ok=True)
-
-            stereo_path = save_path / "stereographic_projections"
+            stereo_path = cfg.save_dir / "stereographic_projections"
             stereo_path.mkdir(parents=True, exist_ok=True)
 
-            flatearth_path = save_path / "flat_earth_plots"
+            flatearth_path = cfg.save_dir / "flat_earth_plots"
             flatearth_path.mkdir(parents=True, exist_ok=True)
 
-            np.save(save_path / "losses.npy", results["losses"][mesh_idx])
-            np.save(save_path / "predictions.npy",
+            np.save(cfg.save_dir / "losses.npy", results["losses"][mesh_idx])
+            np.save(cfg.save_dir / "predictions.npy",
                     results["predictions"][mesh_idx])
-            np.save(save_path / "ground_truth.npy",
+            np.save(cfg.save_dir / "ground_truth.npy",
                     results["ground_truth"][mesh_idx])
 
             true_rq = np.stack(
@@ -511,8 +444,8 @@ def main(cfg):
                 results["predicted_rayleigh_quotients"][mesh_idx], axis=0
             )  # [num_traj, T_out]
 
-            np.save(save_path / "rayleigh_true.npy", true_rq)
-            np.save(save_path / "rayleigh_pred.npy", pred_rq)
+            np.save(cfg.save_dir / "rayleigh_true.npy", true_rq)
+            np.save(cfg.save_dir / "rayleigh_pred.npy", pred_rq)
 
             plt.figure(figsize=(6, 4))
             t = np.arange(true_rq.shape[1])
@@ -541,16 +474,16 @@ def main(cfg):
             plt.legend()
             plt.tight_layout()
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.png")
+                cfg.save_dir / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.pdf")
+                cfg.save_dir / f"rayleigh_quotients_mesh_{mesh_idx}_weather_{cfg.backbone.name}.pdf")
 
             plt.yscale("log")
             plt.tight_layout()
             plt.savefig(
-                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
+                cfg.save_dir / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.png")
             plt.savefig(
-                save_path / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
+                cfg.save_dir / f"wb_rayleigh_quotients_log_mesh_{mesh_idx}_{cfg.backbone.name}.pdf")
 
             traj_error = np.abs(true_rq - pred_rq).sum(axis=1)
             integrated_errors_all.extend(traj_error.tolist())
@@ -584,7 +517,7 @@ def main(cfg):
                     screenshot_mesh_weather(
                         mesh,
                         gt,
-                        save_path
+                        cfg.save_dir
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_gt.png",
                     )
 
@@ -621,7 +554,7 @@ def main(cfg):
                     screenshot_mesh_weather(
                         mesh,
                         preds,
-                        save_path
+                        cfg.save_dir
                         / f"{cfg.dataset.name}_{object_name}_{cfg.backbone.name}_{s}_t{t}_preds.png",
                     )
 
@@ -733,8 +666,6 @@ def main(cfg):
         print("Row 0: [Rayleigh mean, Rayleigh std]")
         print("Row 1: [NRMSE mean, NRMSE std]")
         print("Row 2: [SMAPE mean, SMAPE std]")
-
-        # plot mean and std of rayleigh quotients over the iterations and plot them as a function of t, do this for each mesh
 
 
 if __name__ == "__main__":
