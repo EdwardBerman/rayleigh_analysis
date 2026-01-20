@@ -15,4 +15,4 @@ module load python/3.13.5
 
 eval "$(poetry env activate)"
 
-python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=gcn model_save_path=model_checkpoints/weatherbench__t850_GCN_seed1_model.pt
+python3 -m external.custom_hermes.eval_rollout_weatherbench dataset=weatherbench backbone=gem_cnn model_save_path=model_checkpoints/weatherbench/weatherbench__t850_GemCNN_seed1_model.pt
