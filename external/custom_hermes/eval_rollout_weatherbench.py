@@ -510,7 +510,7 @@ def main(cfg):
             nlon, nlat = dataset.grid_shape
 
             for s in range(1):
-                for t in range(1, 38, 2):
+                for t in range(1, 38, 5):
                     gt = results["ground_truth"][mesh_idx][s][:, t]
                     gt_reshaped = gt.reshape(nlon, nlat)
 
