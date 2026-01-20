@@ -163,12 +163,7 @@ def plot_stereographic_global(data, lat, lon, title, save_path, vmin=None, vmax=
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_rollout")
 def main(cfg):
 
-    cfg.save_dir = (
-        Path(cfg.save_dir)
-        / cfg.backbone.name
-        / cfg.dataset.variable
-        / f"level_{cfg.dataset.level}"
-    )
+    cfg.save_dir = (Path(cfg.save_dir) / cfg.backbone.name / cfg.dataset.cls.task)
     cfg.save_dir.mkdir(parents=True, exist_ok=True)
 
     datasets_dict = create_dataset_loaders(cfg, return_datasets=True)
