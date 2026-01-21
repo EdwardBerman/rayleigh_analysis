@@ -9,7 +9,7 @@ dataset:
     _target_: external.custom_hermes.dataset.weatherbench.WeatherBench
     eras5_path: "${work_dir}/data/weatherbench/eras5"
     mesh_path: "${work_dir}/data/weatherbench/earth_mesh.vtp"
-    task: "t850"
+    task: "z500"
     norm: false
     input_length: 3
     rollout_steps: 40
