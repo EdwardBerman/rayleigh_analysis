@@ -1,7 +1,7 @@
 # @package _global_
 
 train:
-  epochs: 1
+  epochs: 100
   batch_size: 1
   lr: 7e-5
 
