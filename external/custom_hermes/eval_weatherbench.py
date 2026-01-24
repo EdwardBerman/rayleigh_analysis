@@ -5,16 +5,13 @@ See documentation at: `https://weatherbench2.readthedocs.io/en/latest/evaluation
 
 import os
 
-import numpy as np
-
 import hydra
+import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
 from weatherbench2 import config
 from weatherbench2.evaluation import evaluate_in_memory
 from weatherbench2.metrics import ACC, MSE
-
-from external.custom_hermes.utils import create_dataset_loaders
 
 from evaluation.plotting_params import set_rc_params
 
@@ -84,7 +81,7 @@ def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
     )
     np.save(acc_npy_path, acc_values)
     np.save(rmse_npy_path, rmse_values)
-    
+
     print(f"Saved RMSE plot to: {rmse_path}")
     print(f"Saved ACC plot to: {acc_path}")
     print(f"Saved ACC values to: {acc_npy_path}")
@@ -93,9 +90,6 @@ def plot_visuals(output_dir: str, file_name: str, variable: str, level: int):
 
 @hydra.main(version_base=None, config_path="./conf", config_name="eval_weatherbench")
 def main(cfg):
-
-    # loading the datasets with hydra confs and this function
-    test_ds = create_dataset_loaders(cfg, return_datasets=True)['test']
 
     forecast_path = cfg.paths.forecast
     climatology_path = cfg.paths.climatology
@@ -113,16 +107,16 @@ def main(cfg):
 
     selection = config.Selection(
         variables=[
-            test_ds.variable,
+            cfg.eval.variable,
         ],
-        levels=[test_ds.level],
-        time_slice=test_ds.time_slice,
+        levels=[cfg.eval.level],
+        time_slice=slice('2020-01-01', '2020-12-31')
     )
 
     data_config = config.Data(selection=selection, paths=paths)
 
     # output file will be called `{eval_name}.nc`
-    eval_name = f'deterministic_{test_ds.variable}_{test_ds.level}'
+    eval_name = f'deterministic_{cfg.eval.variable}_{cfg.eval.level}'
 
     eval_configs = {
         eval_name: config.Eval(
@@ -134,7 +128,7 @@ def main(cfg):
     }
 
     evaluate_in_memory(data_config, eval_configs)
-    plot_visuals(output_dir, eval_name, test_ds.variable, test_ds.level)
+    plot_visuals(output_dir, eval_name, cfg.eval.variable, cfg.eval.level)
 
 
 if __name__ == "__main__":

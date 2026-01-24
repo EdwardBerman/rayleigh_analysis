@@ -1,13 +1,11 @@
 work_dir: ${hydra:runtime.cwd}
 
 paths:
-  forecast: ${work_dir}/rollouts/temperature/850/forecasts_Hermes_20260102_175819_449525.zarr
+  forecast: ${work_dir}/rollouts/temperature/850/forecasts_Hermes_20260102_175819_449525.zarr # this will always get overwritten
   climatology: ${work_dir}/data/weatherbench/climatology
   obs: ${work_dir}/data/weatherbench/eras5
   output_dir: ${work_dir}/weatherbench_output
 
-defaults:
-  - dataset: weatherbench
-  - backbone: hermes
-  - dataset_backbone: ${dataset}_${backbone}
-  - _self_
+eval:
+  variable: "t850" # this will always get overwritten
+  level: 850 # this will always get overwritten
