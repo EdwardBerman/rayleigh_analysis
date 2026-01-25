@@ -94,7 +94,9 @@ def main(cfg):
     forecast_path = cfg.paths.forecast
     climatology_path = cfg.paths.climatology
     era5_path = cfg.paths.obs
-    output_dir = cfg.paths.output_dir
+    output_dir = cfg.paths.output_dir + "/" + cfg.eval.model
+    
+    os.makedirs(output_dir, exist_ok=True)
 
     climatology = xr.open_zarr(climatology_path)
 
