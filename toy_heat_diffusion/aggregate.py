@@ -44,6 +44,16 @@ def load_metric_from_runs(runs, metric_name):
             print(f"Warning: {metric_path} not found")
     return data
 
+def find_best_run(runs, metric_name):
+    """Find the run with the lowest final value for the given metric."""
+    metric_list = load_metric_from_runs(runs, metric_name)
+    if not metric_list:
+        return None, None
+    
+    final_values = [m[-1] for m in metric_list]
+    best_idx = np.argmin(final_values)
+    return best_idx, metric_list[best_idx]
+
 def main():
     set_rc_params(10)
     
@@ -129,7 +139,7 @@ def main():
         ax.set_xlabel("Epoch", fontsize=20)
         ax.set_title(title, fontsize=22)
         if title == titles[2]:
-            ax.legend(fontsize=8, loc='upper right')
+            ax.legend(fontsize=16, loc='upper right')
         ax.grid(True, alpha=0.3)
     
     axes[0].set_ylabel(r"$\overline{R_{\mathcal{G}}}$", fontsize=20)
@@ -150,7 +160,7 @@ def main():
                 np.arange(num_epochs),
                 mse,
                 color=colors[i % len(colors)],
-                linewidth=2,
+                linewidth=4.5,
                 alpha=0.7,
                 label=f"Run {i+1}"
             )
@@ -158,7 +168,7 @@ def main():
         ax.set_xlabel("Epoch", fontsize=20)
         ax.set_title(title, fontsize=22)
         if title == titles[2]:
-            ax.legend(fontsize=8, loc='upper right')
+            ax.legend(fontsize=16, loc='upper right')
         ax.set_yscale("log")
         ax.grid(True, alpha=0.3)
     
@@ -167,6 +177,94 @@ def main():
     plt.savefig(os.path.join(args.save_dir, "val_mse_comparison_all_runs.png"), dpi=300)
     plt.close()
     print(f"Saved: val_mse_comparison_all_runs.png")
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    model_labels = [r'$f_{\rm GCN}(\mathbf{X}; \mathbf{A})$', r'$f_{\rm Relaxed}(\mathbf{X}; \mathbf{A}, 3)$', r'$f_{\rm Lie Uni Conv}(\mathbf{X}; \mathbf{A})$']
+    model_colors = ['#1f77b4', '#880808', '#2ca02c']  # Blue, Orange, Green
+    
+    # Panel 1: Best Rayleigh quotients
+    ax_rayleigh = axes[0]
+    for model_type, label, color in zip(model_types, model_labels, model_colors):
+        best_idx, best_rayleigh = find_best_run(runs[model_type], "val_mse")
+        if best_rayleigh is None:
+            continue
+        
+        # Load the corresponding rayleigh curve for the best run
+        rayleigh_list = load_metric_from_runs(runs[model_type], "val_rayleigh_xprime")
+        if best_idx < len(rayleigh_list):
+            best_rayleigh_curve = rayleigh_list[best_idx]
+            num_epochs = len(best_rayleigh_curve)
+            ax_rayleigh.plot(
+                np.arange(num_epochs),
+                best_rayleigh_curve,
+                color=color,
+                linewidth=4.5,
+                alpha=0.9,
+                label=label
+            )
+            print(f"{label}: Best run is Run {best_idx+1}")
+    
+    # Plot X and Y reference lines
+    if val_rayleigh_x is not None:
+        num_epochs = len(val_rayleigh_x)
+        ax_rayleigh.plot(
+            np.arange(num_epochs),
+            val_rayleigh_x,
+            color='gray',
+            linewidth=4.5,
+            alpha=0.7,
+            linestyle='--',
+            label=r"$\overline{R_{\mathcal{G}}(X)}$"
+        )
+    
+    if val_rayleigh_y is not None:
+        num_epochs = len(val_rayleigh_y)
+        ax_rayleigh.plot(
+            np.arange(num_epochs),
+            val_rayleigh_y,
+            color='red',
+            linewidth=4.5,
+            alpha=0.7,
+            linestyle='--',
+            label=r"$\overline{R_{\mathcal{G}}(Y)}$"
+        )
+    
+    ax_rayleigh.set_xlabel("Epoch", fontsize=25)
+    ax_rayleigh.set_ylabel(r"Validation $\overline{R_{\mathcal{G}}}$", fontsize=25)
+    ax_rayleigh.set_title("Rayleigh Quotient", fontsize=25)
+    #ax_rayleigh.legend(fontsize=16, loc='upper right')
+    ax_rayleigh.legend(fontsize=20, loc='center left', bbox_to_anchor=(-0.95, 0.5))
+    ax_rayleigh.grid(True, alpha=0.3)
+    
+    # Panel 2: Best validation MSE
+    ax_mse = axes[1]
+    for model_type, label, color in zip(model_types, model_labels, model_colors):
+        best_idx, best_mse = find_best_run(runs[model_type], "val_mse")
+        if best_mse is None:
+            continue
+        
+        num_epochs = len(best_mse)
+        ax_mse.plot(
+            np.arange(num_epochs),
+            best_mse,
+            color=color,
+            linewidth=4.5,
+            alpha=0.9,
+            label=label
+        )
+    
+    ax_mse.set_xlabel("Epoch", fontsize=25)
+    ax_mse.set_ylabel("Validation MSE", fontsize=25)
+    ax_mse.set_title("Validation MSE", fontsize=25)
+    #ax_mse.legend(fontsize=16, loc='upper right')
+    ax_mse.set_yscale("log")
+    ax_mse.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.save_dir, "best_runs_comparison.png"), dpi=300)
+    plt.close()
+    print(f"Saved: best_runs_comparison.png")
 
 if __name__ == "__main__":
     main()
