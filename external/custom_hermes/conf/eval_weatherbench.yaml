@@ -9,3 +9,4 @@ paths:
 eval:
   variable: "t850" # this will always get overwritten
   level: 850 # this will always get overwritten
+  model: "transformer"
