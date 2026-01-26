@@ -49,7 +49,7 @@ class WeatherBench(Dataset):
                  norm: bool,
                  input_length: int,
                  rollout_steps: int,
-                 cluster: bool = False,
+                 cluster: bool = True,
                  compute_edges: bool = False,
                  compute_adj: bool = False,
                  max_cluster_size: int = 20,
