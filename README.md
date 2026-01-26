@@ -1,4 +1,4 @@
-# Smoothness Discrepancies in Dynamics Models and How to Avoid Them
+# Smoothness Errors in Dynamics Models and How to Avoid Them
 
 From [Edward Berman\*](https://ebrmn.space/), [Luisa Li\*](https://www.luisali.com/), [Jung Yeon Park](https://jypark0.github.io/), and [Robin Walters](https://www.robinwalters.com/). Under Review at ICML 2026. An early version of our report can be found [here](https://github.com/EdwardBerman/rayleigh_analysis/blob/main/paper/berman_li_cs_7180_report.pdf). Set up instructions are below
 
