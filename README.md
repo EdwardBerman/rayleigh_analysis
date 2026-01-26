@@ -100,8 +100,6 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 
 <details><summary>Details</summary>
 
-***Community Note: This analysis does not appear in the final paper, but was part of our internal analysis. You can find a write-up of our analysis*** [here](https://github.com/EdwardBerman/rayleigh_analysis/blob/main/paper/FNO.pdf)
-
 **Preliminaries**:
 1. The old submodule is the reason why there are so many different frameworks in our poetry environment. Don't blame me, [Blame Brett](https://open.spotify.com/track/6twjuBZfRJIZnoHrghzWLk?si=0af01ff951cb478b). To be fair, I am sure the authors of [this repository](https://github.com/alasdairtran/fourierflow/tree/main) are likely also blaming Brett.
 2. I had to run the following to get the submodule to run outside of just installing the poetry environment: `poetry run python -m pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html ; poetry run pip install "git+https://github.com/google/jax-cfd.git" ;  poetry run python -m pip install dask-cuda ; poetry run pip install gpytoolbox`
