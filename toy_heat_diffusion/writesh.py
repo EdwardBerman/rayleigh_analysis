@@ -12,7 +12,7 @@ BASH_TEMPLATE = """#!/bin/bash
 #SBATCH --output=slurm/%j.out
 #SBATCH --error=slurm/%j.err
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=li.tao@northeastern.edu
+#SBATCH --mail-user=[anonymized]
 
 {command}
 """
