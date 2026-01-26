@@ -1,4 +1,4 @@
-# Smoothness Discrepancies in Dynamics Models and How to Avoid Them
+# Smoothness Errors in Dynamics Models and How to Avoid Them
 
 ![UniMesh](assets/Graphic.png)
 
