@@ -10,7 +10,7 @@
 
 <details><summary>Details</summary>
 
-1. This repository contains a submodule. To run this repository and access the submodules, run `git clone https://github.com/EdwardBerman/rayleigh_analysis.git ; git submodule add https://github.com/mitkotak/fast_flops.git ; git submodule add https://github.com/EdwardBerman/fourierflow` followed by `git submodule update --init --recursive`. All submodules should be in `external`.
+1. This repository contains a submodule. To run this repository and access the submodules, run `git clone https://github.com/[anonymized]/rayleigh_analysis.git ; git submodule add https://github.com/[anonymized]/fast_flops.git ; git submodule add https://github.com/[anonymized]/fourierflow` followed by `git submodule update --init --recursive`. All submodules should be in `external`.
 2. The repo will require non Pythonic dependencies `cmake` and `gfortran`. On Ubuntu or PopOS! (my OS :D) you can run `sudo apt install cmake gfortran`. 
 3. Install poetry and run `poetry install`
 4. Install wandb via and login via `wandb login [api key]`
