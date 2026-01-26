@@ -3,8 +3,7 @@ name = "rayleigh-analysis"
 version = "0.1.0"
 description = "Poetry environment for Rayleigh quotient analysis"
 authors = [
-    {name = "Edward Berman",email = "berman.ed@northeastern.edu"},
-    {name = "Luisa Li", email = "li.tao@northeastern.edu"}
+    {name = "Anonymous",email = "Anonymous"},
 ]
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
