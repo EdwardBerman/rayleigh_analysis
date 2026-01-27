@@ -12,4 +12,4 @@ net:
   regular_non_lin: true
   batch_norm: false
   dropout: false
-  n_heads: 2
+  n_heads: 5 

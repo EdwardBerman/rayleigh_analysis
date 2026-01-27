@@ -1,5 +1,6 @@
 # @package _global_
 
+# Number of parameters: 990081
 train:
   epochs: 100
   batch_size: 1
@@ -13,7 +14,7 @@ optimizer:
 backbone:
   net:
     in_node_nf: 3
-    hidden_nf: 64
+    hidden_nf: 128
     out_node_nf: ${dataset.out_dim}
     in_edge_nf: ${dataset.edge_dim}
-    n_layers: 2
+    n_layers: 10
