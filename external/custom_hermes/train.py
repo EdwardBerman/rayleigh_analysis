@@ -11,7 +11,7 @@ from external.custom_hermes.utils import (create_dataset_loaders, numel,
 
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
-    
+
     set_seed(cfg.seed)
 
     loaders_dict = create_dataset_loaders(cfg)
@@ -34,6 +34,9 @@ def main(cfg):
     #     model = instantiate(cfg.model.net).to(cfg.device)
 
     num_params = numel(model, only_trainable=True)
+
+    print(f"Number of parameters: {num_params}")
+    breakpoint()
 
     optimizer = instantiate(cfg.optimizer, params=model.parameters())
 
