@@ -17,22 +17,18 @@ backbone:
       - - ${dataset.in_dim}
         - 64
         - 64
-        - 32
-        - 32
+        - 64
     message_orders:
       - - 0
         - 2
         - 2
         - 2
-        - 2
     update_dims:
       - - 64
-        - 32
-        - 32
+        - 64
         - ${dataset.out_dim}
     update_orders:
       - - 2
-        - 2
         - 2
         - 0
     edge_dims: ${dataset.edge_dim}
