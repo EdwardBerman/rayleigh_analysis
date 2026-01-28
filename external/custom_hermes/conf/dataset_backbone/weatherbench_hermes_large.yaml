@@ -10,15 +10,15 @@ optimizer:
   lr: ${train.lr}
   weight_decay: 1e-5
 
-# params: 1039238
+# params: 521734
 backbone:
   net:
     message_dims:
       - - ${dataset.in_dim}
         - 64
         - 64
-        - 64
-        - 64
+        - 32
+        - 32
     message_orders:
       - - 0
         - 2
@@ -27,8 +27,8 @@ backbone:
         - 2
     update_dims:
       - - 64
-        - 64
-        - 64
+        - 32
+        - 32
         - ${dataset.out_dim}
     update_orders:
       - - 2
