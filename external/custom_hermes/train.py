@@ -14,9 +14,7 @@ def main(cfg):
 
     set_seed(cfg.seed)
 
-    cfg.device = 'cpu'
-
-    # loaders_dict = create_dataset_loaders(cfg)
+    loaders_dict = create_dataset_loaders(cfg)
 
     # Create backbone and model
 
@@ -38,7 +36,6 @@ def main(cfg):
     num_params = numel(model, only_trainable=True)
 
     print(f"Number of parameters: {num_params}")
-    breakpoint()
 
     optimizer = instantiate(cfg.optimizer, params=model.parameters())
 
