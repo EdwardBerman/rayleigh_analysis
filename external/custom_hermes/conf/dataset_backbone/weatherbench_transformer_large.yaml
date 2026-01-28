@@ -1,9 +1,8 @@
 # @package _global_
-# 941k parameters
 
 train:
   epochs: 100
-  batch_size: 1
+  batch_size: 2 
   lr: 1e-4
 
 optimizer:
@@ -11,11 +10,11 @@ optimizer:
   lr: ${train.lr}
   weight_decay: 1e-5
 
-# params: 40,093
+# params: 411553
 backbone:
   net:
     state_size: 1
-    w_size: 128
+    w_size: 64
     n_attention: 4
     nb_gn: 4
     n_heads: 1

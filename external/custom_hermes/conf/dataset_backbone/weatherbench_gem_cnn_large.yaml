@@ -1,9 +1,9 @@
 # @package _global_
-# Number of parameters: 1029699
+# Number of parameters: 619715
 
 train:
   epochs: 100
-  batch_size: 1
+  batch_size: 2
   lr: 3e-2
 
 optimizer:
@@ -11,16 +11,14 @@ optimizer:
   lr: ${train.lr}
   weight_decay: 1e-5
 
-# params: 40,337
 backbone:
   net:
     block_dims:
       - ${dataset.in_dim}
       - 64
       - 64
-      - 64
       - 32
       - ${dataset.out_dim}
-    block_orders: [0, 2, 2, 2, 2, 0]
+    block_orders: [0, 2, 2, 2, 0]
     final_activation: false
     node_batch_size: null

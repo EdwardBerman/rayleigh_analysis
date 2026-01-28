@@ -1,9 +1,9 @@
 # @package _global_
-# Number of parameters: 1022785
+# Number of parameters: 463361
 
 train:
   epochs: 100
-  batch_size: 1
+  batch_size: 2
   lr: 3e-4
 
 optimizer:
@@ -15,18 +15,16 @@ backbone:
   net:
     message_dims:
       - - ${dataset.in_dim}
-        - 336
-        - 336
-        - 336
-        - 336
-        - 336
-        - 336
+        - 256
+        - 256
+        - 256
+        - 256
+        - 256
     update_dims:
-      - - 336
-        - 336
-        - 336
-        - 336
-        - 336
+      - - 256
+        - 256
+        - 256
+        - 256
         - ${dataset.out_dim}
     edge_dims: ${dataset.edge_dim}
     final_activation: false

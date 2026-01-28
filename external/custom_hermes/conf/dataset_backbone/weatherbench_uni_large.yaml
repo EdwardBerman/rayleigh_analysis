@@ -2,7 +2,7 @@
 
 train:
   epochs: 100
-  batch_size: 1
+  batch_size: 2 
   lr: 7e-4
 
 optimizer:
