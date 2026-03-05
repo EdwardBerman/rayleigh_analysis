@@ -1,0 +1,26 @@
+# @package _global_
+
+dataset:
+  name: Flag
+  in_dim: 12 # node_type(9) + velocity (3)
+  edge_dim: 7 # world_pos(3) + |world_pos|(1) + mesh_pos(2) + |mesh_pos|(1)
+  out_dim: 1
+  cls:
+    _target_: src.data.dataset.flag.FlagSimpleDataset
+    root: "${work_dir}/data/flag_simple"
+    maxT: 101
+    input_length: 2
+    output_order: 2
+
+loss:
+  _target_: torch.nn.MSELoss
+
+model:
+  _target_: src.run.mgn_pde.PDERegressor
+
+engine:
+  _target_: src.run.mgn_pde.MGNPDEEngine
+  device: ${device}
+  disable_tqdm: true
+  eval_every: 1
+  grad_accum_steps: 1
