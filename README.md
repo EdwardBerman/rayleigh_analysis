@@ -130,6 +130,8 @@ This didn't make into our final paper as the focused converged to dynamics model
 
 ### Citation
 
+Preprint:
+
 ```
 @misc{berman2026smoothnesserrorsdynamicsmodels,
       title={Smoothness Errors in Dynamics Models and How to Avoid Them}, 
@@ -139,5 +141,18 @@ This didn't make into our final paper as the focused converged to dynamics model
       archivePrefix={arXiv},
       primaryClass={cs.LG},
       url={https://arxiv.org/abs/2602.05352}, 
+}
+```
+
+Workshop version:
+
+```
+@inproceedings{
+berman2026smoothness,
+title={Smoothness Errors in Dynamics Models and How to Avoid Them},
+author={Edward Berman and Luisa Li and Jung Yeon Park and Robin Walters},
+booktitle={AI{\&}PDE: ICLR 2026 Workshop on AI and Partial Differential Equations},
+year={2026},
+url={https://openreview.net/forum?id=ABtHGJV3ha}
 }
 ```
