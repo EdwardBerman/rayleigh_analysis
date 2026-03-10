@@ -1,6 +1,6 @@
 # Smoothness Errors in Dynamics Models and How to Avoid Them
 
-From [Edward Berman\*](https://ebrmn.space/), [Luisa Li\*](https://www.luisali.com/), [Jung Yeon Park](https://jypark0.github.io/), and [Robin Walters](https://www.robinwalters.com/). Under Review at ICML 2026. An early version of our report can be found [here](https://github.com/EdwardBerman/rayleigh_analysis/blob/main/paper/berman_li_cs_7180_report.pdf). Set up instructions are below
+From [Edward Berman\*](https://ebrmn.space/), [Luisa Li\*](https://www.luisali.com/), [Jung Yeon Park](https://jypark0.github.io/), and [Robin Walters](https://www.robinwalters.com/). Under Review at ICML 2026. A preprint is on arxiv [here](https://arxiv.org/abs/2602.05352). Set up instructions are below
 
 ![UniMesh](assets/salesman.png)
 
@@ -127,3 +127,32 @@ We engineer the Weatherbench2 dataset and evaluation framework so that it is com
 This didn't make into our final paper as the focused converged to dynamics modeling, but we have some support for it if you poke around :)
 
 </details>
+
+### Citation
+
+Preprint:
+
+```
+@misc{berman2026smoothnesserrorsdynamicsmodels,
+      title={Smoothness Errors in Dynamics Models and How to Avoid Them}, 
+      author={Edward Berman and Luisa Li and Jung Yeon Park and Robin Walters},
+      year={2026},
+      eprint={2602.05352},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2602.05352}, 
+}
+```
+
+Workshop version:
+
+```
+@inproceedings{
+berman2026smoothness,
+title={Smoothness Errors in Dynamics Models and How to Avoid Them},
+author={Edward Berman and Luisa Li and Jung Yeon Park and Robin Walters},
+booktitle={AI{\&}PDE: ICLR 2026 Workshop on AI and Partial Differential Equations},
+year={2026},
+url={https://openreview.net/forum?id=ABtHGJV3ha}
+}
+```
