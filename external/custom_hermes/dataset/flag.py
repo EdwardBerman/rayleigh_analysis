@@ -151,7 +151,7 @@ class FlagSimpleDataset(Dataset):
         return n
 
     def get(self, idx: int) -> Data:
-        data = torch.load(osp.join(self.processed_dir, f"{self.split}_{idx}.pt"))
+        data = torch.load(osp.join(self.processed_dir, f"{self.split}_{idx}.pt"), weights_only=False)
         return data
 
     def num_trajectories(self):
