@@ -12,6 +12,7 @@ dataset:
     input_length: 2
     output_order: 2
 
+
 loss:
   _target_: torch.nn.MSELoss
 
