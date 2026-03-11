@@ -75,8 +75,10 @@ def create_dataset_loaders(cfg, return_datasets=False):
             [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test"]
     elif cfg.dataset.name.startswith("Flag"):
-        pre_tf = [compute_vertex_normals, SimpleGeometry()]
+        pre_tf = T.Compose([compute_vertex_normals, SimpleGeometry()])
         splits = ["train", "valid", "test"]
+        #pre_tf = [compute_vertex_normals, SimpleGeometry()]
+        #splits = ["train", "valid", "test"]
     else:
         raise NotImplementedError(
             f"Incorrect cfg.dataset.name {cfg.dataset.name}")
