@@ -53,6 +53,9 @@ class FlagSimpleDataset(Dataset):
         self.input_length = input_length
         self.output_order = output_order
 
+        self.cluster = cluster
+        self.max_cluster_size = max_cluster_size
+
         super().__init__(root, transform, pre_transform, pre_filter=None)
 
     @property
