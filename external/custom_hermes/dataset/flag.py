@@ -95,6 +95,9 @@ class FlagSimpleDataset(Dataset):
         velocity = np.diff(file_data["world_pos"], n=self.input_length - 1, axis=0)
         target = np.diff(file_data["world_pos"], n=self.output_order, axis=0)
 
+        if self.cluster:
+            print(f"Clustering with max cluster size {self.max_cluster_size}...")
+
         for i in range(
             self.input_length - 1,
             self.maxT,
