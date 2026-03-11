@@ -10,6 +10,7 @@ import trimesh
 from torch_geometric.data import Data, Dataset
 from torch_geometric.data.separate import separate
 
+from external.custom_hermes.dataset.clusterize import clusterize
 
 class NodeType(enum.IntEnum):
     NORMAL = 0
@@ -30,6 +31,8 @@ class FlagSimpleDataset(Dataset):
         maxT=401,
         input_length=5,
         output_order=3,
+        cluster: bool = True,
+        max_cluster_size: int = 20,
         transform: Optional[Callable] = None,
         pre_transform: Optional[Callable] = None,
     ):
@@ -140,6 +143,17 @@ class FlagSimpleDataset(Dataset):
             y = torch.from_numpy(target[i - self.output_order + 1])
 
             data = Data(pos=pos, face=face, x=node_attr, edge_attr=edge_attr, y=y)
+
+            if self.cluster:
+                pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
+                labels_np, centers_np = clusterize(
+                    pos_np, max_cluster_size=self.max_cluster_size)
+
+                cluster_labels = torch.from_numpy(labels_np).long()    # [N]
+                cluster_centers = torch.from_numpy(centers_np).float()
+
+                data.cluster_labels = cluster_labels
+                data.cluster_centers = cluster_centers
 
             data_list.append(data)
 
