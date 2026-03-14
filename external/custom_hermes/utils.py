@@ -75,11 +75,8 @@ def create_dataset_loaders(cfg, return_datasets=False):
             [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test"]
     elif cfg.dataset.name.startswith("drag_force"):
-        def drag_force_pre_tf(data):
-            data.x = data.x[:, [0, 1, 2, 6, 7]]  # Vx, Vy, Vz, Acc, Temp
-            return T.Compose([compute_vertex_normals, empty_edge_attr, SimpleGeometry()])(data)
-
-        pre_tf = drag_force_pre_tf
+        pre_tf = T.Compose(
+                [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
 
         train_ds = instantiate(cfg.dataset.cls, split='train', pre_transform=pre_tf)
         val_ds = instantiate(cfg.dataset.cls, split='val', pre_transform=None)
