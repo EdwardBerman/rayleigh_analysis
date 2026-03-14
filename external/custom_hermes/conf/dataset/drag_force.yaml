@@ -5,7 +5,7 @@ dataset:
   in_dim: ${dataset.cls.input_length}
   cls:
     _target_: external.custom_hermes.dataset.drag_force.DragForceDataset
-    root: "${work_dir}/data/drag_force/drag_dataset_84k.pt"
+    root: "${work_dir}/data/drag_force"
 
 loss:
   _target_: torch.nn.MSELoss
