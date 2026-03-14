@@ -80,15 +80,12 @@ def create_dataset_loaders(cfg, return_datasets=False):
 
         train_ds = instantiate(cfg.dataset.cls, split='train', pre_transform=pre_tf)
 
-        val_ds = instantiate(
-            cfg.dataset.cls,
-            split='val',
-            pre_transform=None,
-            full_dataset=train_ds.full_dataset,   # skip disk load + re-normalization
-            feature_min=train_ds.feature_min,     # use training stats — no leakage
-            feature_max=train_ds.feature_max,
-        )
+        val_ds = instantiate(cfg.dataset.cls, split='val', pre_transform=None)
+        val_ds.full_dataset = train_ds.full_dataset   # share processed data, skip reload
         val_ds._create_split_indices()
+        val_ds.feature_min = train_ds.feature_min     # use training stats — no leakage
+        val_ds.feature_max = train_ds.feature_max
+        val_ds._apply_minmax_normalization()
 
         if return_datasets:
             return {"train": train_ds, "val": val_ds}

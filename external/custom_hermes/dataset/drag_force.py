@@ -11,19 +11,21 @@ from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
 
-
 class DragForceDataset(Dataset):
     """
     Dataset for drag force prediction on different mesh geometries.
-    
+
     Args:
         root: Root directory containing the dataset
         split: One of 'train', 'val', or 'all'
         validation_meshes: List of mesh numbers to use for validation
         transform: Optional transform to apply to each data sample
         pre_transform: Optional pre-transform to apply once during processing
+        full_dataset: Optional pre-loaded dataset (skips disk load + normalization pass)
+        feature_min: Optional per-feature min tensor (shape [num_features]) from training data
+        feature_max: Optional per-feature max tensor (shape [num_features]) from training data
     """
-    
+
     def __init__(
         self,
         root: str,
@@ -31,31 +33,27 @@ class DragForceDataset(Dataset):
         validation_meshes: Optional[List[int]] = None,
         transform=None,
         pre_transform=None,
-        full_dataset=None,
         feature_min: Optional[torch.Tensor] = None,
         feature_max: Optional[torch.Tensor] = None,
     ):
         self.split = split
         assert split in ['train', 'val', 'all'], "split must be 'train', 'val', or 'all'"
-        
-        # Default to meshes 0-4 for validation (5 meshes as requested)
+
         if validation_meshes is None:
             validation_meshes = [0, 1, 2, 3, 4]
         self.validation_meshes = set(validation_meshes)
-        
-        # Load the full dataset
+
         self.data_path = Path(root) / 'drag_dataset_84k.pt'
         if not self.data_path.exists():
             raise FileNotFoundError(f"Dataset not found at {self.data_path}")
-        
+
         print(f"Loading dataset from {self.data_path}...")
         self.full_dataset = torch.load(self.data_path, weights_only=False)
-        
+
         if pre_transform is not None:
             print("Applying pre_transform...")
             print(f"global_features shape: {self.full_dataset[0].global_features.shape}")
             print(f"x shape: {self.full_dataset[0].x.shape}")
-            # print fields of data 
             print("Data fields before pre_transform:", self.full_dataset[0].keys())
             for d in self.full_dataset:
                 global_feats = d.global_features[0, [0, 1, 2, 6, 7]]  # [5]
@@ -66,26 +64,70 @@ class DragForceDataset(Dataset):
                 num_nodes = d.x.shape[0]
                 global_broadcasted = d.x_global.unsqueeze(0).expand(num_nodes, -1)  # [num_nodes, 5]
                 d.x_raw = torch.cat([d.x, global_broadcasted], dim=1)  # [num_nodes, x_dim + 5]
-            
+
             print(f"x_raw shape after concat: {self.full_dataset[0].x_raw.shape}")
-        
-        # Add mesh numbers if not already present
+
         if not hasattr(self.full_dataset[0], 'mesh_number'):
             print("Adding mesh_number field to dataset...")
             self._add_mesh_numbers()
-        
-        # Create split indices
+
+        # Split indices must exist before computing min/max
         self._create_split_indices()
 
-        if feature_min is None or feature_max is None:
-            self.feature_min, self.feature_max = self._compute_minmax(self.train_indices)
-        else:
+        # Always compute normalization stats from training data only.
+        # For val, feature_min/max are injected after instantiation (see utils.py).
+        if feature_min is not None and feature_max is not None:
             self.feature_min = feature_min
             self.feature_max = feature_max
-
-        self._apply_minmax_normalization()
+            self._apply_minmax_normalization()
+        elif pre_transform is not None:
+            # This is the train dataset — compute stats and normalize
+            self.feature_min, self.feature_max = self._compute_minmax(self.train_indices)
+            self._apply_minmax_normalization()
 
         super().__init__(root, transform, pre_transform)
+
+    # ------------------------------------------------------------------
+    # Min-max normalization
+    # ------------------------------------------------------------------
+
+    def _compute_minmax(self, indices: List[int]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute per-feature min/max across all nodes in the given indices."""
+        print("Computing per-feature min/max from training data...")
+        num_features = self.full_dataset[indices[0]].x_raw.shape[1]
+        feat_min = torch.full((num_features,), float('inf'))
+        feat_max = torch.full((num_features,), float('-inf'))
+
+        for idx in tqdm(indices, desc="Scanning features"):
+            x = self.full_dataset[idx].x_raw  # [num_nodes, num_features]
+            feat_min = torch.minimum(feat_min, x.min(dim=0).values)
+            feat_max = torch.maximum(feat_max, x.max(dim=0).values)
+
+        constant_mask = (feat_max - feat_min) == 0
+        if constant_mask.any():
+            print(
+                f"  Warning: {constant_mask.sum().item()} constant feature(s) detected "
+                f"(indices: {constant_mask.nonzero(as_tuple=True)[0].tolist()}). "
+                "These will be mapped to 0."
+            )
+
+        print(f"  feature_min: {feat_min}")
+        print(f"  feature_max: {feat_max}")
+        return feat_min, feat_max
+
+    def _apply_minmax_normalization(self):
+        """Normalize x_raw -> x_normalized using training min/max. Keeps x_raw intact."""
+        print("Applying min-max normalization to all samples...")
+        scale = self.feature_max - self.feature_min
+        safe_scale = scale.clone()
+        safe_scale[safe_scale == 0] = 1.0
+
+        for d in tqdm(self.full_dataset, desc="Normalizing"):
+            d.x_normalized = (d.x_raw - self.feature_min) / safe_scale
+            d.x_normalized[:, scale == 0] = 0.0
+
+        print(f"x_normalized shape: {self.full_dataset[0].x_normalized.shape}")
+
     
     def _add_mesh_numbers(self):
         """Identify unique meshes and add mesh_number field to each Data object."""
