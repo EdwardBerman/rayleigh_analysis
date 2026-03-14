@@ -46,7 +46,7 @@ def main(cfg):
 
     if cfg.dataset.name.startswith("drag_force"):
         def prepare_batch_drag_force(batch, device):
-            batch.x = batch.x_raw.unsqueeze(-1)
+            batch.x = batch.x_normalized.unsqueeze(-1)
             batch.y = batch.y.unsqueeze(-1)
             return batch.to(device)
         prepare_batch = prepare_batch_drag_force

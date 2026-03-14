@@ -31,6 +31,9 @@ class DragForceDataset(Dataset):
         validation_meshes: Optional[List[int]] = None,
         transform=None,
         pre_transform=None,
+        full_dataset=None,
+        feature_min: Optional[torch.Tensor] = None,
+        feature_max: Optional[torch.Tensor] = None,
     ):
         self.split = split
         assert split in ['train', 'val', 'all'], "split must be 'train', 'val', or 'all'"
@@ -73,6 +76,17 @@ class DragForceDataset(Dataset):
         
         # Create split indices
         self._create_split_indices()
+
+        if feature_min is None or feature_max is None:
+            self.feature_min, self.feature_max = self._compute_minmax(self.train_indices)
+        else:
+            self.feature_min = feature_min
+            self.feature_max = feature_max
+
+        self._apply_minmax_normalization()
+
+         if full_dataset is None:
+            pass
         
         super().__init__(root, transform, pre_transform)
     
@@ -129,6 +143,58 @@ class DragForceDataset(Dataset):
         print(f"  Training samples: {len(self.train_indices)}")
         print(f"  Validation samples: {len(self.val_indices)}")
         print(f"  Validation meshes: {sorted(self.validation_meshes)}")
+
+    def _compute_minmax(self, indices: List[int]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute per-feature min and max across all nodes in the given split indices.
+        Statistics are always derived from training data to prevent leakage.
+
+        Returns:
+            feature_min: Tensor of shape [num_features]
+            feature_max: Tensor of shape [num_features]
+        """
+        print("Computing per-feature min/max from training data...")
+        num_features = self.full_dataset[indices[0]].x_raw.shape[1]
+        feat_min = torch.full((num_features,), float('inf'))
+        feat_max = torch.full((num_features,), float('-inf'))
+
+        for idx in tqdm(indices, desc="Scanning features"):
+            x = self.full_dataset[idx].x_raw  # [num_nodes, num_features]
+            feat_min = torch.minimum(feat_min, x.min(dim=0).values)
+            feat_max = torch.maximum(feat_max, x.max(dim=0).values)
+
+        # Sanity-check for constant features (would cause division by zero)
+        constant_mask = (feat_max - feat_min) == 0
+        if constant_mask.any():
+            print(
+                f"  Warning: {constant_mask.sum().item()} constant feature(s) detected "
+                f"(indices: {constant_mask.nonzero(as_tuple=True)[0].tolist()}). "
+                "These will be mapped to 0."
+            )
+
+        print(f"  feature_min: {feat_min}")
+        print(f"  feature_max: {feat_max}")
+        return feat_min, feat_max
+
+    def _apply_minmax_normalization(self):
+        """
+        Normalise x_raw in-place for every sample in the full dataset.
+        Stores the result in data.x_normalized.
+
+        Formula:  x_norm = (x - min) / (max - min)
+        Constant features (max == min) are set to 0.
+        """
+        print("Applying min-max normalization to all samples...")
+        scale = self.feature_max - self.feature_min          # [num_features]
+        safe_scale = scale.clone()
+        safe_scale[safe_scale == 0] = 1.0                    # avoid division by zero
+
+        for d in tqdm(self.full_dataset, desc="Normalizing"):
+            d.x_normalized = (d.x_raw - self.feature_min) / safe_scale
+            # Zero out any feature that had no range (constant across training set)
+            d.x_normalized[:, scale == 0] = 0.0
+
+        print(f"x_normalized shape: {self.full_dataset[0].x_normalized.shape}")
     
     def len(self) -> int:
         """Return the number of samples in the current split."""
