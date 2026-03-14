@@ -118,7 +118,7 @@ class DragForceEngine:
                 y_pred = model(data)  # [batch_size, 1]
                 y_true = data.y  # [batch_size, 1]
                 
-            return y_pred, y_true
+            return y_pred.squeeze(-1), y_true.squeeze(-1)
 
         # Create evaluators for each dataset split
         self.evaluators = {}
