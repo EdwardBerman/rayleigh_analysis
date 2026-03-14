@@ -8,6 +8,9 @@ from torch_geometric.nn import global_mean_pool
 from external.custom_hermes.nn.hermes_conv import HermesLayer
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
 
+class Sin(nn.Module):
+    def forward(self, x):
+        return torch.sin(x)
 
 class Hermes(torch.nn.Module):
     def __init__(
@@ -151,8 +154,7 @@ class Hermes(torch.nn.Module):
         for i in range(num_layers - 1):
             layers.append(nn.Linear(current_dim, hidden_dim))
             if activation == 'sin':
-                # For sin activation, we add it as a lambda layer
-                layers.append(nn.Lambda(lambda x: torch.sin(x)))
+                layers.append(Sin())
             else:
                 layers.append(act_fn)
             current_dim = hidden_dim
