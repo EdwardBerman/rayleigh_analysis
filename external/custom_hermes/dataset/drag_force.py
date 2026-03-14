@@ -50,6 +50,8 @@ class DragForceDataset(Dataset):
         
         if pre_transform is not None:
             print("Applying pre_transform...")
+            # print fields of data 
+            print("Data fields before pre_transform:", self.full_dataset[0].keys())
             for d in self.full_dataset:
                 d.x_raw = d.x[:, [0, 1, 2, 6, 7]]
             self.full_dataset = [pre_transform(d) for d in tqdm(self.full_dataset)]
