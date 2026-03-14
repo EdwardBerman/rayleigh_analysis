@@ -48,6 +48,10 @@ class DragForceDataset(Dataset):
         print(f"Loading dataset from {self.data_path}...")
         self.full_dataset = torch.load(self.data_path, weights_only=False)
         
+        if pre_transform is not None:
+            print("Applying pre_transform...")
+            self.full_dataset = [pre_transform(d) for d in tqdm(self.full_dataset)]
+        
         # Add mesh numbers if not already present
         if not hasattr(self.full_dataset[0], 'mesh_number'):
             print("Adding mesh_number field to dataset...")
