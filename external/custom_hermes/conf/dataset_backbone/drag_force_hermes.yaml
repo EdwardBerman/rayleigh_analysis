@@ -13,7 +13,7 @@ optimizer:
 # params: 40,695
 backbone:
   net:
-     message_dims:
+    message_dims:
       - - ${dataset.in_dim}  # 8 input features
         - 32
         - 32
