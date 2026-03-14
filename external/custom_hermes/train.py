@@ -45,7 +45,8 @@ def main(cfg):
     loss_fn = instantiate(cfg.loss)
 
     if cfg.dataset.name.startswith("drag_force"):
-        from external.custom_hermes.engine.dataset.drag_force import prepare_batch_drag_force
+        def prepare_batch_drag_force(batch, device):
+            return batch.to(device)
         prepare_batch = prepare_batch_drag_force
 
         @engine.trainer.on(Events.EPOCH_COMPLETED)
