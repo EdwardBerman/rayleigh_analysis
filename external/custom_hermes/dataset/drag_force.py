@@ -55,9 +55,16 @@ class DragForceDataset(Dataset):
             # print fields of data 
             print("Data fields before pre_transform:", self.full_dataset[0].keys())
             for d in self.full_dataset:
-                d.x_raw = d.global_features[:, [0, 1, 2, 6, 7]]
-                d.global_features = d.global_features
+                global_feats = d.global_features[0, [0, 1, 2, 6, 7]]  # [5]
+                d.x_global = global_feats
             self.full_dataset = [pre_transform(d) for d in tqdm(self.full_dataset)]
+
+            for d in self.full_dataset:
+                num_nodes = d.x.shape[0]
+                global_broadcasted = d.x_global.unsqueeze(0).expand(num_nodes, -1)  # [num_nodes, 5]
+                d.x_raw = torch.cat([d.x, global_broadcasted], dim=1)  # [num_nodes, x_dim + 5]
+            
+            print(f"x_raw shape after concat: {self.full_dataset[0].x_raw.shape}")
         
         # Add mesh numbers if not already present
         if not hasattr(self.full_dataset[0], 'mesh_number'):
