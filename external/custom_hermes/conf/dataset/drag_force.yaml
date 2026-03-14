@@ -2,7 +2,7 @@
 
 dataset:
   name: drag_force
-  in_dim: 8
+  in_dim: 5
   edge_dim: 1
   cls:
     _target_: external.custom_hermes.dataset.drag_force.DragForceDataset
