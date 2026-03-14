@@ -139,11 +139,11 @@ class DragForceEngine:
             mae.attach(self.evaluators[k], "mae")
             
             # Running average for progress bar
-            RunningAverage(rmse).attach(self.evaluators[k], "running_rmse")
+            #RunningAverage(rmse).attach(self.evaluators[k], "running_rmse")
             
-            ProgressBar(persist=False, desc=k.upper(), disable=disable_tqdm).attach(
-                self.evaluators[k], ["running_rmse"]
-            )
+            #ProgressBar(persist=False, desc=k.upper(), disable=disable_tqdm).attach(
+                #self.evaluators[k], ["running_rmse"]
+            #)
 
     def set_epoch_loggers(self, loaders_dict):
         """Set up logging for each epoch."""
