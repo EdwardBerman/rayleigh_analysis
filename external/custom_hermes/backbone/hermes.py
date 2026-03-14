@@ -1,4 +1,7 @@
 import torch
+
+import torch.nn as nn
+
 from torch_geometric.utils import remove_isolated_nodes
 from torch_geometric.nn import global_mean_pool
 
