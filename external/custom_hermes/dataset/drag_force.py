@@ -85,9 +85,6 @@ class DragForceDataset(Dataset):
 
         self._apply_minmax_normalization()
 
-         if full_dataset is None:
-            pass
-        
         super().__init__(root, transform, pre_transform)
     
     def _add_mesh_numbers(self):
