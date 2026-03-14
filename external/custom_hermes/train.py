@@ -61,21 +61,21 @@ def main(cfg):
     )
 
     if cfg.dataset.name.startswith("drag_force"):
-    @engine.trainer.on(Events.EPOCH_COMPLETED)
-    def run_validation(trainer_engine):
-        for k, evaluator in engine.evaluators.items():
-            evaluator.run(loaders_dict[k])
-            metrics = evaluator.state.metrics
-            print(
-                f"{k.upper()} - Epoch: {trainer_engine.state.epoch} "
-                f"RMSE: {metrics['rmse']:.5E} | "
-                f"MSE: {metrics['mse']:.5E} | "
-                f"MAE: {metrics['mae']:.5E}"
-            )
-            wandb.log(
-                {f"{k}/{m}": v for m, v in metrics.items()},
-                step=trainer_engine.state.iteration,
-            )
+        @engine.trainer.on(Events.EPOCH_COMPLETED)
+        def run_validation(trainer_engine):
+            for k, evaluator in engine.evaluators.items():
+                evaluator.run(loaders_dict[k])
+                metrics = evaluator.state.metrics
+                print(
+                    f"{k.upper()} - Epoch: {trainer_engine.state.epoch} "
+                    f"RMSE: {metrics['rmse']:.5E} | "
+                    f"MSE: {metrics['mse']:.5E} | "
+                    f"MAE: {metrics['mae']:.5E}"
+                )
+                wandb.log(
+                    {f"{k}/{m}": v for m, v in metrics.items()},
+                    step=trainer_engine.state.iteration,
+                )
 
     # This now uses deprecated wandb logger from ignite (or will cause issues with sync at least)
 
