@@ -48,23 +48,6 @@ def main(cfg):
         def prepare_batch_drag_force(batch, device):
             return batch.to(device)
         prepare_batch = prepare_batch_drag_force
-
-        @engine.trainer.on(Events.EPOCH_COMPLETED)
-        def run_validation(trainer_engine):
-            for k, evaluator in engine.evaluators.items():
-                evaluator.run(loaders_dict[k])
-                metrics = evaluator.state.metrics
-                print(
-                    f"{k.upper()} - Epoch: {trainer_engine.state.epoch} "
-                    f"RMSE: {metrics['rmse']:.5E} | "
-                    f"MSE: {metrics['mse']:.5E} | "
-                    f"MAE: {metrics['mae']:.5E}"
-                )
-                wandb.log(
-                    {f"{k}/{m}": v for m, v in metrics.items()},
-                    step=trainer_engine.state.iteration,
-                )
-
     else:
         prepare_batch = prepare_batch_fn(key="y")
 
@@ -76,6 +59,23 @@ def main(cfg):
         prepare_batch=prepare_batch,
         loader_keys=loaders_dict.keys(),
     )
+
+    if cfg.dataset.name.startswith("drag_force"):
+    @engine.trainer.on(Events.EPOCH_COMPLETED)
+    def run_validation(trainer_engine):
+        for k, evaluator in engine.evaluators.items():
+            evaluator.run(loaders_dict[k])
+            metrics = evaluator.state.metrics
+            print(
+                f"{k.upper()} - Epoch: {trainer_engine.state.epoch} "
+                f"RMSE: {metrics['rmse']:.5E} | "
+                f"MSE: {metrics['mse']:.5E} | "
+                f"MAE: {metrics['mae']:.5E}"
+            )
+            wandb.log(
+                {f"{k}/{m}": v for m, v in metrics.items()},
+                step=trainer_engine.state.iteration,
+            )
 
     # This now uses deprecated wandb logger from ignite (or will cause issues with sync at least)
 
