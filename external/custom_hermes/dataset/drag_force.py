@@ -53,7 +53,7 @@ class DragForceDataset(Dataset):
             # print fields of data 
             print("Data fields before pre_transform:", self.full_dataset[0].keys())
             for d in self.full_dataset:
-                d.x_raw = d.x[:, [0, 1, 2, 6, 7]]
+                d.x_raw = d.global_features[:, [0, 1, 2, 6, 7]]
             self.full_dataset = [pre_transform(d) for d in tqdm(self.full_dataset)]
         
         # Add mesh numbers if not already present
