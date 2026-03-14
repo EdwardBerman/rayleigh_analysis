@@ -50,6 +50,8 @@ class DragForceDataset(Dataset):
         
         if pre_transform is not None:
             print("Applying pre_transform...")
+            for d in self.full_dataset:
+                d.x_raw = d.x[:, [0, 1, 2, 6, 7]]
             self.full_dataset = [pre_transform(d) for d in tqdm(self.full_dataset)]
         
         # Add mesh numbers if not already present
