@@ -75,9 +75,18 @@ def create_dataset_loaders(cfg, return_datasets=False):
             [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test"]
     elif cfg.dataset.name.startswith("drag_force"):
-        pre_tf = T.Compose(
-            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
-        splits = ["train", "val"]
+        train_ds = instantiate(cfg.dataset.cls, split='train', pre_transform=pre_tf)
+        val_ds = instantiate(cfg.dataset.cls, split='val', pre_transform=None)
+        val_ds.full_dataset = train_ds.full_dataset  # share the loaded data
+        val_ds._create_split_indices()
+
+        if return_datasets:
+            return {"train": train_ds, "val": val_ds}
+        
+        return {
+            "train": DataLoader(train_ds, batch_size=cfg.train.batch_size, shuffle=True, pin_memory=True),
+            "val": DataLoader(val_ds, batch_size=cfg.train.batch_size, shuffle=False, pin_memory=True),
+        }
     else:
         raise NotImplementedError(
             f"Incorrect cfg.dataset.name {cfg.dataset.name}")
