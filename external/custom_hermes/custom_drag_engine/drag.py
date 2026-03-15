@@ -118,6 +118,7 @@ class DragForceEngine:
                 y_pred = model(data)  # [batch_size, 1]
                 y_true = data.y  # [batch_size, 1]
 
+            # Accumulate all predictions and targets across batches for global RMSE
             preds = y_pred.squeeze(-1).cpu()
             targets = y_true.squeeze(-1).cpu()
             if not hasattr(engine.state, 'all_preds') or engine.state.all_preds is None:
@@ -129,6 +130,14 @@ class DragForceEngine:
 
             return y_pred.squeeze(-1), y_true.squeeze(-1)
 
+        def _reset_accumulators(engine):
+            engine.state.all_preds = None
+            engine.state.all_targets = None
+
+        def _compute_global_rmse(engine):
+            sq_errors = (engine.state.all_preds - engine.state.all_targets) ** 2
+            engine.state.metrics['valRMSE'] = torch.sqrt(sq_errors.mean()).item()
+
         # Create evaluators for each dataset split
         self.evaluators = {}
         for k in self.loader_keys:
@@ -138,30 +147,19 @@ class DragForceEngine:
             evaluator = Engine(eval_step)
 
             # Reset accumulators at the start of each evaluation run
-            @evaluator.on(Events.STARTED)
-            def reset_accumulators(engine):
-                engine.state.all_preds = None
-                engine.state.all_targets = None
+            evaluator.add_event_handler(Events.STARTED, _reset_accumulators)
 
             # Compute global RMSE once all batches have been processed
-            @evaluator.on(Events.COMPLETED)
-            def compute_global_rmse(engine):
-                sq_errors = (engine.state.all_preds - engine.state.all_targets) ** 2
-                engine.state.metrics['valRMSE'] = torch.sqrt(sq_errors.mean()).item()
+            evaluator.add_event_handler(Events.COMPLETED, _compute_global_rmse)
 
             # Attach ignite metrics (per-batch averaged, kept for reference)
-            rmse = RootMeanSquaredError()
-            rmse.attach(evaluator, "rmse")
-            
-            mse = MeanSquaredError()
-            mse.attach(evaluator, "mse")
-            
-            mae = MeanAbsoluteError()
-            mae.attach(evaluator, "mae")
+            RootMeanSquaredError().attach(evaluator, "rmse")
+            MeanSquaredError().attach(evaluator, "mse")
+            MeanAbsoluteError().attach(evaluator, "mae")
 
             self.evaluators[k] = evaluator
 
-def set_epoch_loggers(self, loaders_dict):
+    def set_epoch_loggers(self, loaders_dict):
         """Set up logging for each epoch."""
         # Setup logging level
         setup_logger(name="ignite", level=logging.WARNING)
@@ -227,32 +225,6 @@ def set_epoch_loggers(self, loaders_dict):
 
         return wandb_logger
 
-    def set_epoch_loggers(self, loaders_dict):
-        """Set up logging for each epoch."""
-        # Setup logging level
-        setup_logger(name="ignite", level=logging.WARNING)
-        self.trainer.logger = setup_logger(name="trainer", level=logging.WARNING)
-        for k, evaluator in self.evaluators.items():
-            evaluator.logger = setup_logger(name=k, level=logging.WARNING)
-
-        def inner_log(engine, evaluator, tag):
-            evaluator.run(loaders_dict[tag])
-            metrics = evaluator.state.metrics
-            print(
-                f"{tag.upper()} Results - Epoch: {engine.state.epoch} "
-                f"RMSE: {metrics['rmse']:.5E} | "
-                f"MSE: {metrics['mse']:.5E} | "
-                f"MAE: {metrics['mae']:.5E}"
-            )
-
-        # Evaluate over loaders_dict
-        @self.trainer.on(Events.EPOCH_COMPLETED)
-        def log_results(engine):
-            for k in self.loader_keys:
-                if k == "train":
-                    continue
-                if loaders_dict[k] is not None:
-                    inner_log(engine, self.evaluators[k], k)
 
 def prepare_batch_drag_force(batch, device):
     """
