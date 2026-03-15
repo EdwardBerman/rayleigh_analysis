@@ -117,7 +117,16 @@ class DragForceEngine:
                 # Forward pass
                 y_pred = model(data)  # [batch_size, 1]
                 y_true = data.y  # [batch_size, 1]
-                
+
+            preds = y_pred.squeeze(-1).cpu()
+            targets = y_true.squeeze(-1).cpu()
+            if not hasattr(engine.state, 'all_preds') or engine.state.all_preds is None:
+                engine.state.all_preds = preds
+                engine.state.all_targets = targets
+            else:
+                engine.state.all_preds = torch.cat([engine.state.all_preds, preds])
+                engine.state.all_targets = torch.cat([engine.state.all_targets, targets])
+
             return y_pred.squeeze(-1), y_true.squeeze(-1)
 
         # Create evaluators for each dataset split
@@ -126,26 +135,33 @@ class DragForceEngine:
             if k == "train":
                 continue
 
-            self.evaluators[k] = Engine(eval_step)
+            evaluator = Engine(eval_step)
 
-            # Attach metrics
+            # Reset accumulators at the start of each evaluation run
+            @evaluator.on(Events.STARTED)
+            def reset_accumulators(engine):
+                engine.state.all_preds = None
+                engine.state.all_targets = None
+
+            # Compute global RMSE once all batches have been processed
+            @evaluator.on(Events.COMPLETED)
+            def compute_global_rmse(engine):
+                sq_errors = (engine.state.all_preds - engine.state.all_targets) ** 2
+                engine.state.metrics['valRMSE'] = torch.sqrt(sq_errors.mean()).item()
+
+            # Attach ignite metrics (per-batch averaged, kept for reference)
             rmse = RootMeanSquaredError()
-            rmse.attach(self.evaluators[k], "rmse")
+            rmse.attach(evaluator, "rmse")
             
             mse = MeanSquaredError()
-            mse.attach(self.evaluators[k], "mse")
+            mse.attach(evaluator, "mse")
             
             mae = MeanAbsoluteError()
-            mae.attach(self.evaluators[k], "mae")
-            
-            # Running average for progress bar
-            #RunningAverage(rmse).attach(self.evaluators[k], "running_rmse")
-            
-            #ProgressBar(persist=False, desc=k.upper(), disable=disable_tqdm).attach(
-                #self.evaluators[k], ["running_rmse"]
-            #)
+            mae.attach(evaluator, "mae")
 
-    def set_epoch_loggers(self, loaders_dict):
+            self.evaluators[k] = evaluator
+
+def set_epoch_loggers(self, loaders_dict):
         """Set up logging for each epoch."""
         # Setup logging level
         setup_logger(name="ignite", level=logging.WARNING)
@@ -160,7 +176,8 @@ class DragForceEngine:
                 f"{tag.upper()} Results - Epoch: {engine.state.epoch} "
                 f"RMSE: {metrics['rmse']:.5E} | "
                 f"MSE: {metrics['mse']:.5E} | "
-                f"MAE: {metrics['mae']:.5E}"
+                f"MAE: {metrics['mae']:.5E} | "
+                f"Global RMSE: {metrics['valRMSE']:.5E}"
             )
 
         # Evaluate over loaders_dict
@@ -196,7 +213,7 @@ class DragForceEngine:
             optimizer=optimizer,
         )
 
-        # Attach logger to evaluators
+        # Attach logger to evaluators — includes global valRMSE
         for k in self.loader_keys:
             if k == "train":
                 continue
@@ -204,12 +221,38 @@ class DragForceEngine:
                 self.evaluators[k],
                 event_name=Events.EPOCH_COMPLETED,
                 tag=k,
-                metric_names=["rmse", "mse", "mae"],
+                metric_names=["rmse", "mse", "mae", "valRMSE"],
                 global_step_transform=lambda *_: self.trainer.state.iteration,
             )
 
         return wandb_logger
 
+    def set_epoch_loggers(self, loaders_dict):
+        """Set up logging for each epoch."""
+        # Setup logging level
+        setup_logger(name="ignite", level=logging.WARNING)
+        self.trainer.logger = setup_logger(name="trainer", level=logging.WARNING)
+        for k, evaluator in self.evaluators.items():
+            evaluator.logger = setup_logger(name=k, level=logging.WARNING)
+
+        def inner_log(engine, evaluator, tag):
+            evaluator.run(loaders_dict[tag])
+            metrics = evaluator.state.metrics
+            print(
+                f"{tag.upper()} Results - Epoch: {engine.state.epoch} "
+                f"RMSE: {metrics['rmse']:.5E} | "
+                f"MSE: {metrics['mse']:.5E} | "
+                f"MAE: {metrics['mae']:.5E}"
+            )
+
+        # Evaluate over loaders_dict
+        @self.trainer.on(Events.EPOCH_COMPLETED)
+        def log_results(engine):
+            for k in self.loader_keys:
+                if k == "train":
+                    continue
+                if loaders_dict[k] is not None:
+                    inner_log(engine, self.evaluators[k], k)
 
 def prepare_batch_drag_force(batch, device):
     """
