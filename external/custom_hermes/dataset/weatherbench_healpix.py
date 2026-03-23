@@ -34,14 +34,17 @@ def get_latlons_for_healpix(nside: int):
     lon = np.degrees(phi)
     lon[lon > 180] -= 360
 
-    return lat[::-1], lon
+    return lat, lon
 
 
-def coords_to_sphar(lat, lon, data, lmax=20):
+def latlon_to_sphar(lat, lon, data, lmax=20):
+    lon = lon % 360
+    if data.ndim == 2:
+        data = data[np.newaxis, ...]  # (1, nlon, nlat)
 
-    lon_grid, lat_grid = np.meshgrid(lon, lat)
-    lon_flat = lon_grid.flatten()
+    lon_grid, lat_grid = np.meshgrid(lon, lat)  # (nlat, nlon)
     lat_flat = lat_grid.flatten()
+    lon_flat = lon_grid.flatten()
 
     all_coeffs = []
     for t in range(data.shape[0]):
@@ -51,6 +54,21 @@ def coords_to_sphar(lat, lon, data, lmax=20):
         all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
         if t == 0:
             break
+
+    return all_coeffs
+
+
+def healpix_to_sphar(hp_lat, hp_lon, data, lmax=20):
+    hp_lon = hp_lon % 360
+    if data.ndim == 1:
+        data = data[np.newaxis, :]  # (1, npix)
+
+    all_coeffs = []
+    for t in range(data.shape[0]):
+        cilm, _ = pysh.expand.SHExpandLSQ(
+            data[t], hp_lat, hp_lon, lmax=lmax
+        )
+        all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
 
     return all_coeffs
 
@@ -77,25 +95,22 @@ def sphar_to_healpix(all_coeffs, nside=32):
 
 
 def sphar_to_latlon(all_coeffs, lat, lon):
-
-    lon2d, lat2d = np.meshgrid(lon, lat)
+    lat2d, lon2d = np.meshgrid(lat, lon)
+    lat_flat = lat2d.ravel()
+    lon_flat = lon2d.ravel()
 
     maps = []
-
     for coeffs in all_coeffs:
         cilm = coeffs.to_array()
-        lmax = coeffs.lmax
-
         vals = pysh.expand.MakeGridPoint(
             cilm,
-            lat=lat2d.ravel(),
-            lon=lon2d.ravel(),
-            lmax=lmax
+            lat=lat_flat,
+            lon=lon_flat,
+            lmax=coeffs.lmax
         )
+        maps.append(vals.reshape(240, 121))
 
-        maps.append(vals.reshape(lat2d.shape))
-
-    return np.stack(maps, axis=0)  # (n_samples, nlat, nlon)
+    return np.stack(maps, axis=0)
 
 
 class WeatherbenchHealpix(Dataset):
@@ -176,7 +191,7 @@ class WeatherbenchHealpix(Dataset):
 
     def _project_to_healpix(self, ds):
 
-        sphar_coeffs = coords_to_sphar(
+        sphar_coeffs = latlon_to_sphar(
             self.orig_lat, self.orig_lon, ds.values, self.lmax)
         hp_maps, _, _ = sphar_to_healpix(sphar_coeffs, self.nside)
 
@@ -199,10 +214,11 @@ class WeatherbenchHealpix(Dataset):
 
     def _project_to_latlon(self, data):
 
-        sphar_coeffs = coords_to_sphar(
+        sphar_coeffs = healpix_to_sphar(
             self.hp_lat, self.hp_lon, data, self.lmax)
         latlon_map = sphar_to_latlon(
             sphar_coeffs, self.orig_lat, self.orig_lon)
+
         return latlon_map
 
     def _read_data(self):
@@ -219,8 +235,8 @@ class WeatherbenchHealpix(Dataset):
         self.orig_lon = ds.longitude.values
         self.hp_lat, self.hp_lon = get_latlons_for_healpix(self.nside)
 
-        assert np.all(np.diff(self.hp_lat) >=
-                      0), "hp_lat is not strictly ascending"
+        assert np.all(np.diff(self.hp_lat) <=
+                      0), "hp_lat is not strictly descending"
         assert np.all(np.diff(self.orig_lat) >=
                       0), "orig_lat is not strictly ascending"
         assert np.all(np.diff(ds.latitude) >=

@@ -7,8 +7,8 @@ import numpy as np
 import xarray as xr
 
 from external.custom_hermes.dataset.weatherbench import task_to_variable
-from external.custom_hermes.dataset.weatherbench_healpix import \
-    WeatherbenchHealpix
+from external.custom_hermes.dataset.weatherbench_healpix import (
+    WeatherbenchHealpix, get_latlons_for_healpix)
 
 
 def _hp_marker_size(nside: int, region) -> float:
@@ -23,8 +23,12 @@ def _hp_marker_size(nside: int, region) -> float:
 
 
 def plot_global_latlon_vs_healpix(
-    latlon_data, lat, lon, hp_map, nside, title=""
+    latlon_data, lat, lon, hp_map, nside,
 ):
+
+    lon2d, lat2d = np.meshgrid(lon, lat)
+    hp_lat, hp_lon = get_latlons_for_healpix(nside)
+
     vmin = float(np.nanpercentile(latlon_data, 2))
     vmax = float(np.nanpercentile(latlon_data, 98))
 
@@ -40,20 +44,12 @@ def plot_global_latlon_vs_healpix(
         ax.add_feature(cfeature.BORDERS, linewidth=0.3, linestyle=":")
         ax.gridlines(draw_labels=True, linewidth=0.3, color="gray", alpha=0.5)
 
-    lon2d, lat2d = np.meshgrid(lon, lat)
-
     im = ax_ll.pcolormesh(
         lon2d, lat2d, latlon_data.T,
         transform=ccrs.PlateCarree(),
         cmap="RdBu_r", vmin=vmin, vmax=vmax, shading="nearest",
     )
     ax_ll.set_title("Lat-lon grid")
-
-    npix = hp.nside2npix(nside)
-    theta, phi = hp.pix2ang(nside, np.arange(npix))
-    hp_lat = 90.0 - np.degrees(theta)
-    hp_lon = np.degrees(phi)
-    hp_lon[hp_lon > 180] -= 360
 
     ax_hp.scatter(
         hp_lon, hp_lat, c=hp_map,
@@ -65,9 +61,6 @@ def plot_global_latlon_vs_healpix(
     ax_hp.set_title(f"HEALPix (nside={nside})")
 
     plt.colorbar(im, cax=ax_cb, extend="both")
-
-    if title:
-        fig.suptitle(title, y=1.01)
 
     return fig
 
@@ -89,7 +82,6 @@ hp_map = train.healpix_vals[t].numpy()
 
 fig = plot_global_latlon_vs_healpix(
     latlon_data, lat, lon, hp_map, nside=32,
-    title="Z500 – Global"
 )
 fig.savefig("sanity_global.png", dpi=150, bbox_inches="tight")
 
