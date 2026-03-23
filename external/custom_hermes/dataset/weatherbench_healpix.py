@@ -25,46 +25,43 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
 from external.custom_hermes.dataset.weatherbench import task_to_variable
 
 
-def latlon_to_sphar(ds, lmax=20):
-    lat = ds.latitude.values
-    lon = ds.longitude.values
-    data = ds.values
-
+def coord_to_sphar(lat, lon, data, tmax, lmax=20, test=False):
     lon_grid, lat_grid = np.meshgrid(lon, lat)
     lon_flat = lon_grid.flatten()
     lat_flat = lat_grid.flatten()
 
-    a_lm_all = []
-    for t in range(ds.shape[0]):
+    all_coeffs = []
+    for t in range(tmax):
         cilm, _ = pysh.expand.SHExpandLSQ(
             data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
         )
-        a_lm_all.append(pysh.SHCoeffs.from_array(cilm))
-        if t == 0:
+        all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
+        if test and t == 0:
             break
-        
-    return a_lm_all
+
+    return all_coeffs
 
 
-def sphar_to_healpix(a_lm_all, nside=32):
+def sample_sphar_at(lat, lon, all_coeffs, nside=32):
 
-    npix = hp.nside2npix(nside)
-    pix_idx = np.arange(npix)
+    lon2d, lat2d = np.meshgrid(lon, lat)
 
-    theta, phi = hp.pix2ang(nside, pix_idx)
+    outputs = []
 
-    lat_deg = 90.0 - np.degrees(theta)
-    lon_deg = np.degrees(phi)
-
-    hp_maps = []
-    for coeffs in a_lm_all:
+    for coeffs in all_coeffs:
         cilm = coeffs.to_array()
         lmax = coeffs.lmax
-        vals = pysh.expand.MakeGridPoint(
-            cilm, lat=lat_deg, lon=lon_deg, lmax=lmax)
-        hp_maps.append(vals)
 
-    return np.stack(hp_maps, axis=0), lon_deg, lat_deg
+        vals = pysh.expand.MakeGridPoint(
+            cilm,
+            lat=lat2d.ravel(),
+            lon=lon2d.ravel(),
+            lmax=lmax,
+        )
+
+        outputs.append(vals.reshape(lat2d.shape))
+
+    return np.stack(outputs, axis=0)
 
 
 class WeatherbenchHealpix(Dataset):
@@ -129,8 +126,9 @@ class WeatherbenchHealpix(Dataset):
 
         ds = ds.sel(level=self.level, time=self.time_slice)
 
-        sphar_coeffs = latlon_to_sphar(ds, self.lmax)
-        hp_maps, _, _ = sphar_to_healpix(sphar_coeffs, self.nside)
+        sphar_coeffs = coord_to_sphar(
+            ds.latitude.values, ds.longitude.values, ds.values, ds.shape[0], self.lmax)
+        hp_maps, _, _ = sample_sphar_at(sphar_coeffs, self.nside)
         npix = hp.nside2npix(self.nside)
         x, y, z = hp.pix2vec(self.nside, np.arange(
             npix))
