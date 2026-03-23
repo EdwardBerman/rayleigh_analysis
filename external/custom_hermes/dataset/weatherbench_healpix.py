@@ -25,8 +25,7 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
 from external.custom_hermes.dataset.weatherbench import task_to_variable
 
 
-def latlon_to_sphar(ds, lmax=50):
-
+def latlon_to_sphar(ds, lmax=20):
     lat = ds.latitude.values
     lon = ds.longitude.values
     data = ds.values
@@ -38,12 +37,10 @@ def latlon_to_sphar(ds, lmax=50):
     a_lm_all = []
     for t in range(ds.shape[0]):
         cilm, _ = pysh.expand.SHExpandLSQ(
-            data[t].flatten(), lat_flat, lon_flat, lmax=lmax
+            data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
         )
         a_lm_all.append(pysh.SHCoeffs.from_array(cilm))
-        if t == 3:
-            break
-
+        
     return a_lm_all
 
 
@@ -136,8 +133,10 @@ class WeatherbenchHealpix(Dataset):
         x, y, z = hp.pix2vec(self.nside, np.arange(
             npix))
 
-        self.healpix_vals = hp_maps  # shape (time, num_nodes)
-        self.healpix_pos = np.stack([x, y, z], axis=1)  # shape (num_nodes, 3)
+        self.healpix_vals = torch.from_numpy(
+            hp_maps).float()           # (time, num_nodes)
+        self.healpix_pos = torch.from_numpy(
+            np.stack([x, y, z], axis=1)).float()  # (num_nodes, 3)
 
         # triangulated edges via Delaunay on the unit sphere
         # convex hull of points on sphere = triangulation
@@ -145,7 +144,6 @@ class WeatherbenchHealpix(Dataset):
         self.healpix_faces = torch.tensor(
             hull.simplices, dtype=torch.long).T  # (3, num_faces)
 
-        self.orig_grid_shape = (ds.longitude.size, ds.latitude.size)
         self.orig_lat = ds.latitude.values
         self.orig_lon = ds.longitude.values
         self.time = ds.time.values
@@ -246,7 +244,7 @@ if __name__ == "__main__":
     mesh_path = "./data/weatherbench/earth_mesh.vtp"
 
     train = WeatherbenchHealpix(era5_path, mesh_path, task="z500",
-                                split="train", nside=32, lmax=10)
+                                split="train", nside=32, lmax=20)
 
     train_loader = DataLoader(
         train,
@@ -255,13 +253,6 @@ if __name__ == "__main__":
         num_workers=0
     )
 
-    test = WeatherbenchHealpix(era5_path, mesh_path, task="z500", norm=False,
-                               rollout_steps=40, input_steps=5, split="test", x_mean=train.x_mean, x_std=train.x_std)
-
     # this dry run verfifies that the get() and len() behavior of the dataset won't run into indexing issues
     for i, batch in enumerate(tqdm(train_loader, desc="Dry run for Weatherbench training frames!")):
         pass
-
-    # this dry run verifies that the get() and len() for trajectories won't run into indexing issues
-    for i in tqdm(range(test.num_trajectories()), desc="Dry run for Weatherbench trajectories!"):
-        test.get_trajectory(i)
