@@ -52,7 +52,7 @@ def latlon_to_sphar(lat, lon, data, lmax=20):
             data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
         )
         all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
-        if t == 0:
+        if t == 10:
             break
 
     return all_coeffs
@@ -257,8 +257,9 @@ class WeatherbenchHealpix(Dataset):
 
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
-        return self.healpix_vals.shape[0] - self.input_length
+        return self.healpix_vals.shape[0] - self.input_length - self.output_length
 
+    # this is used for training 
     def get(self, idx: int) -> Data:
         """Builds a Data object on the fly with the shared attributes and the specific time step."""
 
@@ -267,10 +268,11 @@ class WeatherbenchHealpix(Dataset):
 
         data = Data(**self.shared_data.to_dict())
 
-        # x should be of shape (num_nodes, input_length, node_features)
+        # x should be of shape (num_nodes, input_length, node_features), where node_features is just 1
         # y should be of shape (num_nodes, output_length)
         x = self.healpix_vals[idx: idx + self.input_length].T.unsqueeze(-1)
-        y = self.healpix_vals[idx + self.input_length].unsqueeze(-1)
+        y = self.healpix_vals[idx + self.input_length: idx +
+                              self.input_length + self.train_rollout_steps].T
 
         if self.norm:
             xnorm = (x - self.x_mean) / self.x_std
@@ -283,15 +285,17 @@ class WeatherbenchHealpix(Dataset):
 
         return data
 
+    # this is used for evaluation
     def num_trajectories(self):
-        return self.healpix_vals.shape[0] - (self.input_length + self.rollout_steps) + 1
+        return self.healpix_vals.shape[0] - (self.input_length + self.eval_rollout_steps) + 1
 
+    # this is used for evaluation
     def get_trajectory(self, idx: int):
 
         # data.x should have shape (num_nodes, trajectory_length)
         # this is definitely a little bit sketchy but we are just going to run with it :3
         K = self.input_length
-        T = self.rollout_steps
+        T = self.eval_rollout_steps
         start = idx
 
         assert start + K + \
@@ -328,5 +332,5 @@ if __name__ == "__main__":
     )
 
     # this dry run verfifies that the get() and len() behavior of the dataset won't run into indexing issues
-    for i, batch in enumerate(tqdm(train_loader, desc="Dry run for Weatherbench training frames!")):
-        breakpoint()
+    for i, batch in enumerate(tqdm(train_loader, desc="Dry run for Weatherbench Healpix training frames!")):
+        pass
