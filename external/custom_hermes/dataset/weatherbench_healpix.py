@@ -40,6 +40,8 @@ def latlon_to_sphar(ds, lmax=20):
             data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
         )
         a_lm_all.append(pysh.SHCoeffs.from_array(cilm))
+        if t == 0:
+            break
         
     return a_lm_all
 
