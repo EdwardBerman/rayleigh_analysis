@@ -329,4 +329,4 @@ if __name__ == "__main__":
 
     # this dry run verfifies that the get() and len() behavior of the dataset won't run into indexing issues
     for i, batch in enumerate(tqdm(train_loader, desc="Dry run for Weatherbench training frames!")):
-        pass
+        breakpoint()
