@@ -25,28 +25,62 @@ from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
 from external.custom_hermes.dataset.weatherbench import task_to_variable
 
 
-def coord_to_sphar(lat, lon, data, tmax, lmax=20, test=False):
+def get_latlons_for_healpix(nside: int):
+    npix = hp.nside2npix(nside)
+    pix_idx = np.arange(npix)
+
+    theta, phi = hp.pix2ang(nside, pix_idx)
+    lat = 90.0 - np.degrees(theta)
+    lon = np.degrees(phi)
+    lon[lon > 180] -= 360
+
+    return lat[::-1], lon
+
+
+def coords_to_sphar(lat, lon, data, lmax=20):
+
     lon_grid, lat_grid = np.meshgrid(lon, lat)
     lon_flat = lon_grid.flatten()
     lat_flat = lat_grid.flatten()
 
     all_coeffs = []
-    for t in range(tmax):
+    for t in range(data.shape[0]):
         cilm, _ = pysh.expand.SHExpandLSQ(
             data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
         )
         all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
-        if test and t == 0:
+        if t == 0:
             break
 
     return all_coeffs
 
 
-def sample_sphar_at(lat, lon, all_coeffs, nside=32):
+def sphar_to_healpix(all_coeffs, nside=32):
+
+    npix = hp.nside2npix(nside)
+    pix_idx = np.arange(npix)
+
+    theta, phi = hp.pix2ang(nside, pix_idx)
+
+    lat_deg = 90.0 - np.degrees(theta)
+    lon_deg = np.degrees(phi)
+
+    hp_maps = []
+    for coeffs in all_coeffs:
+        cilm = coeffs.to_array()
+        lmax = coeffs.lmax
+        vals = pysh.expand.MakeGridPoint(
+            cilm, lat=lat_deg, lon=lon_deg, lmax=lmax)
+        hp_maps.append(vals)
+
+    return np.stack(hp_maps, axis=0), lon_deg, lat_deg
+
+
+def sphar_to_latlon(all_coeffs, lat, lon):
 
     lon2d, lat2d = np.meshgrid(lon, lat)
 
-    outputs = []
+    maps = []
 
     for coeffs in all_coeffs:
         cilm = coeffs.to_array()
@@ -56,12 +90,12 @@ def sample_sphar_at(lat, lon, all_coeffs, nside=32):
             cilm,
             lat=lat2d.ravel(),
             lon=lon2d.ravel(),
-            lmax=lmax,
+            lmax=lmax
         )
 
-        outputs.append(vals.reshape(lat2d.shape))
+        maps.append(vals.reshape(lat2d.shape))
 
-    return np.stack(outputs, axis=0)
+    return np.stack(maps, axis=0)  # (n_samples, nlat, nlon)
 
 
 class WeatherbenchHealpix(Dataset):
@@ -116,47 +150,6 @@ class WeatherbenchHealpix(Dataset):
         # note that the pos, face and edge_index are *shared* across all data objects
         self._read_data()
 
-    def _read_data(self):
-
-        era5 = xr.open_zarr(self.eras5_path)
-
-        self.variable, self.level = task_to_variable(self.task)
-        ds = era5[self.variable]
-        self.time_slice = self.train_slice if self.split == "train" else self.test_slice
-
-        ds = ds.sel(level=self.level, time=self.time_slice)
-
-        sphar_coeffs = coord_to_sphar(
-            ds.latitude.values, ds.longitude.values, ds.values, ds.shape[0], self.lmax)
-        hp_maps, _, _ = sample_sphar_at(sphar_coeffs, self.nside)
-        npix = hp.nside2npix(self.nside)
-        x, y, z = hp.pix2vec(self.nside, np.arange(
-            npix))
-
-        self.healpix_vals = torch.from_numpy(
-            hp_maps).float()           # (time, num_nodes)
-        self.healpix_pos = torch.from_numpy(
-            np.stack([x, y, z], axis=1)).float()  # (num_nodes, 3)
-
-        # triangulated edges via Delaunay on the unit sphere
-        # convex hull of points on sphere = triangulation
-        hull = ConvexHull(self.healpix_pos)
-        self.healpix_faces = torch.tensor(
-            hull.simplices, dtype=torch.long).T  # (3, num_faces)
-
-        self.orig_lat = ds.latitude.values
-        self.orig_lon = ds.longitude.values
-        self.time = ds.time.values
-
-        self.shared_data = self._compute_shared_data()
-
-        if self.split == "train":
-            self.x_mean = self.healpix_vals.mean()
-            self.x_std = self.healpix_vals.std()
-        else:
-            assert self.x_mean is not None and self.x_std is not None, \
-                "Test split requires `x_mean` and `x_std` from training split"
-
     def _compute_shared_data(self):
 
         data = Data(pos=self.healpix_pos, face=self.healpix_faces)
@@ -180,6 +173,71 @@ class WeatherbenchHealpix(Dataset):
             data.cluster_centers = torch.from_numpy(centers_np).float()
 
         return data
+
+    def _project_to_healpix(self, ds):
+
+        sphar_coeffs = coords_to_sphar(
+            self.orig_lat, self.orig_lon, ds.values, self.lmax)
+        hp_maps, _, _ = sphar_to_healpix(sphar_coeffs, self.nside)
+
+        npix = hp.nside2npix(self.nside)
+        x, y, z = hp.pix2vec(self.nside, np.arange(
+            npix))
+
+        healpix_vals = torch.from_numpy(
+            hp_maps).float()           # (time, num_nodes)
+        healpix_pos = torch.from_numpy(
+            np.stack([x, y, z], axis=1)).float()  # (num_nodes, 3)
+
+        # triangulated edges via Delaunay on the unit sphere
+        # convex hull of points on sphere = triangulation
+        hull = ConvexHull(healpix_pos)
+        healpix_faces = torch.tensor(
+            hull.simplices, dtype=torch.long).T  # (3, num_faces)
+
+        return healpix_vals, healpix_pos, healpix_faces
+
+    def _project_to_latlon(self, data):
+
+        sphar_coeffs = coords_to_sphar(
+            self.hp_lat, self.hp_lon, data, self.lmax)
+        latlon_map = sphar_to_latlon(
+            sphar_coeffs, self.orig_lat, self.orig_lon)
+        return latlon_map
+
+    def _read_data(self):
+
+        era5 = xr.open_zarr(self.eras5_path)
+
+        self.variable, self.level = task_to_variable(self.task)
+        ds = era5[self.variable]
+        self.time_slice = self.train_slice if self.split == "train" else self.test_slice
+
+        ds = ds.sel(level=self.level, time=self.time_slice)
+
+        self.orig_lat = ds.latitude.values
+        self.orig_lon = ds.longitude.values
+        self.hp_lat, self.hp_lon = get_latlons_for_healpix(self.nside)
+
+        assert np.all(np.diff(self.hp_lat) >=
+                      0), "hp_lat is not strictly ascending"
+        assert np.all(np.diff(self.orig_lat) >=
+                      0), "orig_lat is not strictly ascending"
+        assert np.all(np.diff(ds.latitude) >=
+                      0), "ds.latitude is not strictly ascending"
+
+        self.time = ds.time.values
+
+        self.healpix_vals, self.healpix_pos, self.healpix_faces = self._project_to_healpix(
+            ds)
+        self.shared_data = self._compute_shared_data()
+
+        if self.split == "train":
+            self.x_mean = self.healpix_vals.mean()
+            self.x_std = self.healpix_vals.std()
+        else:
+            assert self.x_mean is not None and self.x_std is not None, \
+                "Test split requires `x_mean` and `x_std` from training split"
 
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
