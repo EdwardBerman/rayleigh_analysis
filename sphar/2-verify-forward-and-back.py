@@ -1,6 +1,5 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import healpy as hp
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -90,6 +89,5 @@ latlon_backmap = train._project_to_latlon(hp_map)[0]
 fig = plot_global_latlon_e2e(
     latlon_data, lat, lon, hp_map, latlon_backmap, nside=32,
 )
-fig.savefig("sanity_global.png", dpi=150, bbox_inches="tight")
 
 plt.show()
