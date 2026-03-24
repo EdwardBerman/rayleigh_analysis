@@ -7,6 +7,7 @@ The weatherbench dataset, improved in the following ways:
 5. Minimize objective function over 12 steps of forecasts
 """
 
+from joblib import Parallel, delayed
 import os
 from typing import Callable, Optional
 
@@ -38,21 +39,25 @@ def get_latlons_for_healpix(nside: int):
     return lat, lon
 
 
-def latlon_to_sphar(lat, lon, data, lmax=20):
+def _fit_one_timestep(data_t, lat_flat, lon_flat, lmax):
+    cilm, _ = pysh.expand.SHExpandLSQ(
+        data_t.T.flatten(), lat_flat, lon_flat, lmax=lmax)
+    return pysh.SHCoeffs.from_array(cilm)
+
+
+def latlon_to_sphar(lat, lon, data, lmax=20, n_jobs=-1):
     lon = lon % 360
     if data.ndim == 2:
-        data = data[np.newaxis, ...]  # (1, nlon, nlat)
+        data = data[np.newaxis, ...]
 
-    lon_grid, lat_grid = np.meshgrid(lon, lat)  # (nlat, nlon)
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
     lat_flat = lat_grid.flatten()
     lon_flat = lon_grid.flatten()
 
-    all_coeffs = []
-    for t in range(data.shape[0]):
-        cilm, _ = pysh.expand.SHExpandLSQ(
-            data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
-        )
-        all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
+    all_coeffs = Parallel(n_jobs=n_jobs, verbose=1)(
+        delayed(_fit_one_timestep)(data[t], lat_flat, lon_flat, lmax)
+        for t in range(data.shape[0])
+    )
 
     return all_coeffs
 
