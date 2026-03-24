@@ -7,7 +7,6 @@ The weatherbench dataset, improved in the following ways:
 5. Minimize objective function over 12 steps of forecasts
 """
 
-from joblib import Parallel, delayed
 import os
 from typing import Callable, Optional
 
@@ -16,6 +15,7 @@ import numpy as np
 import pyshtools as pysh
 import torch
 import xarray as xr
+from joblib import Parallel, delayed
 from scipy.spatial import ConvexHull
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader

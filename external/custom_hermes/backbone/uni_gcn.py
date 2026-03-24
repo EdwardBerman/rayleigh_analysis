@@ -198,6 +198,7 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
 
         for i, block in enumerate(self.blocks):
+            
             # projection layer or decoder layers
             if i == 0 or i > self.num_encoder_layers - 1:
                 if isinstance(block, MLP):

@@ -2,7 +2,7 @@ name: Uni
 
 net:
   _target_: external.custom_hermes.backbone.uni_gcn.Uni
-  input_dim: 3
+  input_dim: 12 # this is for weatherbench_healpix 
   hidden_dim: 64
   output_dim: 1
   projection: "pad"
