@@ -7,6 +7,7 @@ The weatherbench dataset, improved in the following ways:
 5. Minimize objective function over 12 steps of forecasts
 """
 
+import os
 from typing import Callable, Optional
 
 import healpy as hp
@@ -52,8 +53,6 @@ def latlon_to_sphar(lat, lon, data, lmax=20):
             data[t].T.flatten(), lat_flat, lon_flat, lmax=lmax
         )
         all_coeffs.append(pysh.SHCoeffs.from_array(cilm))
-        if t == 10:
-            break
 
     return all_coeffs
 
@@ -132,7 +131,9 @@ class WeatherbenchHealpix(Dataset):
                  max_cluster_size: int = 20,
                  x_mean: Optional[torch.Tensor] = None,
                  x_std: Optional[torch.Tensor] = None,
-                 pre_transform: Optional[Callable] = None):
+                 pre_transform: Optional[Callable] = None,
+                 cache_dir: Optional[str] = None
+                 ):
 
         super().__init__(None, None, pre_transform)
 
@@ -162,8 +163,106 @@ class WeatherbenchHealpix(Dataset):
         self.train_slice = slice("2013-01-01", "2019-12-31")
         self.test_slice = slice("2020-01-01", "2020-12-31")
 
+        self.cache_dir = cache_dir
+
         # note that the pos, face and edge_index are *shared* across all data objects
         self._read_data()
+
+    @staticmethod
+    def from_cache(
+        era5_path: str,
+        mesh_path: str,
+        cache_dir: str,
+        split: str,
+        task: str,
+        nside: int = 32,
+        lmax: int = 20,
+        **kwargs,
+    ) -> "WeatherbenchHealpix":
+
+        assert os.path.exists(os.path.join(cache_dir, f"{split}.pt")), \
+            f"No cache found at {cache_dir}/{split}.pt. Run WeatherbenchHealpix.preprocess_and_save() first."
+        assert os.path.exists(os.path.join(cache_dir, "x_mean.npy")), \
+            f"No x_mean.npy found at {cache_dir}. Run WeatherbenchHealpix.preprocess_and_save() first."
+
+        return WeatherbenchHealpix(
+            eras5_path=era5_path,
+            mesh_path=mesh_path,
+            split=split,
+            task=task,
+            nside=nside,
+            lmax=lmax,
+            cache_dir=cache_dir,
+            **kwargs,
+        )
+
+    @staticmethod
+    def preprocess_and_save(
+        era5_path: str,
+        save_dir: str,
+        task: str,
+        nside: int = 32,
+        lmax: int = 20,
+    ):
+        os.makedirs(save_dir, exist_ok=True)
+
+        era5 = xr.open_zarr(era5_path)
+        variable, level = task_to_variable(task)
+        ds = era5[variable]
+
+        train_slice = slice("2013-01-01", "2019-12-31")
+        test_slice = slice("2020-01-01", "2020-12-31")
+
+        for split, time_slice in [("train", train_slice), ("test", test_slice)]:
+            print(f"\nProcessing {split}...")
+            ds_split = ds.sel(level=level, time=time_slice)
+
+            orig_lat = ds_split.latitude.values
+            orig_lon = ds_split.longitude.values
+
+            print("Computing spherical harmonic coefficients...")
+            sphar_coeffs = latlon_to_sphar(
+                orig_lat, orig_lon, ds_split.values, lmax)
+
+            print("Projecting to HEALPix...")
+            hp_maps, _, _ = sphar_to_healpix(sphar_coeffs, nside)
+            healpix_vals = torch.from_numpy(hp_maps).float()
+
+            if split == "train":
+                x_mean = healpix_vals.mean().item()
+                x_std = healpix_vals.std().item()
+                np.save(os.path.join(save_dir, "x_mean.npy"), x_mean)
+                np.save(os.path.join(save_dir, "x_std.npy"),  x_std)
+                print(f"mean={x_mean:.4f}, std={x_std:.4f}")
+
+            torch.save({
+                "healpix_vals": healpix_vals,
+            }, os.path.join(save_dir, f"{split}.pt"))
+            print(
+                f"  Saved to {save_dir}/{split}.pt  shape={healpix_vals.shape}")
+
+    def _load_from_cache(self):
+
+        path = os.path.join(self.cache_dir, f"{self.split}.pt")
+        assert os.path.exists(path), \
+            f"Cache not found at {path}. Run WeatherbenchHealpix.preprocess_and_save() first."
+
+        print(f"Loading preprocessed data from {path}...")
+        data = torch.load(path)
+
+        self.healpix_vals = data["healpix_vals"]
+
+        x_mean = float(np.load(os.path.join(self.cache_dir, "x_mean.npy")))
+        x_std = float(np.load(os.path.join(self.cache_dir, "x_std.npy")))
+
+        if self.split == "train":
+            self.x_mean = x_mean
+            self.x_std = x_std
+        else:
+            if self.x_mean is None:
+                self.x_mean = x_mean
+            if self.x_std is None:
+                self.x_std = x_std
 
     def _compute_shared_data(self):
 
@@ -222,18 +321,39 @@ class WeatherbenchHealpix(Dataset):
         return latlon_map
 
     def _read_data(self):
-
         era5 = xr.open_zarr(self.eras5_path)
-
         self.variable, self.level = task_to_variable(self.task)
         ds = era5[self.variable]
         self.time_slice = self.train_slice if self.split == "train" else self.test_slice
-
         ds = ds.sel(level=self.level, time=self.time_slice)
 
+        self.hp_lat, self.hp_lon = get_latlons_for_healpix(self.nside)
         self.orig_lat = ds.latitude.values
         self.orig_lon = ds.longitude.values
-        self.hp_lat, self.hp_lon = get_latlons_for_healpix(self.nside)
+        self.time = ds.time.values
+
+        if self.cache_dir is not None:
+            self._load_from_cache()
+        else:
+            self.healpix_vals, self.healpix_pos, self.healpix_faces = self._project_to_healpix(
+                ds)
+
+            if self.split == "train":
+                self.x_mean = self.healpix_vals.mean()
+                self.x_std = self.healpix_vals.std()
+            else:
+                assert self.x_mean is not None and self.x_std is not None, \
+                    "Test split requires x_mean and x_std from training split"
+
+        # healpix_pos and faces are always computed from nside, not cached
+        npix = hp.nside2npix(self.nside)
+        x, y, z = hp.pix2vec(self.nside, np.arange(npix))
+        self.healpix_pos = torch.from_numpy(
+            np.stack([x, y, z], axis=1)).float()
+        self.healpix_faces = torch.tensor(ConvexHull(
+            self.healpix_pos).simplices, dtype=torch.long).T
+
+        self.shared_data = self._compute_shared_data()
 
         assert np.all(np.diff(self.hp_lat) <=
                       0), "hp_lat is not strictly descending"
@@ -242,24 +362,11 @@ class WeatherbenchHealpix(Dataset):
         assert np.all(np.diff(ds.latitude) >=
                       0), "ds.latitude is not strictly ascending"
 
-        self.time = ds.time.values
-
-        self.healpix_vals, self.healpix_pos, self.healpix_faces = self._project_to_healpix(
-            ds)
-        self.shared_data = self._compute_shared_data()
-
-        if self.split == "train":
-            self.x_mean = self.healpix_vals.mean()
-            self.x_std = self.healpix_vals.std()
-        else:
-            assert self.x_mean is not None and self.x_std is not None, \
-                "Test split requires `x_mean` and `x_std` from training split"
-
     def len(self) -> int:
         """Returns the amount of time steps in this Weatherbench dataset"""
-        return self.healpix_vals.shape[0] - self.input_length - self.output_length
+        return self.healpix_vals.shape[0] - self.input_length - self.train_rollout_steps
 
-    # this is used for training 
+    # this is used for training
     def get(self, idx: int) -> Data:
         """Builds a Data object on the fly with the shared attributes and the specific time step."""
 
