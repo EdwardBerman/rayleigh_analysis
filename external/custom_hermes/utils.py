@@ -13,6 +13,8 @@ from ignite.metrics import Metric
 from ignite.metrics.metric import reinit__is_reduced, sync_all_reduce
 from torch_geometric.loader import DataLoader
 
+from external.custom_hermes.dataset.weatherbench_healpix import \
+    WeatherbenchHealpix
 from external.custom_hermes.transform.edge_features import empty_edge_attr
 from external.custom_hermes.transform.simple_geometry import SimpleGeometry
 from external.custom_hermes.transform.vector_normals import \
@@ -70,6 +72,10 @@ def create_dataset_loaders(cfg, return_datasets=False):
         pre_tf = T.Compose(
             [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
         splits = ["train", "test"]
+    elif cfg.dataset.name.startswith("weatherbench_healpix"):
+        pre_tf = T.Compose(
+            [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
+        splits = ["train", "test"]
     elif cfg.dataset.name.startswith("weatherbench"):
         pre_tf = T.Compose(
             [compute_vertex_normals, empty_edge_attr, SimpleGeometry()])
@@ -85,7 +91,51 @@ def create_dataset_loaders(cfg, return_datasets=False):
 
     out_dict = {}
 
-    if cfg.dataset.name.startswith("weatherbench"):
+    if cfg.dataset.name.startswith("weatherbench_healpix"):
+
+        # TODO: This is so hardcoded, I am sorry.
+
+        t850_savepath = "data/weatherbench_healpix/preprocessed/t850"
+        z500_savepath = 'data/weatherbench_healpix/preprocessed/z500'
+
+        save_path = t850_savepath if cfg.dataset.cls.task == 't850' else z500_savepath
+
+        train_ds = WeatherbenchHealpix.from_cache(
+            era5_path=cfg.dataset.cls.eras5_path,
+            mesh_path=cfg.dataset.cls.mesh_path,
+            task=cfg.dataset.cls.task,
+            cache_dir=save_path,
+            split="train",
+            input_length=cfg.dataset.cls.input_length
+        )
+
+        test_ds = WeatherbenchHealpix.from_cache(
+            era5_path=cfg.dataset.cls.eras5_path,
+            mesh_path=cfg.dataset.cls.mesh_path,
+            task=cfg.dataset.cls.task,
+            cache_dir=save_path,
+            split="test",
+            input_length=cfg.dataset.cls.input_length
+        )
+
+        if return_datasets:
+            out_dict["train"] = train_ds
+            out_dict["test"] = test_ds
+        else:
+            out_dict['train'] = DataLoader(
+                train_ds,
+                batch_size=cfg.train.batch_size,
+                shuffle=True,
+                pin_memory=True,
+            )
+            out_dict['test'] = DataLoader(
+                test_ds,
+                batch_size=cfg.train.batch_size,
+                shuffle=False,
+                pin_memory=True,
+            )
+        return out_dict
+    elif cfg.dataset.name.startswith("weatherbench"):
         # this case is special because the train statistics need to go to the test dataset
         train_ds = instantiate(
             cfg.dataset.cls, split='train', pre_transform=pre_tf)
