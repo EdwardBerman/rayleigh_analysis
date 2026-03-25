@@ -8,6 +8,10 @@
 #SBATCH --gres=gpu:h200
 #SBATCH --output=slurm/%j.out
 #SBATCH --error=slurm/%j.err
+
+module load python/3.13.5
+
+eval "$(poetry env activate)"
 python3 -m toy_heat_diffusion.train \
     --data_dir toy_heat_diffusion/data \
     --train_steps 3 \

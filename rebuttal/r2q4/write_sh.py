@@ -10,6 +10,10 @@ SBATCH_HEADER = """#!/bin/bash
 #SBATCH --gres=gpu:h200
 #SBATCH --output=slurm/%j.out
 #SBATCH --error=slurm/%j.err
+
+module load python/3.13.5
+
+eval "$(poetry env activate)"
 """
 
 
