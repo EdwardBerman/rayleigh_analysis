@@ -12,7 +12,6 @@ import wandb
 from metrics.heat_flow import rayleigh_quotient_distribution
 from metrics.rayleigh import rayleigh_quotients
 from model.model_factory import build_model
-from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
 
@@ -139,10 +138,9 @@ def main():
         args.data_dir, args.start_time, args.train_steps, args.eval_steps
     )
 
-    train_loader = DataLoader(train_graphs, batch_size=args.batch_size, shuffle=True,
-                              num_workers=4, pin_memory=True)
-    eval_loader = DataLoader(eval_graphs,  batch_size=args.batch_size,
-                             num_workers=4, pin_memory=True)
+    train_loader = DataLoader(
+        train_graphs, batch_size=args.batch_size, shuffle=True)
+    eval_loader = DataLoader(eval_graphs, batch_size=args.batch_size)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     in_ch = train_graphs[0].x.size(1)
@@ -167,7 +165,8 @@ def main():
     else:
         raise Exception("We do not like anything else here.")
 
-    model = torch.compile(base_gnn)
+    complex_floats = args.model in ["separable_unitary", "lie_unitary"]
+    model = base_gnn
     model.to(device)
 
     optimizer = torch.optim.Adam(
