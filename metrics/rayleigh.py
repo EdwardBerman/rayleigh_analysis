@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch_geometric.data import Data
-from torch_geometric.utils import degree
+from torch_geometric.utils import degree, k_hop_subgraph
 
 
 def rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
@@ -57,9 +56,9 @@ def rayleigh_quotients(f: nn.Module, batch: Data) -> tuple[torch.Tensor, torch.T
     return batchX, fX, batchY
 
 
-def rayleigh_quotients_graphlevel(f: nn.Module, batch: Data) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """ 
-    Computes three Rayleigh quotients, for batch.X, f(X) and batch.Y
+def rayleigh_quotients_graphlevel(f: nn.Module, batch: Data) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Computes Rayleigh quotients for batch.X and f(X)
     """
     batchX = compute_rayleigh_quotient(batch.x, batch.edge_index)
     fX = compute_rayleigh_quotient(f.base_model(
@@ -67,13 +66,14 @@ def rayleigh_quotients_graphlevel(f: nn.Module, batch: Data) -> tuple[torch.Tens
     return batchX, fX
 
 
-def compute_rayleigh_quotient(x, edge_index):
+def compute_rayleigh_quotient(node_features, edge_index):
     """Computes the Rayleigh quotient for one graph given node features and edge index."""
     edge_index = edge_index.long()
     src, dst = edge_index[0], edge_index[1]
-    N = x.shape[0]
+    N = node_features.shape[0]
 
-    dtype = x.real.dtype if torch.is_complex(x) else x.dtype
+    dtype = node_features.real.dtype if torch.is_complex(
+        node_features) else node_features.dtype
     deg = degree(dst, num_nodes=N, dtype=dtype)
     deg_in = deg.clamp(min=1.0)
     inv_sqrt_deg = deg_in.rsqrt().view(N, 1)
@@ -81,22 +81,32 @@ def compute_rayleigh_quotient(x, edge_index):
     def norm_sqrt_deg(x: torch.Tensor) -> torch.Tensor:
         return x * inv_sqrt_deg
 
-    x_norm = norm_sqrt_deg(x)
+    x_norm = norm_sqrt_deg(node_features)
     diff_X = x_norm[src, 0] - x_norm[dst, 0]
     x_numerator = (diff_X.abs().pow(2).sum(dim=-1)).sum()
-    X_denom = x.abs().pow(2).sum()
+    X_denom = node_features.abs().pow(2).sum()
     rayleigh = x_numerator*0.5/(X_denom+1e-16)
 
     return rayleigh
 
 
-def integrated_rayleigh_error(f: nn.Module, X: Data) -> torch.Tensor:
-    """
-        Sums the Rayleigh errors across all layers of the model f.
-    """
-    total_error = 0.0
-    for layer in f.children():
-        if isinstance(layer, nn.Module):
-            total_error += rayleigh_error(layer, X)
-            X = layer(X)
-    return total_error
+def compute_localized_rayleigh_quotient(node_features, edge_index, num_hops=2, samples=100):
+
+    rqs = []
+
+    for _ in range(samples):
+
+        node_idx = torch.randint(0, node_features.size(0), (1,)).item()
+
+        subset, sub_edge_index, _, _ = k_hop_subgraph(
+            node_idx=node_idx,
+            num_hops=num_hops,
+            edge_index=edge_index,
+            relabel_nodes=True,
+        )
+
+        sub_node_features = node_features[subset]
+        rqs.append(compute_rayleigh_quotient(
+            sub_node_features, sub_edge_index))
+
+    return rqs

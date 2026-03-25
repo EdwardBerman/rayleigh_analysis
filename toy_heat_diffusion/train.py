@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 from datetime import datetime
 
 import numpy as np
@@ -14,7 +15,6 @@ from model.model_factory import build_model
 from model.predictor import NodeLevelRegressor
 from toy_heat_diffusion.pyg_toy import load_autoregressive_dataset
 
-import time
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -73,8 +73,10 @@ def evaluate_heat_flow(model, loader, device):
     for data in loader:
         data = data.to(device)
         out = model(data)
-        out = out.real if torch.is_complex(out) else out # Take the real part if complex, i.e., for unitary models
-        out = out.type(torch.float32) if torch.is_complex(out) else out # Same thing
+        # Take the real part if complex, i.e., for unitary models
+        out = out.real if torch.is_complex(out) else out
+        out = out.type(torch.float32) if torch.is_complex(
+            out) else out  # Same thing
         mse = F.mse_loss(out, data.y, reduction="sum").item()
         total_mse += mse
         total_nodes += data.num_nodes
@@ -137,9 +139,10 @@ def main():
         args.data_dir, args.start_time, args.train_steps, args.eval_steps
     )
 
-    train_loader = DataLoader(
-        train_graphs, batch_size=args.batch_size, shuffle=True)
-    eval_loader = DataLoader(eval_graphs, batch_size=args.batch_size)
+    train_loader = DataLoader(train_graphs, batch_size=args.batch_size, shuffle=True,
+                              num_workers=4, pin_memory=True)
+    eval_loader = DataLoader(eval_graphs,  batch_size=args.batch_size,
+                             num_workers=4, pin_memory=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     in_ch = train_graphs[0].x.size(1)
@@ -148,15 +151,15 @@ def main():
         base_gnn = build_model(node_dim=in_ch, model_type="GCN", num_layers=args.layers,
                                hidden_size=args.hidden, activation_function=args.act, skip_connections=False, batch_size=64, batch_norm="None", dropout_rate=args.dropout)
     elif args.model == 'lie_unitary':
-        base_gnn = build_model(node_dim=in_ch, 
-                               model_type="LieUni", 
+        base_gnn = build_model(node_dim=in_ch,
+                               model_type="LieUni",
                                num_layers=args.layers,
-                               hidden_size=args.hidden, 
-                               activation_function=args.act, 
-                               skip_connections=False, 
-                               batch_size=64, 
-                               batch_norm="None", 
-                               dropout_rate=args.dropout, 
+                               hidden_size=args.hidden,
+                               activation_function=args.act,
+                               skip_connections=False,
+                               batch_size=64,
+                               batch_norm="None",
+                               dropout_rate=args.dropout,
                                truncation_level=args.truncation_level)
     elif args.model == 'separable_unitary':
         base_gnn = build_model(node_dim=in_ch, model_type="Uni", num_layers=args.layers,
@@ -164,8 +167,7 @@ def main():
     else:
         raise Exception("We do not like anything else here.")
 
-    complex_floats = args.model in ["separable_unitary", "lie_unitary"]
-    model = base_gnn
+    model = torch.compile(base_gnn)
     model.to(device)
 
     optimizer = torch.optim.Adam(
@@ -214,13 +216,15 @@ def main():
         val_rayleigh_y_list.append(rayleigh_y)
 
         if epoch % 100 == 0:
-            rayleigh_quotient_distribution(model, eval_loader, device, args.save_dir)
+            rayleigh_quotient_distribution(
+                model, eval_loader, device, args.save_dir)
 
             torch.save(model.state_dict(), os.path.join(
                 args.save_dir, "model.pt"))
             np.save(os.path.join(args.save_dir, "train_mse.npy"),
                     np.array(train_mse_list))
-            np.save(os.path.join(args.save_dir, "val_mse.npy"), np.array(val_mse_list))
+            np.save(os.path.join(args.save_dir, "val_mse.npy"),
+                    np.array(val_mse_list))
             np.save(os.path.join(args.save_dir, "train_rayleigh_x.npy"),
                     np.array(train_rayleigh_x_list))
             np.save(os.path.join(args.save_dir, "train_rayleigh_xprime.npy"),
