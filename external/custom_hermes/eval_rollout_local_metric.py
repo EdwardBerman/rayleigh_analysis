@@ -21,7 +21,7 @@ set_rc_params(15)
 pv.set_plot_theme("paraview")
 
 
-def plot_local_rq_dists(locrq_pred, locrq_y, cfg):
+def plot_local_rq_dists(locrq_pred, locrq_y, cfg, traj):
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -51,7 +51,7 @@ def plot_local_rq_dists(locrq_pred, locrq_y, cfg):
 
     ani = animation.FuncAnimation(
         fig, animate, frames=locrq_pred.shape[0], interval=50)
-    ani.save(f"{cfg.dataset.name}_{cfg.backbone.nam}.gif",
+    ani.save(f"{cfg.dataset.name}_{cfg.backbone.name}_{traj}.gif",
              writer="pillow", fps=20)
     plt.close()
 

@@ -18,15 +18,17 @@ class PadToDim(nn.Module):
         padding_size = self.hidden_dim - self.input_dim
         return torch.nn.functional.pad(x, (0, padding_size), value=0)
 
+
 class Sin(nn.Module):
     def __init__(self):
         super().__init__()
-    
+
     def forward(self, x):
         return torch.sin(x)
 
+
 class MLP(nn.Module):
-    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, num_layers: int=3, activation: str="sin"):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, num_layers: int = 3, activation: str = "sin"):
         super().__init__()
         layers = []
         dims = [input_dim] + [hidden_dim] * (num_layers - 1) + [output_dim]
@@ -78,6 +80,7 @@ class Uni(nn.Module):
         dropout,
         final_activation,
         T=10,
+        adaptive=False,
     ):
         """
         Unitary Convolution on meshes.
@@ -129,6 +132,7 @@ class Uni(nn.Module):
                                            residual=False,
                                            global_bias=False,
                                            T=T,
+                                           adaptive=adaptive,
                                            use_hermitian=True,
                                            activation=GroupSort)
 
@@ -138,7 +142,8 @@ class Uni(nn.Module):
             if i == self.num_decoder_layers - 1:
                 if self.decoder == MLP:
                     self.blocks.append(
-                        self.decoder(self.hidden_dim, self.hidden_dim, self.output_dim)
+                        self.decoder(self.hidden_dim,
+                                     self.hidden_dim, self.output_dim)
                     )
                 else:
                     self.blocks.append(
@@ -148,7 +153,8 @@ class Uni(nn.Module):
             else:
                 if self.decoder == MLP:
                     self.blocks.append(
-                        self.decoder(self.hidden_dim, self.hidden_dim, self.hidden_dim)
+                        self.decoder(self.hidden_dim,
+                                     self.hidden_dim, self.hidden_dim)
                     )
                 else:
                     self.blocks.append(self.decoder(
@@ -198,7 +204,7 @@ class Uni(nn.Module):
         input_data_obj.edge_weight = edge_weight
 
         for i, block in enumerate(self.blocks):
-            
+
             # projection layer or decoder layers
             if i == 0 or i > self.num_encoder_layers - 1:
                 if isinstance(block, MLP):

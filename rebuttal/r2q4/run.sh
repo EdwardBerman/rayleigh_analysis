@@ -1,1 +1,0 @@
-python3 -m toy_heat_diffusion.train --data_dir toy_heat_diffusion/data/demo --train_steps 2 --eval_steps 1 --model "lie_unitary" --layers 12 --act "Identity" --lr 1e-4 --epochs 450 --hidden 128

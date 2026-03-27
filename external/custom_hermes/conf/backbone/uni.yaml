@@ -12,3 +12,4 @@ net:
   null_isolated: false
   add_self_loops: false
   dropout: false
+  adaptive: true
