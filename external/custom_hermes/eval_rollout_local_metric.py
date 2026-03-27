@@ -258,13 +258,15 @@ def main(cfg):
             continue
 
         results.append(eval_step(dataset))
+        
+    ch_mesh_idx = 3
+    wave_mesh_idx = 0
+    mesh_id = wave_mesh_idx
 
-    # for CH, and Uni, there is only one item in results, and things are very sparsely populated
-    # this is hardcoding the retrieval
-    locrq_pred_0 = results[0]['locrq_ypred'][3][0]
-    locrq_y_0 = results[0]['locrq_ytrue'][3][0]
-    locrq_pred_1 = results[0]['locrq_ypred'][3][1]
-    locrq_y_1 = results[0]['locrq_ytrue'][3][1]
+    locrq_pred_0 = results[0]['locrq_ypred'][mesh_id][0]
+    locrq_y_0 = results[0]['locrq_ytrue'][mesh_id][0]
+    locrq_pred_1 = results[0]['locrq_ypred'][mesh_id][1]
+    locrq_y_1 = results[0]['locrq_ytrue'][mesh_id][1]
 
     plot_local_rq_dists(locrq_pred_0, locrq_y_0, cfg, 0)
     plot_local_rq_dists(locrq_pred_1, locrq_y_1, cfg, 1)
