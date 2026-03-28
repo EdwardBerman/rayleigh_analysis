@@ -3,7 +3,7 @@
 dataset:
   name: Wave
   in_dim: ${dataset.cls.input_length}
-  edge_dim: 0
+  edge_dim: 1
   out_dim: 1
   cls:
     _target_: external.custom_hermes.dataset.heatwave_pde.HeatWavePDEonMesh
