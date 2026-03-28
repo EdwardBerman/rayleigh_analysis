@@ -261,7 +261,7 @@ def main(cfg):
         
     ch_mesh_idx = 3
     wave_mesh_idx = 0
-    mesh_id = wave_mesh_idx
+    mesh_id = ch_mesh_idx
 
     locrq_pred_0 = results[0]['locrq_ypred'][mesh_id][0]
     locrq_y_0 = results[0]['locrq_ytrue'][mesh_id][0]
