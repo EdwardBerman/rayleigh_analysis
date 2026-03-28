@@ -1,0 +1,44 @@
+# @package _global_
+
+train:
+  epochs: 100
+  batch_size: 1
+  lr: 1e-4
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: ${train.lr}
+
+scheduler:
+  _target_: external.custom_hermes.custom_pde_engine.mgn_pde.ExpLR
+  gamma: 0.1
+  decay_steps: 1e5
+  min_lr: 1e-6
+
+# params: 44,993
+model:
+  _target_: external.custom_hermes.custom_pde_engine.mgn_pde.PDEEncDecNormalizeRegressor
+  node_enc_in_dim: ${dataset.in_dim}
+  node_enc_out_dim: 32
+  node_enc_hid_dim: 32
+  node_enc_num_layers: 2
+  edge_enc_in_dim: ${dataset.edge_dim}
+  edge_enc_out_dim: 32
+  edge_enc_hid_dim: 32
+  edge_enc_num_layers: 2
+  node_dec_in_dim: 32
+  node_dec_out_dim: ${dataset.out_dim}
+  node_dec_hid_dim: 32
+  node_dec_num_layers: 2
+  output_order: ${dataset.cls.output_length}
+  normalize: false
+
+backbone:
+  net:
+    num_mp_layers: 4
+    mp_node_in_dim: ${model.node_enc_out_dim}
+    mp_edge_in_dim: ${model.edge_enc_out_dim}
+    mp_node_hid_dim: 32
+    mp_node_num_layers: 2
+    mp_edge_hid_dim: 32
+    mp_edge_num_layers: 2
