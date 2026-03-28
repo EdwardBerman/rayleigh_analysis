@@ -12,8 +12,6 @@ from external.custom_hermes.utils import (create_dataset_loaders, numel,
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
 
-    cfg.device = 'cpu'
-
     set_seed(10) # this is set to 10 for GEMCNN which experienced a catastrophic event for no reason with our 42 seed 
     
     loaders_dict = create_dataset_loaders(cfg)

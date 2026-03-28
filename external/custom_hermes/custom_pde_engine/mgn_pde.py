@@ -1,3 +1,4 @@
+import copy
 import logging
 from math import pow
 
@@ -12,6 +13,7 @@ from torch import nn
 from torch.optim.lr_scheduler import _LRScheduler
 
 from external.custom_hermes.nn.meshgraphnet import MLP
+
 
 class ExpLR(_LRScheduler):
     """
@@ -64,11 +66,13 @@ class Normalizer(nn.Module):
         self.max_accumulations = max_accumulations
         self.epsilon = torch.tensor(epsilon, dtype=float, device=device)
 
-        self.register_buffer("acc_count", torch.tensor(0.0, dtype=float, device=device))
+        self.register_buffer("acc_count", torch.tensor(
+            0.0, dtype=float, device=device))
         self.register_buffer(
             "num_accumulations", torch.tensor(0.0, dtype=float, device=device)
         )
-        self.register_buffer("acc_sum", torch.zeros(size, dtype=float, device=device))
+        self.register_buffer("acc_sum", torch.zeros(
+            size, dtype=float, device=device))
         self.register_buffer(
             "acc_sum_squared", torch.zeros(size, dtype=float, device=device)
         )
@@ -107,7 +111,8 @@ class Normalizer(nn.Module):
         squared_data_sum = torch.sum(batched_data**2, dim=0)
 
         self.acc_sum += data_sum.to(self.acc_sum.device)
-        self.acc_sum_squared += squared_data_sum.to(self.acc_sum_squared.device)
+        self.acc_sum_squared += squared_data_sum.to(
+            self.acc_sum_squared.device)
         self.acc_count += count.to(self.acc_count.device)
         self.num_accumulations += 1
 
@@ -250,31 +255,32 @@ class PDEEncDecNormalizeRegressor(nn.Module):
             self._output_normalizer = Normalizer(size=node_dec_out_dim)
 
     def forward(self, data):
-        
+
+        data_fwd = copy.copy(data)
+
         if self.normalize:
             with torch.no_grad():
-                data.x = self._node_normalizer(
-                    data.x.squeeze(-1), accumulate=self.training
+                data_fwd.x = self._node_normalizer(
+                    data_fwd.x.squeeze(-1), accumulate=self.training
                 ).unsqueeze(-1)
-        
-        data.x = self.node_encoder(data.x.squeeze(-1)).unsqueeze(-1)
 
-        if data.edge_attr is not None and self.edge_enc_in_dim != 0:
+        data_fwd.x = self.node_encoder(data_fwd.x.squeeze(-1)).unsqueeze(-1)
+
+        if data_fwd.edge_attr is not None and self.edge_enc_in_dim != 0:
             if self.normalize:
                 with torch.no_grad():
-                    data.edge_attr = self._edge_normalizer(
-                        data.edge_attr, accumulate=self.training
+                    data_fwd.edge_attr = self._edge_normalizer(
+                        data_fwd.edge_attr, accumulate=self.training
                     )
+            data_fwd.edge_attr = self.edge_encoder(data_fwd.edge_attr)
 
-            data.edge_attr = self.edge_encoder(data.edge_attr)
-
-        x = self.backbone(data)
+        x = self.backbone(data_fwd)
 
         # Take trivial feature
         x = x[:, :, 0]
 
         x = self.node_decoder(x)
-        
+
         return x
 
     def predict(self, output, current_state, previous_state):
@@ -368,7 +374,8 @@ class MGNPDEEngine:
                 # revert edge_attr
                 x.edge_attr = cur_edge_attr
 
-                x.x = torch.cat([cur_x[:, y_pred.shape[1] :, 0], y_pred], 1)[:, :, None]
+                x.x = torch.cat([cur_x[:, y_pred.shape[1]:, 0], y_pred], 1)[
+                    :, :, None]
 
                 loss += loss_fn(y_pred, y)
             loss /= yy.shape[1]
@@ -385,7 +392,8 @@ class MGNPDEEngine:
         self.loader_keys = loader_keys
         self.eval_every = eval_every
 
-        RunningAverage(output_transform=lambda x: x).attach(self.trainer, "loss")
+        RunningAverage(output_transform=lambda x: x).attach(
+            self.trainer, "loss")
         ProgressBar(disable=disable_tqdm).attach(self.trainer, ["loss"])
 
         def eval_step(engine, batch):
@@ -409,7 +417,7 @@ class MGNPDEEngine:
 
                     y_preds.append(y_pred)
 
-                    x.x = torch.cat([cur_x[:, y_pred.shape[1] :, 0], y_pred], 1)[
+                    x.x = torch.cat([cur_x[:, y_pred.shape[1]:, 0], y_pred], 1)[
                         :, :, None
                     ]
 
@@ -434,7 +442,8 @@ class MGNPDEEngine:
     def set_epoch_loggers(self, loaders_dict):
         # Setup logging level
         setup_logger(name="ignite", level=logging.WARNING)
-        self.trainer.logger = setup_logger(name="trainer", level=logging.WARNING)
+        self.trainer.logger = setup_logger(
+            name="trainer", level=logging.WARNING)
         for k, evaluator in self.evaluators.items():
             evaluator.logger = setup_logger(name=k, level=logging.WARNING)
 
