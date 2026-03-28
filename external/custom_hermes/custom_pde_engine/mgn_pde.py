@@ -250,12 +250,13 @@ class PDEEncDecNormalizeRegressor(nn.Module):
             self._output_normalizer = Normalizer(size=node_dec_out_dim)
 
     def forward(self, data):
+        
         if self.normalize:
             with torch.no_grad():
                 data.x = self._node_normalizer(
                     data.x.squeeze(-1), accumulate=self.training
                 ).unsqueeze(-1)
-
+        
         data.x = self.node_encoder(data.x.squeeze(-1)).unsqueeze(-1)
 
         if data.edge_attr is not None and self.edge_enc_in_dim != 0:
@@ -273,7 +274,7 @@ class PDEEncDecNormalizeRegressor(nn.Module):
         x = x[:, :, 0]
 
         x = self.node_decoder(x)
-
+        
         return x
 
     def predict(self, output, current_state, previous_state):
