@@ -56,6 +56,7 @@ def save_metrics_table(runs, model_types, model_labels, save_dir):
 
     rows = []
     for model_type, label in zip(model_types, model_labels):
+            
         val_mse_list = load_metric_from_runs(runs[model_type], "val_mse")
         rayleigh_list = load_metric_from_runs(
             runs[model_type], "val_rayleigh_xprime")
@@ -183,7 +184,7 @@ def main():
                 np.arange(num_epochs),
                 mse,
                 color=colors[i % len(colors)],
-                linewidth=2.5,
+                linewidth=1.5,
                 alpha=0.7,
                 label=f"Run {i+1}"
             )
@@ -223,7 +224,7 @@ def main():
                 np.arange(num_epochs),
                 best_rayleigh_curve,
                 color=color,
-                linewidth=4.5,
+                linewidth=2.5,
                 alpha=0.9,
                 label=label
             )
@@ -235,7 +236,7 @@ def main():
             np.arange(num_epochs),
             val_rayleigh_x,
             color='gray',
-            linewidth=4.5,
+            linewidth=2.5,
             alpha=0.7,
             linestyle='--',
             label=r"$\overline{R_{\mathcal{G}}(X)}$"
@@ -247,7 +248,7 @@ def main():
             np.arange(num_epochs),
             val_rayleigh_y,
             color='red',
-            linewidth=4.5,
+            linewidth=2.5,
             alpha=0.7,
             linestyle='--',
             label=r"$\overline{R_{\mathcal{G}}(Y)}$"
@@ -273,7 +274,7 @@ def main():
             np.arange(num_epochs),
             best_mse,
             color=color,
-            linewidth=4.5,
+            linewidth=2.5,
             alpha=0.9,
             label=label
         )

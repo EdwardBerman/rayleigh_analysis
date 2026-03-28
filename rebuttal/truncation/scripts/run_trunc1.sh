@@ -63,4 +63,3 @@ python3 -m toy_heat_diffusion.train \
     --save_dir rebuttal/r2q4/lie_unitary_trunc1_trial4 \
     --entity_name rayleigh_analysis_gnn \
     --project_name truncation_rebuttal
-
