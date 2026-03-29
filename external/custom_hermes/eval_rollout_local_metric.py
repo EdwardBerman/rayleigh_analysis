@@ -8,6 +8,7 @@ import numpy as np
 import pyvista as pv
 import robust_laplacian
 import torch
+import torch.nn.functional as F
 from hydra.utils import instantiate
 from tqdm import tqdm
 
@@ -69,9 +70,11 @@ def main(cfg):
     model.load_state_dict(torch.load(
         cfg.model_save_path, map_location=cfg.device))
     model.eval()
-    
-    breakpoint()
 
+    # term_weights = [m.model.term_weights for m in model.backbone.blocks[1:11]]
+    # weights = torch.stack(term_weights)
+    # probs = F.softmax(weights, dim=-1)
+    
     loss_fn = instantiate(cfg.loss)
 
     def eval_step(dataset):
@@ -260,7 +263,7 @@ def main(cfg):
             continue
 
         results.append(eval_step(dataset))
-        
+
     ch_mesh_idx = 3
     wave_mesh_idx = 0
     mesh_id = ch_mesh_idx

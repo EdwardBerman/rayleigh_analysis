@@ -1,4 +1,5 @@
 import hydra
+import torch
 from hydra.utils import instantiate
 from ignite.engine import Events
 from ignite.handlers import LRScheduler, ModelCheckpoint
@@ -9,11 +10,33 @@ from external.custom_hermes.utils import (create_dataset_loaders, numel,
                                           prepare_batch_fn, set_seed)
 
 
+def make_term_weight_regularized_loss(loss_fn, model, lambda_=0.01):
+    def regularized_loss(pred, target):
+        l = loss_fn(pred, target)
+
+        try:
+            term_weights = [
+                m.model.term_weights for m in model.backbone.blocks[1:11]]
+        except AttributeError:
+            return l
+
+        probs = F.softmax(torch.stack(term_weights), dim=-1)
+        max_entropy = torch.log(torch.tensor(float(probs.shape[-1])))
+        entropy_reg = -(probs * probs.log()).sum(dim=-1).mean() / max_entropy
+
+        return l + lambda_ * entropy_reg
+
+    return regularized_loss
+
+
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
-
-    set_seed(10) # this is set to 10 for GEMCNN which experienced a catastrophic event for no reason with our 42 seed 
     
+    cfg.device = 'cpu'
+
+    # this is set to 10 for GEMCNN which experienced a catastrophic event for no reason with our 42 seed
+    set_seed(10)
+
     loaders_dict = create_dataset_loaders(cfg)
 
     # Create backbone and model
@@ -45,6 +68,8 @@ def main(cfg):
         scheduler = None
 
     loss_fn = instantiate(cfg.loss)
+    loss_fn = make_term_weight_regularized_loss(loss_fn, backbone)  # no-op if backbone has no term_weights
+    
     prepare_batch = prepare_batch_fn(key="y")
 
     engine = instantiate(
