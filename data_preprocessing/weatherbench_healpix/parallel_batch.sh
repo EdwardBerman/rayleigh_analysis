@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH -J preprocess_weatherbench
-#SBATCH -N 1
-#SBATCH -n 1
-#SBATCH --cpus-per-task=16
+#SBATCH --nodes=1
+#SBATCH --time=07:59:59
+#SBATCH --job-name=[prep]
 #SBATCH --mem=32GB
-#SBATCH --time=47:59:59
-#SBATCH --partition=short
-#SBATCH -o slurm/%j.out
-#SBATCH -e slurm/%j.err
+#SBATCH --partition=gpu
+#SBATCH --cpus-per-task=4
+#SBATCH --gres=gpu:v100-sxm2:1
+#SBATCH --output=slurm/%j.out
+#SBATCH --error=slurm/%j.err
+
 
 module load python/3.13.5
 
