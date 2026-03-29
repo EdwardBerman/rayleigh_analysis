@@ -69,6 +69,8 @@ def main(cfg):
     model.load_state_dict(torch.load(
         cfg.model_save_path, map_location=cfg.device))
     model.eval()
+    
+    breakpoint()
 
     loss_fn = instantiate(cfg.loss)
 

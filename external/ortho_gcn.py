@@ -81,7 +81,7 @@ class OrthogonalGCNConvLayer(nn.Module):
             nn.Dropout(self.dropout),
         )
         self.model = TaylorGCNConv(
-            base_conv(dim_in, dim_out, adaptive, **kwargs), T=T)
+            base_conv(dim_in, dim_out, **kwargs), T=T, adaptive=adaptive)
 
     def forward(self, batch):
         x_in = batch.x
