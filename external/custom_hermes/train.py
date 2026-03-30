@@ -15,12 +15,9 @@ def make_term_weight_regularized_loss(loss_fn, model, lambda_=0.01):
     def regularized_loss(pred, target):
         l = loss_fn(pred, target)
 
-        try:
-            term_weights = [
-                m.model.term_weights for m in model.blocks[1:11]]
-        except AttributeError:
-            return l
-
+        term_weights = [
+            m.model.term_weights for m in model.blocks[1:11]]
+    
         probs = F.softmax(torch.stack(term_weights), dim=-1)
         max_entropy = torch.log(torch.tensor(float(probs.shape[-1])))
         entropy_reg = -(probs * probs.log()).sum(dim=-1).mean() / max_entropy
@@ -32,8 +29,6 @@ def make_term_weight_regularized_loss(loss_fn, model, lambda_=0.01):
 
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
-
-    cfg.device = 'cpu'
 
     # this is set to 10 for GEMCNN which experienced a catastrophic event for no reason with our 42 seed
     set_seed(10)
