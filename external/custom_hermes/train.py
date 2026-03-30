@@ -1,5 +1,6 @@
 import hydra
 import torch
+import torch.nn.functional as F
 from hydra.utils import instantiate
 from ignite.engine import Events
 from ignite.handlers import LRScheduler, ModelCheckpoint
@@ -16,7 +17,7 @@ def make_term_weight_regularized_loss(loss_fn, model, lambda_=0.01):
 
         try:
             term_weights = [
-                m.model.term_weights for m in model.backbone.blocks[1:11]]
+                m.model.term_weights for m in model.blocks[1:11]]
         except AttributeError:
             return l
 
@@ -31,7 +32,9 @@ def make_term_weight_regularized_loss(loss_fn, model, lambda_=0.01):
 
 @hydra.main(version_base=None, config_path="./conf", config_name="train")
 def main(cfg):
-    
+
+    cfg.device = 'cpu'
+
     # this is set to 10 for GEMCNN which experienced a catastrophic event for no reason with our 42 seed
     set_seed(10)
 
@@ -66,8 +69,9 @@ def main(cfg):
         scheduler = None
 
     loss_fn = instantiate(cfg.loss)
-    loss_fn = make_term_weight_regularized_loss(loss_fn, backbone)  # no-op if backbone has no term_weights
-    
+    loss_fn = make_term_weight_regularized_loss(
+        loss_fn, backbone)  # no-op if backbone has no term_weights
+
     prepare_batch = prepare_batch_fn(key="y")
 
     engine = instantiate(
