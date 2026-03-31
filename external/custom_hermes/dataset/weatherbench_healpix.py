@@ -231,7 +231,6 @@ class WeatherbenchHealpix(Dataset):
 
             print("Projecting to HEALPix...")
             hp_maps, _, _ = sphar_to_healpix(sphar_coeffs, nside)
-            # this technically does not need cuda, but i cant get cpus only on explorer, so sorry
             healpix_vals = torch.from_numpy(hp_maps).float().cuda()
 
             if split == "train":
