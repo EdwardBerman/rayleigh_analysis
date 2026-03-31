@@ -40,6 +40,14 @@ def compute_edges_dense(data: Data) -> Data:
     return data
 
 
+def compute_edge_attr(data: Data) -> Data:
+    src, dst = data.edge_index[0], data.edge_index[1]
+    rel_pos = data.pos[dst] - data.pos[src]
+    data.edge_attr = (rel_pos ** 2).sum(dim=-1,
+                                        keepdim=True).sqrt()  # shape: [E, 1]
+    return data
+
+
 class HeatWavePDEonMesh(InMemoryDataset):
     def __init__(
         self,
@@ -134,7 +142,8 @@ class HeatWavePDEonMesh(InMemoryDataset):
                 data = self.pre_transform(data)
 
             pos_np = data.pos.cpu().numpy().astype(np.float32)   # [N, 3]
-            labels_np, centers_np = clusterize(pos_np, max_cluster_size=self.max_cluster_size)
+            labels_np, centers_np = clusterize(
+                pos_np, max_cluster_size=self.max_cluster_size)
 
             data.cluster_labels = torch.from_numpy(labels_np).long()    # [N]
             data.cluster_centers = torch.from_numpy(centers_np).float()
@@ -227,7 +236,8 @@ class HeatWavePDEonMesh(InMemoryDataset):
 
         data = compute_edges_dense(data)
         data = compute_adj_mat(data)
-
+        data = compute_edge_attr(data)
+        
         self._data_list[idx] = copy.copy(data)
 
         return data

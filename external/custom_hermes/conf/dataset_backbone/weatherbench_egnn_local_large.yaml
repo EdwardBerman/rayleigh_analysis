@@ -1,0 +1,20 @@
+# @package _global_
+
+# Number of parameters: 495361
+train:
+  epochs: 100
+  batch_size: 2
+  lr: 7e-5
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: ${train.lr}
+  weight_decay: 1e-5
+
+backbone:
+  net:
+    in_node_nf: 3
+    hidden_nf: 128
+    out_node_nf: ${dataset.out_dim}
+    in_edge_nf: ${dataset.edge_dim}
+    n_layers: 5

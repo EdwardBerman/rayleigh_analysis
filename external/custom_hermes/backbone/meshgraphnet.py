@@ -64,13 +64,8 @@ class MeshGraphNet(nn.Module):
         self.out_dim = mp_node_in_dim
 
     def forward(self, data):
+        
         x = data.x.squeeze(-1)
-
-        pos = data.pos                      # [N, 3]
-        src, dst = data.edge_index          # [E], [E]
-        rel = pos[dst] - pos[src]
-        data.edge_attr = (rel ** 2).sum(dim=-1, keepdim=True)
-
         # message passing
         x, _ = self.graph_processor(x, data.edge_index, data.edge_attr)
 

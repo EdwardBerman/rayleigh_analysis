@@ -3,7 +3,7 @@
 dataset:
   name: Wave
   in_dim: ${dataset.cls.input_length}
-  edge_dim: 0
+  edge_dim: 1
   out_dim: 1
   cls:
     _target_: external.custom_hermes.dataset.heatwave_pde.HeatWavePDEonMesh
@@ -14,7 +14,6 @@ dataset:
     num_samples: 5
     input_length: 5
     output_length: 3
-
 loss:
   _target_: torch.nn.MSELoss
 

@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --time=07:59:59
+#SBATCH --job-name=[heat]
+#SBATCH --mem=32GB
+#SBATCH --ntasks=1
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:h200
+#SBATCH --output=slurm/%j.out
+#SBATCH --error=slurm/%j.err
+
+module load python/3.13.5
+
+eval "$(poetry env activate)"
+
+HYDRA_FULL_ERROR=1
+
+python3 -m external.custom_hermes.train dataset=wave backbone=uni # with the flag adaptive kept to True

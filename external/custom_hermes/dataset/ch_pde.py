@@ -9,7 +9,8 @@ from torch_geometric.data.separate import separate
 
 from external.custom_hermes.dataset.clusterize import clusterize
 from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
-                                                         compute_edges_dense)
+                                                         compute_edges_dense,
+                                                         compute_edge_attr)
 
 
 class CHPDEonMesh(InMemoryDataset):
@@ -192,6 +193,7 @@ class CHPDEonMesh(InMemoryDataset):
         
         data = compute_edges_dense(data)
         data = compute_adj_mat(data)
+        data = compute_edge_attr(data)
 
         self._data_list[idx] = copy.copy(data)
 
