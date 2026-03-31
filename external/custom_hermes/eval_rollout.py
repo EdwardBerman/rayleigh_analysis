@@ -14,8 +14,7 @@ from pyvista import examples
 from torch_geometric.utils import degree
 from tqdm import tqdm
 
-from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat,
-                                                         compute_edges_dense)
+from external.custom_hermes.dataset.heatwave_pde import (compute_adj_mat, compute_edges_dense, compute_edge_attr)
 from external.custom_hermes.utils import (create_dataset_loaders,
                                           rotate_mesh_video)
 from external.hermes.src.data.pde.utils import screenshot_mesh
@@ -338,6 +337,7 @@ def main(cfg):
             with torch.no_grad():
                 data.x = values[:, 0: dataset.input_length][..., None]
                 data = compute_adj_mat(compute_edges_dense(data))
+                data = compute_edge_attr(data)
 
                 # for t in range(dataset.input_length, values.shape[1]):
                 # tqdm ift
