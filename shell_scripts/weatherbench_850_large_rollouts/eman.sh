@@ -9,7 +9,7 @@
 #SBATCH --output=slurm/%j.out
 #SBATCH --error=slurm/%j.err
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=berman.ed@northeastern.edu
+
 
 module load python/3.13.5
 
