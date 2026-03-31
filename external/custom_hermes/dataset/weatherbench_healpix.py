@@ -231,7 +231,7 @@ class WeatherbenchHealpix(Dataset):
 
             print("Projecting to HEALPix...")
             hp_maps, _, _ = sphar_to_healpix(sphar_coeffs, nside)
-            healpix_vals = torch.from_numpy(hp_maps).float()
+            healpix_vals = torch.from_numpy(hp_maps).float().cuda()
 
             if split == "train":
                 x_mean = healpix_vals.mean().item()
@@ -241,7 +241,7 @@ class WeatherbenchHealpix(Dataset):
                 print(f"mean={x_mean:.4f}, std={x_std:.4f}")
 
             torch.save({
-                "healpix_vals": healpix_vals,
+                "healpix_vals": healpix_vals.cpu(),
             }, os.path.join(save_dir, f"{split}.pt"))
             print(
                 f"  Saved to {save_dir}/{split}.pt  shape={healpix_vals.shape}")

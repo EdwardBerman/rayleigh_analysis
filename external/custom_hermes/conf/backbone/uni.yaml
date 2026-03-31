@@ -2,13 +2,14 @@ name: Uni
 
 net:
   _target_: external.custom_hermes.backbone.uni_gcn.Uni
-  input_dim: 12 # this is for weatherbench_healpix 
+  input_dim: 5
   hidden_dim: 64
   output_dim: 1
   projection: "pad"
   num_encoder_layers: 11
-  decoder: "gcn"
+  decoder: "mlp"
   num_decoder_layers: 1
   null_isolated: false
   add_self_loops: false
   dropout: false
+  adaptive: false
