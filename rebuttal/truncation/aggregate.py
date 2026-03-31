@@ -92,7 +92,7 @@ def main():
     os.makedirs(args.save_dir, exist_ok=True)
 
     model_types = ['lie_1', 'lie_3', 'lie_5', 'lie_7', 'lie_9']
-    model_labels = [r'$K=1$', r'$K=3$', r'$K=5$', r'$K=7$', r'$K=9$']
+    model_labels = [r'$T_{max}=1$', r'$T_{max}=3$', r'$T_{max}=5$', r'$T_{max}=7$', r'$T_{max}=9$']
     model_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
     val_rayleigh_x = None
@@ -114,7 +114,7 @@ def main():
 
     fig, axes = plt.subplots(1, 5, figsize=(15, 4), sharey=True)
 
-    titles = [r'$K=1$', r'$K=3$', r'$K=5$', r'$K=7$', r'$K=9$']
+    titles = [r'$T_{max}=1$', r'$T_{max}=3$', r'$T_{max}=5$', r'$T_{max}=7$', r'$T_{max}=9$']
     colors = plt.cm.viridis(np.linspace(0.2, 0.8, 5))
 
     for ax, model_type, title in zip(axes, model_types, titles):
