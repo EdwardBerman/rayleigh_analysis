@@ -1,9 +1,15 @@
 import torch
 from torch_geometric.utils import remove_isolated_nodes
+from torch_geometric.nn import global_mean_pool
+
+import torch.nn as nn
 
 from external.custom_hermes.nn.eman_res_net_block import EmanAttResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
 
+class Sin(nn.Module):
+    def forward(self, x):
+        return torch.sin(x)
 
 class EMAN(torch.nn.Module):
     def __init__(
@@ -103,6 +109,7 @@ class EMAN(torch.nn.Module):
                 activation=readout_activation,
             )
 
+    
     def _build_readout_mlp(self, in_dim, hidden_dim, num_layers, activation='sin'):
         """Build MLP head for graph-level prediction."""
         # Choose activation function
@@ -116,6 +123,23 @@ class EMAN(torch.nn.Module):
             act_fn = nn.GELU()
         else:
             raise ValueError(f"Unknown activation: {activation}")
+        
+        layers = []
+        
+        # Build hidden layers
+        current_dim = in_dim
+        for i in range(num_layers - 1):
+            layers.append(nn.Linear(current_dim, hidden_dim))
+            if activation == 'sin':
+                layers.append(Sin())
+            else:
+                layers.append(act_fn)
+            current_dim = hidden_dim
+        
+        # Final layer to scalar output
+        layers.append(nn.Linear(current_dim, 1))
+        
+        self.readout_mlp = nn.Sequential(*layers)
         
     def forward(self, data):
         # transform adds precomp feature (cosines and sines with radial weights) to the data
