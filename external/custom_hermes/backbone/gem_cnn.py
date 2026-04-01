@@ -8,6 +8,10 @@ import torch.nn as nn
 from external.custom_hermes.nn.gem_res_net_block import GemResNetBlock
 from external.custom_hermes.transform.gem_precomp import GemPrecomp
 
+class Sin(nn.Module):
+    def forward(self, x):
+        return torch.sin(x)
+
 class GemCNN(torch.nn.Module):
     def __init__(
         self,
