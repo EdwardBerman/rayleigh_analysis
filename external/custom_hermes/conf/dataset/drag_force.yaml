@@ -4,6 +4,7 @@ dataset:
   name: drag_force
   in_dim: 8
   edge_dim: 0
+  out_dim: 1
   cls:
     _target_: external.custom_hermes.dataset.drag_force.DragForceDataset
     root: "${work_dir}/data"
