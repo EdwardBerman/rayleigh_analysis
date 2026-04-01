@@ -23,6 +23,11 @@ class EMAN(torch.nn.Module):
         dropout,
         n_heads,
         final_activation,
+        graph_level_readout=True,
+        pooling='mean',
+        readout_layers=2,
+        readout_hidden_dim=64,
+        readout_activation='sin',
         **kwargs
     ):
         super().__init__()
@@ -41,6 +46,9 @@ class EMAN(torch.nn.Module):
 
         self.reltan_features = reltan_features
         self.null_isolated = null_isolated
+        
+        self.graph_level_readout = graph_level_readout
+        self.pooling = pooling
 
         block_kwargs = dict(
             n_rings=n_rings,
@@ -85,6 +93,30 @@ class EMAN(torch.nn.Module):
             )
         )
 
+        if self.graph_level_readout:
+            # After message passing, node features have shape [num_nodes, out_dim, 1]
+            # After pooling: [batch_size, out_dim]
+            self._build_readout_mlp(
+                in_dim=self.out_dim,
+                hidden_dim=readout_hidden_dim,
+                num_layers=readout_layers,
+                activation=readout_activation,
+            )
+
+    def _build_readout_mlp(self, in_dim, hidden_dim, num_layers, activation='sin'):
+        """Build MLP head for graph-level prediction."""
+        # Choose activation function
+        if activation == 'sin':
+            act_fn = torch.sin
+        elif activation == 'relu':
+            act_fn = nn.ReLU()
+        elif activation == 'silu':
+            act_fn = nn.SiLU()
+        elif activation == 'gelu':
+            act_fn = nn.GELU()
+        else:
+            raise ValueError(f"Unknown activation: {activation}")
+        
     def forward(self, data):
         # transform adds precomp feature (cosines and sines with radial weights) to the data
         # rel_transform adds rel_tang_feat (check Sec. 4 in the draft) feature to data
@@ -109,5 +141,17 @@ class EMAN(torch.nn.Module):
 
         for layer in self.layers:
             x = layer(x, edge_index, precomp_neigh_edge, precomp_self_edge, connection)
-
-        return x
+        
+        if self.graph_level_readout:
+            # x has shape [num_nodes, out_dim, 1]
+            # Take the trivial feature (order-0) for pooling
+            x_scalar = x[:, :, 0]  # [num_nodes, out_dim]
+            
+            if self.pooling == 'mean':
+                graph_emb = global_mean_pool(x_scalar, data.batch)  # [batch_size, out_dim]
+            else:
+                raise ValueError(f"Unsupported pooling method: {self.pooling}")
+            out = self.readout_mlp(graph_emb)  # [batch_size, 1]
+            return out
+        else:
+            return x
