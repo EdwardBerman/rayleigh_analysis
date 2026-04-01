@@ -24,7 +24,6 @@ backbone:
     node_batch_size: null
     n_heads: 1 # need to use n_heads=1 or 5 for heat/wave
     edge_dims: ${dataset.edge_dim}
-    final_activation: false
     node_batch_size: null
     graph_level_readout: true
     pooling: mean
