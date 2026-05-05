@@ -1,0 +1,6 @@
+Supplementary Material for Smoothness Errors in Dynamics Models and How to Avoid Them
+
+Contains: 
+
+1. LieUni_timelapse_loop.gif , which shows the evolving Rayleigh quotient distributions for Lie unitary convolution for different T_max
+2. heat_armadillo_comparison_landscape.gif , which shows the evolving heat distribution over the armadillos at each time step. From left to right, Truth, R-UniMesh (ours), EMAN, Hermes.
