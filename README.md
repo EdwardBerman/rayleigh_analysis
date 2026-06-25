@@ -130,17 +130,16 @@ This didn't make into our final paper as the focused converged to dynamics model
 
 ### Citation
 
-Preprint:
+ICML Proceedings (Preferred Citation):
 
 ```
-@misc{berman2026smoothnesserrorsdynamicsmodels,
-      title={Smoothness Errors in Dynamics Models and How to Avoid Them}, 
-      author={Edward Berman and Luisa Li and Jung Yeon Park and Robin Walters},
-      year={2026},
-      eprint={2602.05352},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2602.05352}, 
+@inproceedings{
+berman2026smoothness,
+title={Smoothness Errors in Dynamics Models and How to Avoid Them},
+author={Edward Berman and Luisa Li and Jung Yeon Park and Robin Walters},
+booktitle={Forty-third International Conference on Machine Learning},
+year={2026},
+url={https://openreview.net/forum?id=Uf3SMkP2Wd}
 }
 ```
 
