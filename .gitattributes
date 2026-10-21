@@ -21,3 +21,8 @@
 *.cff linguist-detectable=false
 *.bst linguist-detectable=false
 *.xml linguist-detectable=false
+
+# Web files (website, slide decks)
+*.html linguist-detectable=false
+*.css linguist-detectable=false
+*.js linguist-detectable=false
